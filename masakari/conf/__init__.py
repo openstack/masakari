@@ -1,4 +1,4 @@
-# Copyright (c) 2016 NTT Data
+# Copyright 2016 NTT DATA
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,17 +13,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""
-:mod:`masakari` -- Cloud IaaS Platform
-===================================
+from oslo_config import cfg
 
-.. automodule:: masakari
-   :platform: Unix
-   :synopsis: Infrastructure-as-a-Service Cloud platform.
-"""
+from masakari.conf import api
+from masakari.conf import database
+from masakari.conf import exceptions
+from masakari.conf import osapi_v1
+from masakari.conf import service
+from masakari.conf import ssl
+from masakari.conf import wsgi
 
-import os
+CONF = cfg.CONF
 
-os.environ['EVENTLET_NO_GREENDNS'] = 'yes'
-
-import eventlet  # noqa
+api.register_opts(CONF)
+database.register_opts(CONF)
+exceptions.register_opts(CONF)
+osapi_v1.register_opts(CONF)
+ssl.register_opts(CONF)
+service.register_opts(CONF)
+wsgi.register_opts(CONF)

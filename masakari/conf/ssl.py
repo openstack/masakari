@@ -1,4 +1,4 @@
-# Copyright (c) 2016 NTT Data
+# Copyright 2016 NTT DATA
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,17 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""
-:mod:`masakari` -- Cloud IaaS Platform
-===================================
+from oslo_service import sslutils
 
-.. automodule:: masakari
-   :platform: Unix
-   :synopsis: Infrastructure-as-a-Service Cloud platform.
-"""
 
-import os
+def register_opts(conf):
+    sslutils.register_opts(conf)
 
-os.environ['EVENTLET_NO_GREENDNS'] = 'yes'
 
-import eventlet  # noqa
+def list_opts():
+    return sslutils.list_opts()

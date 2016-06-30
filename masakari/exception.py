@@ -1,0 +1,215 @@
+# Copyright 2016 NTT DATA
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+"""Masakari base exception handling.
+
+Includes decorator for re-raising Masakari-type exceptions.
+
+SHOULD include dedicated exception logging.
+
+"""
+
+import functools
+import inspect
+import sys
+
+from oslo_log import log as logging
+from oslo_utils import excutils
+import six
+import webob.exc
+from webob import util as woutil
+
+import masakari.conf
+from masakari.i18n import _
+from masakari.i18n import _LE
+from masakari import safe_utils
+
+LOG = logging.getLogger(__name__)
+
+
+CONF = masakari.conf.CONF
+
+
+class ConvertedException(webob.exc.WSGIHTTPException):
+    def __init__(self, code, title="", explanation=""):
+        self.code = code
+        # There is a strict rule about constructing status line for HTTP:
+        # '...Status-Line, consisting of the protocol version followed by a
+        # numeric status code and its associated textual phrase, with each
+        # element separated by SP characters'
+        # (http://www.faqs.org/rfcs/rfc2616.html)
+        # 'code' and 'title' can not be empty because they correspond
+        # to numeric status code and its associated text
+        if title:
+            self.title = title
+        else:
+            try:
+                self.title = woutil.status_reasons[self.code]
+            except KeyError:
+                msg = _LE("Improper or unknown HTTP status code used: %d")
+                LOG.error(msg, code)
+                self.title = woutil.status_generic_reasons[self.code // 100]
+        self.explanation = explanation
+        super(ConvertedException, self).__init__()
+
+
+def _cleanse_dict(original):
+    """Strip all admin_password, new_pass, rescue_pass keys from a dict."""
+    return {k: v for k, v in six.iteritems(original) if "_pass" not in k}
+
+
+def wrap_exception(notifier=None, get_notifier=None):
+    """This decorator wraps a method to catch any exceptions that may
+    get thrown. It also optionally sends the exception to the notification
+    system.
+    """
+    def inner(f):
+        def wrapped(self, context, *args, **kw):
+            # Don't store self or context in the payload, it now seems to
+            # contain confidential information.
+            try:
+                return f(self, context, *args, **kw)
+            except Exception as e:
+                with excutils.save_and_reraise_exception():
+                    if notifier or get_notifier:
+                        payload = dict(exception=e)
+                        wrapped_func = safe_utils.get_wrapped_function(f)
+                        call_dict = inspect.getcallargs(wrapped_func, self,
+                                                        context, *args, **kw)
+                        # self can't be serialized and shouldn't be in the
+                        # payload
+                        call_dict.pop('self', None)
+                        cleansed = _cleanse_dict(call_dict)
+                        payload.update({'args': cleansed})
+
+                        # If f has multiple decorators, they must use
+                        # functools.wraps to ensure the name is
+                        # propagated.
+                        event_type = f.__name__
+
+                        (notifier or get_notifier()).error(context,
+                                                           event_type,
+                                                           payload)
+
+        return functools.wraps(f)(wrapped)
+    return inner
+
+
+class MasakariException(Exception):
+    """Base Masakari Exception
+
+    To correctly use this class, inherit from it and define
+    a 'msg_fmt' property. That msg_fmt will get printf'd
+    with the keyword arguments provided to the constructor.
+
+    """
+    msg_fmt = _("An unknown exception occurred.")
+    code = 500
+    headers = {}
+    safe = False
+
+    def __init__(self, message=None, **kwargs):
+        self.kwargs = kwargs
+
+        if 'code' not in self.kwargs:
+            try:
+                self.kwargs['code'] = self.code
+            except AttributeError:
+                pass
+
+        if not message:
+            try:
+                message = self.msg_fmt % kwargs
+
+            except Exception:
+                exc_info = sys.exc_info()
+                # kwargs doesn't match a variable in the message
+                # log the issue and the kwargs
+                LOG.exception(_LE('Exception in string format operation'))
+                for name, value in six.iteritems(kwargs):
+                    LOG.error("%s: %s" % (name, value))    # noqa
+
+                if CONF.fatal_exception_format_errors:
+                    six.reraise(*exc_info)
+                else:
+                    # at least get the core message out if something happened
+                    message = self.msg_fmt
+
+        self.message = message
+        super(MasakariException, self).__init__(message)
+
+    def format_message(self):
+        # NOTE: use the first argument to the python Exception object
+        # which should be our full MasakariException message, (see __init__)
+        return self.args[0]
+
+
+class Invalid(MasakariException):
+    msg_fmt = _("Bad Request - Invalid Parameters")
+    code = 400
+
+
+class InvalidAPIVersionString(Invalid):
+    msg_fmt = _("API Version String %(version)s is of invalid format. Must "
+                "be of format MajorNum.MinorNum.")
+
+
+class MalformedRequestBody(MasakariException):
+    msg_fmt = _("Malformed message body: %(reason)s")
+
+
+# NOTE: NotFound should only be used when a 404 error is
+# appropriate to be returned
+class ConfigNotFound(MasakariException):
+    msg_fmt = _("Could not find config at %(path)s")
+
+
+class Forbidden(MasakariException):
+    msg_fmt = _("Forbidden")
+    code = 403
+
+
+class AdminRequired(Forbidden):
+    msg_fmt = _("User does not have admin privileges")
+
+
+class PolicyNotAuthorized(Forbidden):
+    msg_fmt = _("Policy doesn't allow %(action)s to be performed.")
+
+
+class PasteAppNotFound(MasakariException):
+    msg_fmt = _("Could not load paste app '%(name)s' from %(path)s")
+
+
+class InvalidContentType(Invalid):
+    msg_fmt = _("Invalid content type %(content_type)s.")
+
+
+class VersionNotFoundForAPIMethod(Invalid):
+    msg_fmt = _("API version %(version)s is not supported on this method.")
+
+
+class InvalidGlobalAPIVersion(Invalid):
+    msg_fmt = _("Version %(req_ver)s is not supported by the API. Minimum "
+                "is %(min_ver)s and maximum is %(max_ver)s.")
+
+
+class ApiVersionsIntersect(Invalid):
+    msg_fmt = _("Version of %(name) %(min_ver) %(max_ver) intersects "
+                "with another versions.")
+
+
+class ValidationError(Invalid):
+    msg_fmt = "%(detail)s"

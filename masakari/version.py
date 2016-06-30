@@ -1,4 +1,4 @@
-# Copyright (c) 2016 NTT Data
+# Copyright 2016 NTT DATA
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,17 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""
-:mod:`masakari` -- Cloud IaaS Platform
-===================================
+from pbr import version as pbr_version
 
-.. automodule:: masakari
-   :platform: Unix
-   :synopsis: Infrastructure-as-a-Service Cloud platform.
-"""
+MASAKARI_VENDOR = "OpenStack Foundation"
+MASAKARI_PRODUCT = "OpenStack Masakari"
+MASAKARI_PACKAGE = None  # OS distro package version suffix
 
-import os
-
-os.environ['EVENTLET_NO_GREENDNS'] = 'yes'
-
-import eventlet  # noqa
+loaded = False
+version_info = pbr_version.VersionInfo('masakari')
+version_string = version_info.version_string

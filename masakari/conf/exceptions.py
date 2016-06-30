@@ -1,4 +1,4 @@
-# Copyright (c) 2016 NTT Data
+# Copyright 2016 NTT DATA
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,17 +13,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""
-:mod:`masakari` -- Cloud IaaS Platform
-===================================
+from oslo_config import cfg
 
-.. automodule:: masakari
-   :platform: Unix
-   :synopsis: Infrastructure-as-a-Service Cloud platform.
-"""
+exc_log_opts = [
+    cfg.BoolOpt('fatal_exception_format_errors',
+                default=False,
+                help='Make exception message format errors fatal'),
+]
 
-import os
 
-os.environ['EVENTLET_NO_GREENDNS'] = 'yes'
+def register_opts(conf):
+    conf.register_opts(exc_log_opts)
 
-import eventlet  # noqa
+
+def list_opts():
+    return {'DEFAULT': exc_log_opts}

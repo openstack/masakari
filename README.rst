@@ -19,12 +19,41 @@ Masakari is distributed under the terms of the Apache License,
 Version 2.0. The full terms and conditions of this license are
 detailed in the LICENSE file.
 
-
-
 * Free software: Apache license 2.0
 * Documentation: http://docs.openstack.org/developer/masakari
 * Source: http://git.openstack.org/cgit/openstack/masakari
 * Bugs: http://bugs.launchpad.net/masakari
+
+
+Configure masakari-api
+----------------------
+
+1. Create masakari user:
+$ openstack user create --password-prompt masakari
+(give password as masakari)
+
+2. Add admin role to masakari user:
+$ openstack role add --project service --user masakari admin
+
+3. Create new service:
+$ openstack service create --name masakari --description "masakari high availability" masakari
+
+4. Create endpoint for masakari service:
+$ openstack endpoint create --region RegionOne masakari --publicurl http://<ip-address>:<port>/v1/%\(tenant_id\)s --adminurl http://<ip-address>:<port>/v1/%\(tenant_id\)s --internalurl http://<ip-address>:<port>/v1/%\(tenant_id\)s
+
+5. Clone masakari using
+$ git clone https://github.com/openstack/masakari.git
+
+6. Run setup.py from masakari
+$ sudo python setup.py install
+
+7. Create masakari directory in /etc/
+
+8. Copy masakari.conf, api-paste.ini and policy.json file from masakari/etc/ to
+   /etc/masakari folder
+
+9. To run masakari-api simply use following binary:
+$ masakari-api
 
 Features
 --------

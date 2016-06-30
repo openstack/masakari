@@ -1,4 +1,4 @@
-# Copyright (c) 2016 NTT Data
+# Copyright 2016 NTT DATA
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,17 +13,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""
-:mod:`masakari` -- Cloud IaaS Platform
-===================================
+from masakari.conf import paths
 
-.. automodule:: masakari
-   :platform: Unix
-   :synopsis: Infrastructure-as-a-Service Cloud platform.
-"""
+from oslo_db import options as oslo_db_options
 
-import os
+_DEFAULT_SQL_CONNECTION = 'sqlite:///' + paths.state_path_def(
+    'masakari.sqlite')
 
-os.environ['EVENTLET_NO_GREENDNS'] = 'yes'
 
-import eventlet  # noqa
+def register_opts(conf):
+    oslo_db_options.set_defaults(conf, connection=_DEFAULT_SQL_CONNECTION,
+                                 sqlite_db='masakari.sqlite')
+
+
+def list_opts():
+    return {'DEFAULT': []}
