@@ -55,6 +55,17 @@ $ sudo python setup.py install
 9. To run masakari-api simply use following binary:
 $ masakari-api
 
+
+Configure masakari database
+---------------------------
+
+1. Create 'masakari' database
+
+2. After running setup.py for masakari '$ sudo python setup.py install'
+    run 'masakari-manage' command to sync the database
+    $ masakari-manage db sync
+
+
 Features
 --------
 
