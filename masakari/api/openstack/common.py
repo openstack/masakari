@@ -18,6 +18,7 @@ from oslo_log import log as logging
 import six.moves.urllib.parse as urlparse
 
 import masakari.conf
+from masakari.i18n import _
 
 CONF = masakari.conf.CONF
 
