@@ -36,3 +36,215 @@ MAX_INT = 0x7FFFFFFF
 def get_engine():
     """Returns database engine"""
     return IMPL.get_engine()
+
+
+def failover_segment_get_all_by_filters(
+        context, filters=None, sort_keys=None, sort_dirs=None,
+        limit=None, marker=None):
+    """Get all failover segments that match all filters.
+
+    :param context: context to query under
+    :param filters: filters for the query in the form of key/value
+    :param sort_keys: list of attributes by which results should be sorted,
+                    paired with corresponding item in sort_dirs
+    :param sort_dirs: list of directions in which results should be sorted,
+                    paired with corresponding item in sort_keys
+    :param limit: maximum number of items to return
+    :param marker: the last item of the previous page, used to determine the
+                  next page of results to return
+
+    :returns: list of dictionary-like objects containing all failover segments
+    """
+    return IMPL.failover_segment_get_all_by_filters(context, filters=filters,
+                                                    sort_keys=sort_keys,
+                                                    sort_dirs=sort_dirs,
+                                                    limit=limit,
+                                                    marker=marker)
+
+
+def failover_segment_get_by_id(context, segment_id):
+    """Get failover segment by id.
+
+    :param context: context to query under
+    :param segment_id: id of failover segment
+
+    :returns: dictionary-like object containing failover segment
+
+    :raises exception.FailoverSegmentNotFound if failover segment with given ID
+            doesn't exist.
+    """
+    return IMPL.failover_segment_get_by_id(context, segment_id)
+
+
+def failover_segment_get_by_uuid(context, segment_uuid):
+    """Get failover segment by uuid.
+
+    :param context: context to query under
+    :param segment_uuid: uuid of failover segment
+
+    :returns: dictionary-like object containing failover segment
+
+    :raises exception.FailoverSegmentNotFound if failover segment with given
+            'segment_uuid' doesn't exist.
+    """
+    return IMPL.failover_segment_get_by_uuid(context, segment_uuid)
+
+
+def failover_segment_get_by_name(context, name):
+    """Get failover segment by name
+
+    :param context: context: context to query under
+    :param name: name of failover segment
+
+    :returns: dictionary-like object containing failover segment
+
+    :raises exception.FailoverSegmentNotFoundByName if failover segment with
+            given 'name' doesn't exist.
+    """
+    return IMPL.failover_segment_get_by_name(context, name)
+
+
+def failover_segment_create(context, values):
+    """Insert failover segment to database.
+
+    :param context: context to query under
+    :param values: dictionary of failover segment attributes to create
+
+    :returns: dictionary-like object containing created failover segment
+
+    :raises exception.FailoverSegmentExists if failover segment with given name
+            already exist.
+    """
+    return IMPL.failover_segment_create(context, values)
+
+
+def failover_segment_update(context, segment_uuid, values):
+    """Update failover segment by uuid.
+
+    :param context: context to query under
+    :param segment_uuid: uuid of segment to be updated
+    :param values: dictionary of values to be updated
+
+    :returns: dictionary-like object containing updated failover segment
+
+    :raises exception.FailoverSegmentNotFound if failover segment with given
+            'segment_uuid' doesn't exist.
+            exception.FailoverSegmentExists if failover segment with given name
+            already exist.
+    """
+    return IMPL.failover_segment_update(context, segment_uuid, values)
+
+
+def failover_segment_delete(context, segment_uuid):
+    """Delete the failover segment.
+
+    :param context: context to query under
+    :param segment_uuid: uuid of segment to be deleted
+
+    :raises exception.FailoverSegmentNotFound if failover segment with
+            'segment_uuid' doesn't exist.
+    """
+    return IMPL.failover_segment_delete(context, segment_uuid)
+
+
+# db apis for host
+
+
+def host_get_all_by_filters(
+        context, filters=None, sort_keys=None, sort_dirs=None,
+        limit=None, marker=None):
+    """Get all hosts that match all filters.
+
+    :param context: context to query under
+    :param filters: filters for the query in the form of key/value
+    :param sort_keys: list of attributes by which results should be sorted,
+                     paired with corresponding item in sort_dirs
+    :param sort_dirs: list of directions in which results should be sorted,
+                     paired with corresponding item in sort_keys
+    :param limit: maximum number of items to return
+    :param marker: the last item of the previous page, used to determine the
+                   next page of results to return
+
+    :returns: list of dictionary-like objects containing all hosts
+    """
+    return IMPL.host_get_all_by_filters(context, filters=filters,
+                                        sort_keys=sort_keys,
+                                        sort_dirs=sort_dirs, limit=limit,
+                                        marker=marker)
+
+
+def host_get_by_uuid(context, host_uuid):
+    """Get host information by uuid.
+
+    :param context: context to query under
+    :param host_uuid: uuid of host
+
+    :returns: dictionary-like object containing host
+
+    :raises: exception.HostNotFound if host with 'host_uuid' doesn't exist
+    """
+    return IMPL.host_get_by_uuid(context, host_uuid)
+
+
+def host_get_by_id(context, host_id):
+    """Get host information by id.
+
+    :param context: context to query under
+    :param host_id: id of host
+
+    :returns: dictionary-like object containing host
+
+    :raises: exception.HostNotFound if host with given ID doesn't exist
+    """
+    return IMPL.host_get_by_id(context, host_id)
+
+
+def host_get_by_name(context, name):
+    """Get host information by name.
+
+    :param context: context to query under
+    :param name: name of host
+
+    :returns: dictionary-like object containing host
+
+    :raises: exception.HostNotFoundByName if host with given 'name' doesn't
+             exist
+    """
+    return IMPL.host_get_by_name(context, name)
+
+
+def host_create(context, values):
+    """Create a host.
+
+    :param context: context to query under
+    :param values: dictionary of host attributes to create
+
+    :returns: dictionary-like object containing created host
+    """
+    return IMPL.host_create(context, values)
+
+
+def host_update(context, host_uuid, values):
+    """Update host information in the database.
+
+    :param context: context to query under
+    :param host_uuid: uuid of host to be updated
+    :param values: dictionary of host attributes to be updated
+
+    :returns: dictionary-like object containing updated host
+
+    :raises: exception.HostNotFound if host with 'host_uuid' doesn't exist
+             exception.HostExists if host with given 'name' already exist
+    """
+    return IMPL.host_update(context, host_uuid, values)
+
+
+def host_delete(context, host_uuid):
+    """Delete the host.
+
+    :param context: context to query under
+    :param host_uuid: uuid of host to be deleted
+
+    :raises: exception.HostNotFound if host with 'host_uuid' doesn't exist
+    """
+    return IMPL.host_delete(context, host_uuid)

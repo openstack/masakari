@@ -176,7 +176,12 @@ class MalformedRequestBody(MasakariException):
 
 # NOTE: NotFound should only be used when a 404 error is
 # appropriate to be returned
-class ConfigNotFound(MasakariException):
+class NotFound(MasakariException):
+    msg_fmt = _("Resource could not be found.")
+    code = 404
+
+
+class ConfigNotFound(NotFound):
     msg_fmt = _("Could not find config at %(path)s")
 
 
@@ -217,3 +222,36 @@ class ApiVersionsIntersect(Invalid):
 
 class ValidationError(Invalid):
     msg_fmt = "%(detail)s"
+
+
+class InvalidSortKey(Invalid):
+    msg_fmt = _("Sort key supplied was not valid.")
+
+
+class MarkerNotFound(NotFound):
+    msg_fmt = _("Marker %(marker)s could not be found.")
+
+
+class FailoverSegmentNotFound(NotFound):
+    msg_fmt = _("No failover segment with id %(id)s.")
+
+
+class HostNotFound(NotFound):
+    msg_fmt = _("No host with id %(id)s.")
+
+
+class FailoverSegmentNotFoundByName(FailoverSegmentNotFound):
+    msg_fmt = _("Failover segment with name %(segment_name)s could not "
+                "be found.")
+
+
+class HostNotFoundByName(HostNotFound):
+    msg_fmt = _("Host with name %(host_name)s could not be found.")
+
+
+class FailoverSegmentExists(MasakariException):
+    msg_fmt = _("Failover segment with name %(name)s already exists.")
+
+
+class HostExists(MasakariException):
+    msg_fmt = _("Host with name %(name)s already exists.")
