@@ -481,3 +481,55 @@ class HackingTestCase(test.NoDBTestCase):
         errors = [(4, 0, 'M329'), (8, 8, 'M329')]
         self._assert_has_errors(code, checks.no_os_popen,
                                 expected_errors=errors)
+
+    def test_check_delayed_string_interpolation(self):
+        checker = checks.check_delayed_string_interpolation
+        code = """
+               msg_w = _LW('Test string (%s)')
+               msg_i = _LI('Test string (%s)')
+               value = 'test'
+
+               LOG.error(_LE("Test string (%s)") % value)
+               LOG.warning(msg_w % 'test%string')
+               LOG.info(msg_i %
+                        "test%string%info")
+               LOG.critical(
+                   _LC('Test string (%s)') % value,
+                   instance=instance)
+               LOG.exception(_LE(" 'Test quotation %s' \"Test\"") % 'test')
+               LOG.debug(' "Test quotation %s" \'Test\'' % "test")
+               LOG.debug('Tesing %(test)s' %
+                         {'test': ','.join(
+                             ['%s=%s' % (name, value)
+                              for name, value in test.items()])})
+               """
+
+        expected_errors = [(5, 34, 'M330'), (6, 18, 'M330'), (7, 15, 'M330'),
+                           (10, 28, 'M330'), (12, 49, 'M330'),
+                           (13, 40, 'M330'), (14, 28, 'M330')]
+        self._assert_has_errors(code, checker, expected_errors=expected_errors)
+        self._assert_has_no_errors(
+            code, checker, filename='masakari/tests/unit/test_hacking.py')
+
+        code = """
+               msg_w = _LW('Test string (%s)')
+               msg_i = _LI('Test string (%s)')
+               value = 'test'
+
+               LOG.error(_LE("Test string (%s)"), value)
+               LOG.error(_LE("Test string (%s)") % value) # noqa
+               LOG.warn(_LW('Test string (%s)'),
+                        value)
+               LOG.info(msg_i,
+                        "test%string%info")
+               LOG.critical(
+                   _LC('Test string (%s)'), value,
+                   instance=instance)
+               LOG.exception(_LE(" 'Test quotation %s' \"Test\""), 'test')
+               LOG.debug(' "Test quotation %s" \'Test\'', "test")
+               LOG.debug('Tesing %(test)s',
+                         {'test': ','.join(
+                             ['%s=%s' % (name, value)
+                              for name, value in test.items()])})
+               """
+        self._assert_has_no_errors(code, checker)

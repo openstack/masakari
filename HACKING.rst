@@ -48,3 +48,4 @@ Masakari Specific Commandments
 - [M327] Python 3: do not use dict.iterkeys.
 - [M328] Python 3: do not use dict.itervalues.
 - [M329] Deprecated library function os.popen()
+- [M330] String interpolation should be delayed at logging calls.

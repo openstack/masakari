@@ -95,6 +95,9 @@ spawn_re = re.compile(
 contextlib_nested = re.compile(r"^with (contextlib\.)?nested\(")
 doubled_words_re = re.compile(
     r"\b(then?|[iao]n|i[fst]|but|f?or|at|and|[dt]o)\s+\1\b")
+log_string_interpolation = re.compile(r".*LOG\.(error|warning|info"
+                                      r"|critical|exception|debug)"
+                                      r"\([^,]*%[^,]*[,)]")
 
 
 def no_db_session_in_public_api(logical_line, filename):
@@ -418,6 +421,27 @@ def no_os_popen(logical_line):
                  'Replace it using subprocess module. ')
 
 
+def check_delayed_string_interpolation(logical_line, filename, noqa):
+    """M330 String interpolation should be delayed at logging calls.
+
+    M330: LOG.debug('Example: %s' % 'bad')
+    Okay: LOG.debug('Example: %s', 'good')
+    """
+    msg = ("M330 String interpolation should be delayed to be "
+           "handled by the logging code, rather than being done "
+           "at the point of the logging call. "
+           "Use ',' instead of '%'.")
+
+    if noqa:
+        return
+
+    if '/tests/' in filename:
+        return
+
+    if log_string_interpolation.match(logical_line):
+        yield(logical_line.index('%'), msg)
+
+
 def factory(register):
     register(no_db_session_in_public_api)
     register(use_timeutils_utcnow)
@@ -445,3 +469,4 @@ def factory(register):
     register(check_python3_no_iterkeys)
     register(check_python3_no_itervalues)
     register(no_os_popen)
+    register(check_delayed_string_interpolation)
