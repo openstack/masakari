@@ -442,6 +442,20 @@ def check_delayed_string_interpolation(logical_line, filename, noqa):
         yield(logical_line.index('%'), msg)
 
 
+def no_log_warn(logical_line):
+    """Disallow 'LOG.warn('
+
+    Deprecated LOG.warn(), instead use LOG.warning
+    https://bugs.launchpad.net/senlin/+bug/1508442
+
+    M331
+    """
+
+    msg = ("M331: LOG.warn is deprecated, please use LOG.warning!")
+    if "LOG.warn(" in logical_line:
+        yield (0, msg)
+
+
 def factory(register):
     register(no_db_session_in_public_api)
     register(use_timeutils_utcnow)
@@ -470,3 +484,4 @@ def factory(register):
     register(check_python3_no_itervalues)
     register(no_os_popen)
     register(check_delayed_string_interpolation)
+    register(no_log_warn)
