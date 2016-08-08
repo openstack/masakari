@@ -161,6 +161,10 @@ class Invalid(MasakariException):
     code = 400
 
 
+class InvalidInput(Invalid):
+    msg_fmt = _("Invalid input received: %(reason)s")
+
+
 class InvalidAPIVersionString(Invalid):
     msg_fmt = _("API Version String %(version)s is of invalid format. Must "
                 "be of format MajorNum.MinorNum.")

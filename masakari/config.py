@@ -15,6 +15,7 @@ from oslo_log import log
 
 from masakari.common import config
 import masakari.conf
+from masakari.db.sqlalchemy import api as sqlalchemy_api
 from masakari import version
 
 
@@ -33,3 +34,6 @@ def parse_args(argv, default_config_files=None, configure_db=True,
          project='masakari',
          version=version.version_string(),
          default_config_files=default_config_files)
+
+    if configure_db:
+        sqlalchemy_api.configure(CONF)
