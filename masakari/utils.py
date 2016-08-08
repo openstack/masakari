@@ -15,10 +15,13 @@
 
 """Utilities and helper functions."""
 
+import contextlib
 import functools
 import inspect
 import pyclbr
+import shutil
 import sys
+import tempfile
 
 import eventlet
 from oslo_context import context as common_context
@@ -28,6 +31,7 @@ from oslo_utils import timeutils
 import six
 
 import masakari.conf
+from masakari.i18n import _LE
 from masakari import safe_utils
 
 
@@ -211,3 +215,18 @@ def spawn_n(func, *args, **kwargs):
         func(*args, **kwargs)
 
     eventlet.spawn_n(context_wrapper, *args, **kwargs)
+
+
+@contextlib.contextmanager
+def tempdir(**kwargs):
+    argdict = kwargs.copy()
+    if 'dir' not in argdict:
+        argdict['dir'] = CONF.tempdir
+    tmpdir = tempfile.mkdtemp(**argdict)
+    try:
+        yield tmpdir
+    finally:
+        try:
+            shutil.rmtree(tmpdir)
+        except OSError as e:
+            LOG.error(_LE('Could not remove tmpdir: %s'), e)
