@@ -27,6 +27,7 @@ from masakari import config
 from masakari import exception
 from masakari.i18n import _LE
 from masakari.i18n import _LW
+from masakari import objects
 from masakari import service
 
 
@@ -37,6 +38,7 @@ def main():
     config.parse_args(sys.argv)
     logging.setup(CONF, "masakari")
     log = logging.getLogger(__name__)
+    objects.register_all()
 
     launcher = service.process_launcher()
     started = 0
