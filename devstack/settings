@@ -1,0 +1,35 @@
+# Settings needed for Masakari plugin
+# -----------------------------------
+
+# Set up default directories
+MASAKARI_DIR=${MASAKARI_DIR:-${DEST}/masakari}
+MASAKARI_REPO=${GIT_BASE}/openstack/masakari.git}
+MASAKARI_BRANCH=${MASAKARI_BRANCH:-master}
+
+# Set up configuration directory and files
+MASAKARI_CONF_DIR=${MASAKARI_CONF_DIR:-/etc/masakari}
+MASAKARI_CONF=${MASAKARI_CONF:-${MASAKARI_CONF_DIR}/masakari.conf}
+MASAKARI_API_PASTE_INI=${MASAKARI_API_PASTE_INI:-${MASAKARI_CONF_DIR}/api-paste.ini}
+MASAKARI_POLICY_JSON=${MASAKARI_POLICY_JSON:-${MASAKARI_CONF_DIR}/policy.json}
+
+MASAKARI_LOCAL_CONF_DIR=${MASAKARI_LOCAL_CONF_DIR:-${MASAKARI_DIR}/etc/masakari}
+MASAKARI_LOCAL_API_PASTE_INI=${MASAKARI_LOCAL_API_PASTE_INI:-${MASAKARI_LOCAL_CONF_DIR}/api-paste.ini}
+MASAKARI_LOCAL_POLICY_JSON=${MASAKARI_LOCAL_POLICY_JSON:-${MASAKARI_LOCAL_CONF_DIR}/policy.json}
+MASAKARI_AUTH_CACHE_DIR=${MASAKARI_AUTH_CACHE_DIR:-/var/cache/masakari}
+
+# Support entry points installation of console scripts
+if [[ -d $MASAKARI_DIR/bin ]]; then
+    MASAKARI_BIN_DIR=$MASAKARI_DIR/bin
+else
+    MASAKARI_BIN_DIR=$(get_python_exec_prefix)
+fi
+MASAKARI_MANAGE=$MASAKARI_BIN_DIR/masakari-manage
+
+# Public facing bits
+MASAKARI_SERVICE_PORT=${MANILA_SERVICE_PORT:-15868}
+
+# Tell Tempest this project is present
+TEMPEST_SERVICES+=,masakari
+
+enable_service masakari masakari-api
+
