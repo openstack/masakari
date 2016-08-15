@@ -97,12 +97,12 @@ class Server(service.ServiceBase):
         try:
             self._socket = eventlet.listen(bind_addr, family, backlog=backlog)
         except EnvironmentError:
-            LOG.error(_LE("Could not bind to %(host)s:%(port)s"),
+            LOG.error(_LE("Could not bind to %(host)s:%(port)d"),
                       {'host': host, 'port': port})
             raise
 
         (self.host, self.port) = self._socket.getsockname()[0:2]
-        LOG.info(_LI("%(name)s listening on %(host)s:%(port)s"),
+        LOG.info(_LI("%(name)s listening on %(host)s:%(port)d"),
                  {'name': self.name, 'host': self.host, 'port': self.port})
 
     def start(self):
@@ -167,7 +167,7 @@ class Server(service.ServiceBase):
             except Exception:
                 with excutils.save_and_reraise_exception():
                     LOG.error(_LE("Failed to start %(name)s on %(host)s"
-                                  ":%(port)s with SSL support"),
+                                  ":%(port)d with SSL support"),
                               {'name': self.name, 'host': self.host,
                                'port': self.port})
 
