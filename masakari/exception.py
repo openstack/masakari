@@ -161,6 +161,11 @@ class Invalid(MasakariException):
     code = 400
 
 
+class InvalidName(Invalid):
+    msg_fmt = _("An invalid 'name' value was provided. "
+                "The name must be: %(reason)s")
+
+
 class InvalidInput(Invalid):
     msg_fmt = _("Invalid input received: %(reason)s")
 
