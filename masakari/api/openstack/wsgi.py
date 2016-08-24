@@ -61,7 +61,7 @@ _METHODS_WITH_BODY = [
 ]
 
 # The default api version request if none is requested in the headers
-DEFAULT_API_VERSION = "1"
+DEFAULT_API_VERSION = "1.0"
 
 # name of attribute to keep version method information
 VER_METHOD_ATTR = 'versioned_methods'

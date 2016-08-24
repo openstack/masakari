@@ -494,6 +494,46 @@ class ResourceTest(MicroversionedTest):
         self.assertEqual(content_type, 'application/json')
         self.assertEqual(b'foo', body)
 
+    def test_get_dict_response_body(self):
+
+        class Controller(wsgi.Controller):
+            def index(self, req):
+                return {'foo': 'bar'}
+
+        req = fakes.HTTPRequest.blank('/tests')
+        app = fakes.TestRouter(Controller())
+        response = req.get_response(app)
+        self.assertIn('masakari.context', req.environ)
+        self.assertEqual(b'{"foo": "bar"}', response.body)
+        self.assertEqual(response.status_int, 200)
+
+    def test_str_response_body(self):
+
+        class Controller(wsgi.Controller):
+            def index(self, req):
+                return 'foo'
+
+        req = fakes.HTTPRequest.blank('/tests')
+        app = fakes.TestRouter(Controller())
+        response = req.get_response(app)
+        expected_header = self.get_req_id_header_name(req)
+        self.assertFalse(hasattr(response.headers, expected_header))
+        self.assertEqual(b'foo', response.body)
+        self.assertEqual(response.status_int, 200)
+
+    def test_get_no_response_body(self):
+
+        class Controller(object):
+            def index(self, req):
+                pass
+
+        req = fakes.HTTPRequest.blank('/tests')
+        app = fakes.TestRouter(Controller())
+        response = req.get_response(app)
+        self.assertIn('masakari.context', req.environ)
+        self.assertEqual(b'', response.body)
+        self.assertEqual(response.status_int, 200)
+
     def test_deserialize_default(self):
         class Controller(object):
             def index(self, req, pants=None):
