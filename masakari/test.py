@@ -24,10 +24,24 @@ import contextlib
 import eventlet
 eventlet.monkey_patch(os=False)
 
+import fixtures
 import mock
 
 import six
 import testtools
+
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslotest import moxstubout
+
+from masakari.tests.unit import conf_fixture
+from masakari.tests.unit import policy_fixture
+
+CONF = cfg.CONF
+logging.register_options(CONF)
+CONF.set_override('use_stderr', False)
+logging.setup(CONF, 'masakari')
+
 
 if six.PY2:
     nested = contextlib.nested
@@ -72,6 +86,29 @@ class TestCase(testtools.TestCase):
     def setUp(self):
         """Run before each test method to initialize test environment."""
         super(TestCase, self).setUp()
+
+        self.useFixture(conf_fixture.ConfFixture(CONF))
+        mox_fixture = self.useFixture(moxstubout.MoxStubout())
+        self.stubs = mox_fixture.stubs
+        self.policy = self.useFixture(policy_fixture.PolicyFixture())
+
+    def stub_out(self, old, new):
+        """Replace a function for the duration of the test.
+
+        Use the monkey patch fixture to replace a function for the
+        duration of a test. Useful when you want to provide fake
+        methods instead of mocks during testing.
+
+        This should be used instead of self.stubs.Set (which is based
+        on mox) going forward.
+        """
+        self.useFixture(fixtures.MonkeyPatch(old, new))
+
+    def flags(self, **kw):
+        """Override flag variables for a test."""
+        group = kw.pop('group', None)
+        for k, v in six.iteritems(kw):
+            CONF.set_override(k, v, group)
 
 
 class NoDBTestCase(TestCase):

@@ -260,3 +260,8 @@ class FailoverSegmentExists(MasakariException):
 
 class HostExists(MasakariException):
     msg_fmt = _("Host with name %(name)s already exists.")
+
+
+class Unauthorized(MasakariException):
+    msg_fmt = _("Not authorized.")
+    code = 401

@@ -12,25 +12,16 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+"""Example Module A for testing utils.monkey_patch()."""
 
-from oslo_config import cfg
 
-from masakari.conf import api
-from masakari.conf import base
-from masakari.conf import database
-from masakari.conf import exceptions
-from masakari.conf import osapi_v1
-from masakari.conf import service
-from masakari.conf import ssl
-from masakari.conf import wsgi
+def example_function_a():
+    return 'Example function'
 
-CONF = cfg.CONF
 
-api.register_opts(CONF)
-base.register_opts(CONF)
-database.register_opts(CONF)
-exceptions.register_opts(CONF)
-osapi_v1.register_opts(CONF)
-ssl.register_opts(CONF)
-service.register_opts(CONF)
-wsgi.register_opts(CONF)
+class ExampleClassA(object):
+    def example_method(self):
+        return 'Example method'
+
+    def example_method_add(self, arg1, arg2):
+        return arg1 + arg2

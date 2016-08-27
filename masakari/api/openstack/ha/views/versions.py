@@ -86,8 +86,10 @@ class ViewBuilder(common.ViewBuilder):
 
     def generate_href(self, version, path=None):
         """Create an url that refers to a specific version_number."""
-        if version.find('v1') == 0:
-            version_number = 'v1'
+        # TODO(Dinesh_Bhor) When there will be increment in version then we can
+        # define the default version_number according to the 'version' given
+        # but currently the 'version_number' should be 'v1' by default.
+        version_number = 'v1'
 
         path = path or ''
         return common.url_join(self.prefix, version_number, path)
