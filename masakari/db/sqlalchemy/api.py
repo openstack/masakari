@@ -308,10 +308,13 @@ def failover_segment_update(context, segment_uuid, values):
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 @main_context_manager.writer
 def failover_segment_delete(context, segment_uuid):
-    model_query(context,
-                models.FailoverSegment
-                ).filter_by(uuid=segment_uuid
-                            ).soft_delete(synchronize_session=False)
+
+    count = model_query(context, models.FailoverSegment
+                        ).filter_by(uuid=segment_uuid
+                                    ).soft_delete(synchronize_session=False)
+
+    if count == 0:
+        raise exception.FailoverSegmentNotFound(id=segment_uuid)
 
 
 # db apis for host
@@ -437,6 +440,10 @@ def host_update(context, host_uuid, values):
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 @main_context_manager.writer
 def host_delete(context, host_uuid):
-    model_query(context, models.Host
-                ).filter_by(uuid=host_uuid
-                            ).soft_delete(synchronize_session=False)
+
+    count = model_query(context, models.Host
+                        ).filter_by(uuid=host_uuid
+                                    ).soft_delete(synchronize_session=False)
+
+    if count == 0:
+        raise exception.HostNotFound(id=host_uuid)
