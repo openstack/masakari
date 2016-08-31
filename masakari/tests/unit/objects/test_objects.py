@@ -777,6 +777,38 @@ class TestObjectVersions(test.NoDBTestCase):
                          " 'objects' should not be in the primitive.")
 
 
+class TestObjEqualPrims(_BaseTestCase):
+
+    def test_object_equal(self):
+        obj1 = MyObj(foo=1, bar='goodbye')
+        obj1.obj_reset_changes()
+        obj2 = MyObj(foo=1, bar='goodbye')
+        obj2.obj_reset_changes()
+        obj2.bar = 'goodbye'
+        # obj2 will be marked with field 'three' updated
+        self.assertTrue(base.obj_equal_prims(obj1, obj2),
+                        "Objects that differ only because one a is marked "
+                        "as updated should be equal")
+
+    def test_object_not_equal(self):
+        obj1 = MyObj(foo=1, bar='goodbye')
+        obj1.obj_reset_changes()
+        obj2 = MyObj(foo=1, bar='hello')
+        obj2.obj_reset_changes()
+        self.assertFalse(base.obj_equal_prims(obj1, obj2),
+                         "Objects that differ in any field "
+                         "should not be equal")
+
+    def test_object_ignore_equal(self):
+        obj1 = MyObj(foo=1, bar='goodbye')
+        obj1.obj_reset_changes()
+        obj2 = MyObj(foo=1, bar='hello')
+        obj2.obj_reset_changes()
+        self.assertTrue(base.obj_equal_prims(obj1, obj2, ['bar']),
+                        "Objects that only differ in an ignored field "
+                        "should be equal")
+
+
 class TestObjMethodOverrides(test.NoDBTestCase):
     def test_obj_reset_changes(self):
         args = inspect.getargspec(base.MasakariObject.obj_reset_changes)

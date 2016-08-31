@@ -16,9 +16,13 @@ import re
 
 from oslo_log import log as logging
 import six.moves.urllib.parse as urlparse
+import webob
 
 import masakari.conf
+from masakari import exception
 from masakari.i18n import _
+from masakari import utils
+
 
 CONF = masakari.conf.CONF
 
@@ -163,3 +167,50 @@ class ViewBuilder(object):
     def _update_masakari_link_prefix(self, orig_url):
         return self._update_link_prefix(orig_url,
                                         CONF.osapi_masakari_link_prefix)
+
+
+def _get_int_param(request, param):
+    """Extract integer param from request or fail."""
+    try:
+        int_param = utils.validate_integer(request.GET[param], param,
+                                           min_value=0)
+    except exception.InvalidInput as e:
+        raise webob.exc.HTTPBadRequest(explanation=e.format_message())
+    return int_param
+
+
+def _get_marker_param(request):
+    """Extract marker id from request or fail."""
+    return request.GET['marker']
+
+
+def get_pagination_params(request):
+    """Return marker, limit tuple from request.
+
+    :param request: `wsgi.Request` possibly containing 'marker' and 'limit'
+                    GET variables. 'marker' is the id of the last element
+                    the client has seen, and 'limit' is the maximum number
+                    of items to return. If 'limit' is not specified, 0, or
+                    > max_limit, we default to max_limit. Negative values
+                    for either marker or limit will cause
+                    exc.HTTPBadRequest() exceptions to be raised.
+
+    """
+    params = {}
+    if 'limit' in request.GET:
+        params['limit'] = _get_int_param(request, 'limit')
+    if 'page_size' in request.GET:
+        params['page_size'] = _get_int_param(request, 'page_size')
+    if 'marker' in request.GET:
+        params['marker'] = _get_marker_param(request)
+    return params
+
+
+def get_limit_and_marker(request, max_limit=CONF.osapi_max_limit):
+    """get limited parameter from request."""
+    params = get_pagination_params(request)
+    limit = params.get('limit', max_limit)
+    limit = min(max_limit, limit)
+    marker = params.get('marker')
+
+    return limit, marker

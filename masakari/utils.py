@@ -31,7 +31,8 @@ from oslo_utils import timeutils
 import six
 
 import masakari.conf
-from masakari.i18n import _LE
+from masakari import exception
+from masakari.i18n import _, _LE
 from masakari import safe_utils
 
 
@@ -230,3 +231,29 @@ def tempdir(**kwargs):
             shutil.rmtree(tmpdir)
         except OSError as e:
             LOG.error(_LE('Could not remove tmpdir: %s'), e)
+
+
+def validate_integer(value, name, min_value=None, max_value=None):
+    """Make sure that value is a valid integer, potentially within range."""
+    try:
+        value = int(str(value))
+    except (ValueError, UnicodeEncodeError):
+        msg = _('%(value_name)s must be an integer')
+        raise exception.InvalidInput(reason=(
+            msg % {'value_name': name}))
+
+    if min_value is not None:
+        if value < min_value:
+            msg = _('%(value_name)s must be >= %(min_value)d')
+            raise exception.InvalidInput(
+                reason=(msg % {'value_name': name,
+                               'min_value': min_value}))
+    if max_value is not None:
+        if value > max_value:
+            msg = _('%(value_name)s must be <= %(max_value)d')
+            raise exception.InvalidInput(
+                reason=(
+                    msg % {'value_name': name,
+                           'max_value': max_value})
+            )
+    return value

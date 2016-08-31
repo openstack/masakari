@@ -17,6 +17,7 @@ policy_data = """
 {
     "context_is_admin": "role:admin or role:administrator",
 
-    "os_masakari_api:extensions": ""
+    "os_masakari_api:extensions": "",
+    "os_masakari_api:segments": ""
 }
 """

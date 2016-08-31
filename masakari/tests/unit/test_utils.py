@@ -23,6 +23,7 @@ import six
 
 import masakari
 from masakari import context
+from masakari import exception
 from masakari import test
 from masakari import utils
 
@@ -233,3 +234,43 @@ class SpawnTestCase(SpawnNTestCase):
     def setUp(self):
         super(SpawnTestCase, self).setUp()
         self.spawn_name = 'spawn'
+
+
+class ValidateIntegerTestCase(test.NoDBTestCase):
+    def test_valid_inputs(self):
+        self.assertEqual(
+            utils.validate_integer(42, "answer"), 42)
+        self.assertEqual(
+            utils.validate_integer("42", "answer"), 42)
+        self.assertEqual(
+            utils.validate_integer(
+                "7", "lucky", min_value=7, max_value=8), 7)
+        self.assertEqual(
+            utils.validate_integer(
+                7, "lucky", min_value=6, max_value=7), 7)
+        self.assertEqual(
+            utils.validate_integer(
+                300, "Spartaaa!!!", min_value=300), 300)
+        self.assertEqual(
+            utils.validate_integer(
+                "300", "Spartaaa!!!", max_value=300), 300)
+
+    def test_invalid_inputs(self):
+        self.assertRaises(exception.InvalidInput,
+                          utils.validate_integer,
+                          "im-not-an-int", "not-an-int")
+        self.assertRaises(exception.InvalidInput,
+                          utils.validate_integer,
+                          3.14, "Pie")
+        self.assertRaises(exception.InvalidInput,
+                          utils.validate_integer,
+                          "299", "Sparta no-show",
+                          min_value=300, max_value=300)
+        self.assertRaises(exception.InvalidInput,
+                          utils.validate_integer,
+                          55, "doing 55 in a 54",
+                          max_value=54)
+        self.assertRaises(exception.InvalidInput,
+                          utils.validate_integer,
+                          six.unichr(129), "UnicodeError",
+                          max_value=1000)

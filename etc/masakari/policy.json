@@ -3,5 +3,6 @@
     "context_is_admin":  "role:admin",
     "admin_or_owner":  "is_admin:True or project_id:%(project_id)s",
     "default": "rule:admin_or_owner",
-    "os_masakari_api:extensions": "rule:admin_api"
+    "os_masakari_api:extensions": "rule:admin_api",
+    "os_masakari_api:segments": "rule:admin_api"
 }

@@ -19,6 +19,7 @@ Test suites for 'common' code used throughout the OpenStack HTTP API.
 
 import mock
 from testtools import matchers
+import webob
 
 from masakari.api.openstack import common
 from masakari import test
@@ -236,3 +237,58 @@ class ViewBuilderLinkTest(test.NoDBTestCase):
                 self.request.application_url)))
         expected = "/".join((bmk_url, self.project_id, collection, identifier))
         self.assertEqual(expected, bookmark_link)
+
+
+class PaginationParamsTest(test.NoDBTestCase):
+    """Unit tests for the `masakari.api.openstack.common.get_pagination_params`
+    method which takes in a request object and returns 'marker' and 'limit'
+    GET params.
+    """
+
+    def test_no_params(self):
+        # Test no params.
+        req = webob.Request.blank('/')
+        self.assertEqual(common.get_pagination_params(req), {})
+
+    def test_valid_marker(self):
+        # Test valid marker param.
+        req = webob.Request.blank('/?marker=263abb28-1de6-412f-b00'
+                                  'b-f0ee0c4333c2')
+        self.assertEqual(common.get_pagination_params(req),
+                         {'marker': '263abb28-1de6-412f-b00b-f0ee0c4333c2'})
+
+    def test_valid_limit(self):
+        # Test valid limit param.
+        req = webob.Request.blank('/?limit=10')
+        self.assertEqual(common.get_pagination_params(req), {'limit': 10})
+
+    def test_invalid_limit(self):
+        # Test invalid limit param.
+        req = webob.Request.blank('/?limit=-2')
+        self.assertRaises(
+            webob.exc.HTTPBadRequest, common.get_pagination_params, req)
+
+    def test_valid_limit_and_marker(self):
+        # Test valid limit and marker parameters.
+        marker = '263abb28-1de6-412f-b00b-f0ee0c4333c2'
+        req = webob.Request.blank('/?limit=20&marker=%s' % marker)
+        self.assertEqual(common.get_pagination_params(req),
+                         {'marker': marker, 'limit': 20})
+
+    def test_valid_page_size(self):
+        # Test valid page_size param.
+        req = webob.Request.blank('/?page_size=10')
+        self.assertEqual(common.get_pagination_params(req),
+                         {'page_size': 10})
+
+    def test_invalid_page_size(self):
+        # Test invalid page_size param.
+        req = webob.Request.blank('/?page_size=-2')
+        self.assertRaises(
+            webob.exc.HTTPBadRequest, common.get_pagination_params, req)
+
+    def test_valid_limit_and_page_size(self):
+        # Test valid limit and page_size parameters.
+        req = webob.Request.blank('/?limit=20&page_size=5')
+        self.assertEqual(common.get_pagination_params(req),
+                         {'page_size': 5, 'limit': 20})
