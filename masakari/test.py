@@ -34,6 +34,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslotest import moxstubout
 
+from masakari.tests import fixtures as masakari_fixtures
 from masakari.tests.unit import conf_fixture
 from masakari.tests.unit import policy_fixture
 
@@ -92,6 +93,11 @@ class TestCase(testtools.TestCase):
         self.mox = mox_fixture.mox
         self.stubs = mox_fixture.stubs
         self.policy = self.useFixture(policy_fixture.PolicyFixture())
+
+        if self.USES_DB:
+            self.useFixture(masakari_fixtures.Database())
+        else:
+            self.useFixture(masakari_fixtures.DatabasePoisonFixture())
 
     def stub_out(self, old, new):
         """Replace a function for the duration of the test.

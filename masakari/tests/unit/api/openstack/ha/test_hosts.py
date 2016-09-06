@@ -65,7 +65,7 @@ HOST = {
 HOST = _make_host_obj(HOST)
 
 
-class HostTestCase(test.NoDBTestCase):
+class HostTestCase(test.TestCase):
     """Test Case for host api."""
 
     bad_request = exception.ValidationError
