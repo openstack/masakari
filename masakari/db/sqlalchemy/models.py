@@ -99,3 +99,11 @@ class Host(BASE, MasakariAPIBase, models.SoftDeleteMixin):
     failover_segment_id = Column(String(36),
                                  ForeignKey('failover_segments.uuid'),
                                  nullable=False)
+
+    failover_segment = orm.relationship(FailoverSegment,
+                                        backref=orm.backref('hosts'),
+                                        foreign_keys=failover_segment_id,
+                                        primaryjoin='and_(Host.'
+                                                    'failover_segment_id=='
+                                                    'FailoverSegment.uuid,'
+                                                    'Host.deleted==0)')

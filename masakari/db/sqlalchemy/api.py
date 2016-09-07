@@ -21,6 +21,7 @@ from oslo_db import exception as db_exc
 from oslo_db.sqlalchemy import enginefacade
 from oslo_db.sqlalchemy import utils as sqlalchemyutils
 from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import null
 
 import masakari.conf
@@ -377,7 +378,9 @@ def host_get_by_uuid(context, host_uuid):
 
 
 def _host_get_by_uuid(context, host_uuid):
-    query = model_query(context, models.Host).filter_by(uuid=host_uuid)
+    query = model_query(context, models.Host
+                        ).filter_by(uuid=host_uuid
+                                    ).options(joinedload('failover_segment'))
 
     result = query.first()
     if not result:
@@ -389,7 +392,9 @@ def _host_get_by_uuid(context, host_uuid):
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 @main_context_manager.reader
 def host_get_by_id(context, host_id):
-    query = model_query(context, models.Host).filter_by(id=host_id)
+    query = model_query(context, models.Host
+                        ).filter_by(id=host_id
+                                    ).options(joinedload('failover_segment'))
 
     result = query.first()
     if not result:
@@ -401,7 +406,9 @@ def host_get_by_id(context, host_id):
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 @main_context_manager.reader
 def host_get_by_name(context, name):
-    query = model_query(context, models.Host).filter_by(name=name)
+    query = model_query(context, models.Host
+                        ).filter_by(name=name
+                                    ).options(joinedload('failover_segment'))
 
     result = query.first()
     if not result:

@@ -265,3 +265,11 @@ class HostExists(MasakariException):
 class Unauthorized(MasakariException):
     msg_fmt = _("Not authorized.")
     code = 401
+
+
+class ObjectActionError(MasakariException):
+    msg_fmt = _('Object action %(action)s failed because: %(reason)s')
+
+
+class OrphanedObjectError(MasakariException):
+    msg_fmt = _('Cannot call %(method)s on orphaned %(objtype)s object')
