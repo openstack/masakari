@@ -98,13 +98,9 @@ class ExtensionsController(wsgi.Resource):
         super(ExtensionsController, self).__init__(None)
 
     def _translate(self, ext):
-        ext_data = {}
-        ext_data['name'] = ext.name
-        ext_data['alias'] = ext.alias
-        ext_data['description'] = ext.__doc__
-        ext_data['namespace'] = ext.namespace
-        ext_data['updated'] = ext.updated
-        ext_data['links'] = []
+        ext_data = {'name': ext.name, 'alias': ext.alias,
+                    'description': ext.__doc__, 'namespace': ext.namespace,
+                    'updated': ext.updated, 'links': []}
         return ext_data
 
     def index(self, req):
