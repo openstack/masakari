@@ -23,6 +23,7 @@ StringField = fields.StringField
 EnumField = fields.EnumField
 UUIDField = fields.UUIDField
 DateTimeField = fields.DateTimeField
+DictOfStringsField = fields.DictOfStringsField
 ObjectField = fields.ObjectField
 BaseEnumField = fields.BaseEnumField
 ListOfObjectsField = fields.ListOfObjectsField
@@ -59,5 +60,64 @@ class FailoverSegmentRecoveryMethod(Enum):
         return cls.ALL[index]
 
 
+class NotificationType(Enum):
+    """Represents possible notification types."""
+
+    COMPUTE_HOST = "COMPUTE_HOST"
+    VM = "VM"
+    PROCESS = "PROCESS"
+
+    ALL = (COMPUTE_HOST, VM, PROCESS)
+
+    def __init__(self):
+        super(NotificationType,
+              self).__init__(valid_values=NotificationType.ALL)
+
+    @classmethod
+    def index(cls, value):
+        """Return an index into the Enum given a value."""
+        return cls.ALL.index(value)
+
+    @classmethod
+    def from_index(cls, index):
+        """Return the Enum value at a given index."""
+        return cls.ALL[index]
+
+
+class NotificationStatus(Enum):
+    """Represents possible statuses for notifications."""
+
+    NEW = "new"
+    RUNNING = "running"
+    ERROR = "error"
+    FAILED = "failed"
+    IGNORED = "ignored"
+    FINISHED = "finished"
+
+    ALL = (NEW, RUNNING, ERROR, FAILED, IGNORED, FINISHED)
+
+    def __init__(self):
+        super(NotificationStatus,
+              self).__init__(valid_values=NotificationStatus.ALL)
+
+    @classmethod
+    def index(cls, value):
+        """Return an index into the Enum given a value."""
+        return cls.ALL.index(value)
+
+    @classmethod
+    def from_index(cls, index):
+        """Return the Enum value at a given index."""
+        return cls.ALL[index]
+
+
 class FailoverSegmentRecoveryMethodField(BaseEnumField):
     AUTO_TYPE = FailoverSegmentRecoveryMethod()
+
+
+class NotificationTypeField(BaseEnumField):
+    AUTO_TYPE = NotificationType()
+
+
+class NotificationStatusField(BaseEnumField):
+    AUTO_TYPE = NotificationStatus()
