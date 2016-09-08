@@ -245,6 +245,10 @@ class HostNotFound(NotFound):
     msg_fmt = _("No host with id %(id)s.")
 
 
+class NotificationNotFound(NotFound):
+    msg_fmt = _("No notification with id %(id)s.")
+
+
 class FailoverSegmentNotFoundByName(FailoverSegmentNotFound):
     msg_fmt = _("Failover segment with name %(segment_name)s could not "
                 "be found.")

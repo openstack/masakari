@@ -14,7 +14,7 @@
 #    under the License.
 
 from oslo_db.sqlalchemy import models
-from sqlalchemy import (Column, Index, Integer, Enum, String,
+from sqlalchemy import (Column, DateTime, Index, Integer, Enum, String,
                         schema)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
@@ -107,3 +107,22 @@ class Host(BASE, MasakariAPIBase, models.SoftDeleteMixin):
                                                     'failover_segment_id=='
                                                     'FailoverSegment.uuid,'
                                                     'Host.deleted==0)')
+
+
+class Notification(BASE, MasakariAPIBase, models.SoftDeleteMixin):
+    """Represents a notification."""
+    __tablename__ = 'notifications'
+    __table_args__ = (
+        schema.UniqueConstraint('notification_uuid',
+                                name='uniq_notification0uuid'),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    notification_uuid = Column(String(36), nullable=False)
+    generated_time = Column(DateTime, nullable=False)
+    type = Column(String(36), nullable=False)
+    payload = Column(Text)
+    status = Column(Enum('new', 'running', 'error', 'failed',
+                         'ignored', 'finished', name='notification_status'),
+                    nullable=False)
+    source_host_uuid = Column(String(36), nullable=False)

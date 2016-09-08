@@ -454,3 +454,121 @@ def host_delete(context, host_uuid):
 
     if count == 0:
         raise exception.HostNotFound(id=host_uuid)
+
+
+# db apis for notifications
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.reader
+def notifications_get_all_by_filters(
+        context, filters=None, sort_keys=None,
+        sort_dirs=None, limit=None, marker=None):
+
+    # NOTE(Dinesh_Bhor): If the limit is 0 there is no point in even going
+    # to the database since nothing is going to be returned anyway.
+    if limit == 0:
+        return []
+
+    sort_keys, sort_dirs = _process_sort_params(sort_keys,
+                                                sort_dirs)
+
+    filters = filters or {}
+    query = model_query(context, models.Notification)
+
+    if 'source_host_uuid' in filters:
+        query = query.filter(models.Notification.source_host_uuid == filters[
+            'source_host_uuid'])
+
+    if 'type' in filters:
+        query = query.filter(models.Notification.type == filters['type'])
+
+    if 'status' in filters:
+        query = query.filter(models.Notification.status == filters[
+            'status'])
+
+    marker_row = None
+    if marker is not None:
+        marker_row = model_query(context,
+                                 models.Notification
+                                 ).filter_by(id=marker).first()
+        if not marker_row:
+            raise exception.MarkerNotFound(marker=marker)
+
+    try:
+        query = sqlalchemyutils.paginate_query(query, models.Notification,
+                                               limit,
+                                               sort_keys,
+                                               marker=marker_row,
+                                               sort_dirs=sort_dirs)
+    except db_exc.InvalidSortKey:
+        raise exception.InvalidSortKey()
+
+    return query.all()
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.reader
+def notification_get_by_uuid(context, notification_uuid):
+    return _notification_get_by_uuid(context, notification_uuid)
+
+
+def _notification_get_by_uuid(context, notification_uuid):
+    query = model_query(context, models.Notification
+                        ).filter_by(notification_uuid=notification_uuid
+                                    )
+
+    result = query.first()
+    if not result:
+        raise exception.NotificationNotFound(id=notification_uuid)
+
+    return result
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.reader
+def notification_get_by_id(context, notification_id):
+    query = model_query(context, models.Notification
+                        ).filter_by(id=notification_id
+                                    )
+
+    result = query.first()
+    if not result:
+        raise exception.NotificationNotFound(id=notification_id)
+
+    return result
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.writer
+def notification_create(context, values):
+    notification = models.Notification()
+    notification.update(values)
+
+    notification.save(session=context.session)
+
+    return _notification_get_by_uuid(context, notification.notification_uuid)
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.writer
+def notification_update(context, notification_uuid, values):
+    notification = _notification_get_by_uuid(context, notification_uuid)
+
+    notification.update(values)
+
+    notification.save(session=context.session)
+
+    return _notification_get_by_uuid(context, notification.notification_uuid)
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.writer
+def notification_delete(context, notification_uuid):
+
+    count = model_query(context, models.Notification
+                        ).filter_by(notification_uuid=notification_uuid
+                                    ).soft_delete(synchronize_session=False)
+
+    if count == 0:
+        raise exception.NotificationNotFound(id=notification_uuid)

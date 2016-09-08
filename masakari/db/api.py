@@ -248,3 +248,96 @@ def host_delete(context, host_uuid):
     :raises: exception.HostNotFound if host with 'host_uuid' doesn't exist
     """
     return IMPL.host_delete(context, host_uuid)
+
+
+# notification related db apis
+
+
+def notifications_get_all_by_filters(
+        context, filters=None, sort_keys=None, sort_dirs=None,
+        limit=None, marker=None):
+    """Get all notifications that match all filters.
+
+    :param context: context to query under
+    :param filters: filters for the query in the form of key/value
+    :param sort_keys: list of attributes by which results should be sorted,
+                     paired with corresponding item in sort_dirs
+    :param sort_dirs: list of directions in which results should be sorted,
+                     paired with corresponding item in sort_keys
+    :param limit: maximum number of items to return
+    :param marker: the last item of the previous page, used to determine the
+                   next page of results to return
+
+    :returns: list of dictionary-like objects containing all notifications
+    """
+    return IMPL.notifications_get_all_by_filters(context, filters=filters,
+                                                 sort_keys=sort_keys,
+                                                 sort_dirs=sort_dirs,
+                                                 limit=limit,
+                                                 marker=marker)
+
+
+def notification_get_by_uuid(context, notification_uuid):
+    """Get notification information by uuid.
+
+    :param context: context to query under
+    :param notification_uuid: uuid of notification
+
+    :returns: dictionary-like object containing notification
+
+    :raises: exception.NotificationNotFound if notification with given
+             'notification_uuid' doesn't exist
+    """
+    return IMPL.notification_get_by_uuid(context, notification_uuid)
+
+
+def notification_get_by_id(context, notification_id):
+    """Get notification information by id.
+
+    :param context: context to query under
+    :param notification_id: id of notification
+
+    :returns: dictionary-like object containing notification
+
+    :raises: exception.NotificationNotFound if notification with given ID
+             doesn't exist
+    """
+    return IMPL.notification_get_by_id(context, notification_id)
+
+
+def notification_create(context, values):
+    """Create a notification.
+
+    :param context: context to query under
+    :param values: dictionary of notification attributes to create
+
+    :returns: dictionary-like object containing created notification
+    """
+    return IMPL.notification_create(context, values)
+
+
+def notification_update(context, notification_uuid, values):
+    """Update notification information in the database.
+
+    :param context: context to query under
+    :param notification_uuid: uuid of notification to be updated
+    :param values: dictionary of notification attributes to be updated
+
+    :returns: dictionary-like object containing updated notification
+
+    :raises: exception.NotificationNotFound if notification with given
+             'notification_uuid' doesn't exist
+    """
+    return IMPL.notification_update(context, notification_uuid, values)
+
+
+def notification_delete(context, notification_uuid):
+    """Delete the notification.
+
+    :param context: context to query under
+    :param notification_uuid: uuid of notification to be deleted
+
+    :raises: exception.NotificationNotFound if notification with given
+             'notification_uuid' doesn't exist
+    """
+    return IMPL.notification_delete(context, notification_uuid)
