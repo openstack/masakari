@@ -171,7 +171,7 @@ class TestHostObject(test_objects._LocalTest):
         self.assertEqual(2, len(host_result))
         mock_api_get.assert_called_once_with(self.context, filters={
             'reserved': False
-        }, limit=None, marker=None, sort_dirs=['asc'], sort_keys=['id'])
+        }, limit=None, marker=None, sort_dirs=None, sort_keys=None)
 
     @mock.patch.object(db, 'host_get_all_by_filters')
     def test_get_limit_and_marker_invalid_marker(self, mock_api_get):
