@@ -101,3 +101,97 @@ class FailoverSegmentAPI(object):
         # or not. Various constraints will be applied for deleting failover
         # segment in future.
         segment.destroy()
+
+
+class HostAPI(object):
+    """The Host API to manage hosts"""
+
+    def get_host(self, context, segment_uuid, host_uuid):
+        """Get a host by id"""
+        objects.FailoverSegment.get_by_uuid(context, segment_uuid)
+        if uuidutils.is_uuid_like(host_uuid):
+            LOG.debug("Fetching host by "
+                      "UUID", host_uuid=host_uuid)
+
+            host = objects.Host.get_by_uuid(context, host_uuid)
+        else:
+            LOG.debug("Failed to fetch host by uuid %s", host_uuid)
+            raise exception.HostNotFound(id=host_uuid)
+
+        return host
+
+    def get_all(self, context, req, segment_uuid):
+        """Get all hosts by filter"""
+        filters = {}
+        sort_keys = req.params.get('sort_key') or 'id'
+        sort_dirs = req.params.get('sort_dir') or 'asc'
+        limit, marker = common.get_limit_and_marker(req)
+
+        segment = objects.FailoverSegment.get_by_uuid(context, segment_uuid)
+
+        filters['failover_segment_id'] = segment.uuid
+        if 'name' in req.params:
+            filters['name'] = req.params['name']
+
+        if 'type' in req.params:
+            filters['type'] = req.params['type']
+
+        if 'control_attributes' in req.params:
+            filters['control_attributes'] = req.params['control_attributes']
+
+        if 'on_maintenance' in req.params:
+            filters['on_maintenance'] = req.params['on_maintenance']
+
+        if 'reserved' in req.params:
+            filters['reserved'] = req.params['reserved']
+
+        limited_hosts = objects.HostList.get_all(context,
+                                                 filters=filters,
+                                                 sort_keys=[sort_keys],
+                                                 sort_dirs=[sort_dirs],
+                                                 limit=limit,
+                                                 marker=marker)
+
+        return limited_hosts
+
+    def create_host(self, context, segment_uuid, host_data):
+        """Create host"""
+        segment = objects.FailoverSegment.get_by_uuid(context, segment_uuid)
+        host = objects.Host(context=context)
+
+        # Populate host object for create
+        host.name = host_data.get('name')
+        host.failover_segment_id = segment.uuid
+        host.type = host_data.get('type')
+        host.control_attributes = host_data.get('control_attributes')
+        host.on_maintenance = host_data.get('on_maintenance', False)
+        host.reserved = host_data.get('reserved', False)
+
+        host.create()
+        return host
+
+    def update_host(self, context, segment_uuid, id, host_data):
+        """Update the host"""
+        objects.FailoverSegment.get_by_uuid(context, segment_uuid)
+
+        # TODO(Dinesh_Bhor): Updating a host will depend on many factors
+        # for e.g. whether a recovery action is in progress for the host
+        # or not. Various constraints will be applied for updating host
+        # in future.
+        host = objects.Host.get_by_uuid(context, id)
+        host.update(host_data)
+
+        host.save()
+
+        return host
+
+    def delete_host(self, context, segment_uuid, id):
+        """Delete the host"""
+        objects.FailoverSegment.get_by_uuid(context, segment_uuid)
+
+        # TODO(Dinesh_Bhor): Deleting a host will depend on many factors
+        # for e.g. whether a recovery action is in progress for the host
+        # or not. Various constraints will be applied for deleting host
+        # in future.
+        host = objects.Host.get_by_uuid(context, id)
+        host.destroy()

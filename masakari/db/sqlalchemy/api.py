@@ -336,7 +336,8 @@ def host_get_all_by_filters(
                                                 sort_dirs)
 
     filters = filters or {}
-    query = model_query(context, models.Host)
+    query = model_query(context,
+                        models.Host).options(joinedload('failover_segment'))
 
     if 'failover_segment_id' in filters:
         query = query.filter(models.Host.failover_segment_id == filters[

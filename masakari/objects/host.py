@@ -13,11 +13,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log as logging
+from oslo_utils import uuidutils
+
 from masakari import db
 from masakari import exception
 from masakari import objects
 from masakari.objects import base
 from masakari.objects import fields
+
+LOG = logging.getLogger(__name__)
 
 
 @base.MasakariObjectRegistry.register
@@ -74,6 +79,12 @@ class Host(base.MasakariPersistentObject, base.MasakariObject,
             raise exception.ObjectActionError(action='create',
                                               reason='already created')
         updates = self.masakari_obj_get_changes()
+
+        if 'uuid' not in updates:
+            updates['uuid'] = uuidutils.generate_uuid()
+            LOG.debug('Generated uuid %(uuid)s for host',
+                      dict(uuid=updates['uuid']))
+
         if 'failover_segment' in updates:
             raise exception.ObjectActionError(action='create',
                                               reason='failover segment '

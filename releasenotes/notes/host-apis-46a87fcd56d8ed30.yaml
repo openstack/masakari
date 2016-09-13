@@ -1,0 +1,18 @@
+---
+features:
+  - Added following new REST API's for masakari operators -
+
+      1. GET /v1/segments/<segment_uuid>/hosts
+             Returns list of all hosts associated with failover segment.
+
+      2. GET /v1/segments/<segment_uuid>/hosts/<host_uuid>
+             Returns specific host from the failover segment with uuid.
+
+      3. POST /v1/segments/<segment_uuid>/hosts
+             Creates a new host in failover segment
+
+      4. PUT /v1/segments/<segment_uuid>/hosts/<host_uuid>
+             Updates a host in failover segment by uuid
+
+      5. DELETE /v1/segments/<segment_uuid>/hosts/<host_uuid>
+             Delete a host from failover segment by uuid
