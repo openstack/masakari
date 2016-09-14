@@ -427,7 +427,7 @@ def host_create(context, values):
     except db_exc.DBDuplicateEntry:
         raise exception.HostExists(name=host.name)
 
-    return _host_get_by_uuid(context, host.failover_segment_id, host.uuid)
+    return _host_get_by_uuid(context, host.uuid)
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
