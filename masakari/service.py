@@ -16,17 +16,12 @@
 """Generic Node base class for all workers that run on hosts."""
 
 from oslo_concurrency import processutils
-from oslo_log import log as logging
 from oslo_service import service
-
 
 import masakari.conf
 from masakari import exception
 from masakari.i18n import _
 from masakari import wsgi
-
-
-LOG = logging.getLogger(__name__)
 
 
 CONF = masakari.conf.CONF
