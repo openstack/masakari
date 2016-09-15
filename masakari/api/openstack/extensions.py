@@ -25,9 +25,7 @@ import webob.exc
 import masakari.api.openstack
 from masakari.api.openstack import wsgi
 from masakari import exception
-from masakari.i18n import _
-from masakari.i18n import _LE
-from masakari.i18n import _LW
+from masakari.i18n import _, _LE, _LW
 import masakari.policy
 
 LOG = logging.getLogger(__name__)

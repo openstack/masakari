@@ -25,8 +25,7 @@ import six
 import masakari.conf
 from masakari import config
 from masakari import exception
-from masakari.i18n import _LE
-from masakari.i18n import _LW
+from masakari.i18n import _LE, _LW
 from masakari import objects
 from masakari import service
 

@@ -32,8 +32,7 @@ import webob.exc
 from webob import util as woutil
 
 import masakari.conf
-from masakari.i18n import _
-from masakari.i18n import _LE
+from masakari.i18n import _, _LE
 from masakari import safe_utils
 
 LOG = logging.getLogger(__name__)
