@@ -124,8 +124,8 @@ class HostList(base.ObjectListBase, base.MasakariObject):
                 limit=None, marker=None):
 
         groups = db.host_get_all_by_filters(context, filters=filters,
-                                            sort_keys=['id'],
-                                            sort_dirs=['asc'],
+                                            sort_keys=sort_keys,
+                                            sort_dirs=sort_dirs,
                                             limit=limit, marker=marker)
 
         return base.obj_make_list(context, cls(context), objects.Host, groups)
