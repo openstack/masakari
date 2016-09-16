@@ -13,16 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
-
 from masakari import db
 from masakari import exception
 from masakari import objects
 from masakari.objects import base
 from masakari.objects import fields
-
-
-LOG = logging.getLogger(__name__)
 
 
 @base.MasakariObjectRegistry.register

@@ -20,7 +20,6 @@ import os
 import pprint
 
 import mock
-from oslo_log import log
 from oslo_versionedobjects import exception as ovo_exc
 from oslo_versionedobjects import fixture
 
@@ -29,9 +28,6 @@ from masakari.objects import base
 from masakari.objects import fields
 from masakari.objects import segment
 from masakari import test
-
-
-LOG = log.getLogger(__name__)
 
 
 class MyOwnedObject(base.MasakariPersistentObject, base.MasakariObject):
