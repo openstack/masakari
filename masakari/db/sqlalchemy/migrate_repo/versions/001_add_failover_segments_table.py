@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from migrate.changeset import UniqueConstraint
+from migrate import changeset
 from sqlalchemy import Column, MetaData, Table, Index
 from sqlalchemy import Integer, DateTime, String, Enum, Text
 
@@ -39,11 +39,13 @@ def define_failover_segments_table(meta):
                                           'rh_priority',
                                           name='recovery_methods'),
                                      nullable=False),
-                              UniqueConstraint('name', 'deleted',
-                                               name='uniq_segment0name0deleted'
-                                               ),
-                              UniqueConstraint('uuid',
-                                               name='uniq_segments0uuid'),
+                              changeset.UniqueConstraint(
+                                  'name', 'deleted',
+                                  name='uniq_segment0name0deleted'
+                              ),
+                              changeset.UniqueConstraint(
+                                  'uuid',
+                                  name='uniq_segments0uuid'),
                               Index('segments_service_type_idx',
                                     'service_type'),
                               mysql_engine='InnoDB',
