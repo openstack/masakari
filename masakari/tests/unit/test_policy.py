@@ -18,6 +18,7 @@
 import os.path
 
 from oslo_policy import policy as oslo_policy
+from oslo_serialization import jsonutils
 import requests_mock
 
 import masakari.conf
@@ -25,6 +26,8 @@ from masakari import context
 from masakari import exception
 from masakari import policy
 from masakari import test
+from masakari.tests.unit import fake_policy
+from masakari.tests.unit import policy_fixture
 from masakari import utils
 
 CONF = masakari.conf.CONF
@@ -155,3 +158,36 @@ class IsAdminCheckTestCase(test.NoDBTestCase):
                                policy._ENFORCER), False)
         self.assertEqual(check('target', dict(is_admin=False),
                                policy._ENFORCER), True)
+
+
+class RealRolePolicyTestCase(test.NoDBTestCase):
+    def setUp(self):
+        super(RealRolePolicyTestCase, self).setUp()
+        self.policy = self.useFixture(policy_fixture.RealPolicyFixture())
+        self.admin_context = context.RequestContext('fake', 'fake', True,
+                                                    roles=['member'])
+        self.non_admin_context = context.RequestContext('fake', 'fake',
+                                                        roles=['member'])
+        self.target = {}
+        self.fake_policy = jsonutils.loads(fake_policy.policy_data)
+
+        self.admin_only_rules = (
+            "os_masakari_api:extensions",
+            "os_masakari_api:os-hosts",
+            "os_masakari_api:segments",
+            "os_masakari_api:notifications"
+        )
+
+    def test_all_rules_in_sample_file(self):
+        special_rules = ["context_is_admin", "admin_or_owner", "default"]
+        for (name, rule) in self.fake_policy.items():
+            if name in special_rules:
+                continue
+            self.assertIn(name, policy.get_rules())
+
+    def test_admin_only_rules(self):
+        for rule in self.admin_only_rules:
+            self.assertRaises(exception.PolicyNotAuthorized, policy.enforce,
+                              self.non_admin_context, rule,
+                              {'project_id': 'fake', 'user_id': 'fake'})
+            policy.enforce(self.admin_context, rule, self.target)
