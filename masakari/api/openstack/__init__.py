@@ -25,9 +25,7 @@ import webob.exc
 
 from masakari.api.openstack import wsgi
 import masakari.conf
-from masakari.i18n import _LE
-from masakari.i18n import _LI
-from masakari.i18n import _LW
+from masakari.i18n import _LE, _LI, _LW
 from masakari.i18n import translate
 from masakari import utils
 from masakari import wsgi as base_wsgi

@@ -35,9 +35,7 @@ import webob.exc
 
 import masakari.conf
 from masakari import exception
-from masakari.i18n import _
-from masakari.i18n import _LE
-from masakari.i18n import _LI
+from masakari.i18n import _, _LE, _LI
 from masakari import utils
 
 CONF = masakari.conf.CONF

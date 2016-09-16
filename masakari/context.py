@@ -28,8 +28,7 @@ from oslo_utils import timeutils
 import six
 
 from masakari import exception
-from masakari.i18n import _
-from masakari.i18n import _LW
+from masakari.i18n import _, _LW
 from masakari import policy
 from masakari import utils
 

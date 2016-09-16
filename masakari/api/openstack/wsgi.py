@@ -27,9 +27,7 @@ from masakari.api import api_version_request as api_version
 from masakari.api import versioned_method
 from masakari import exception
 from masakari import i18n
-from masakari.i18n import _
-from masakari.i18n import _LE
-from masakari.i18n import _LI
+from masakari.i18n import _, _LE, _LI
 from masakari import utils
 from masakari import wsgi
 
