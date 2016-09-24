@@ -21,6 +21,7 @@ from webob import exc
 from masakari import exception
 from masakari.ha import api as ha_api
 from masakari.objects import base as obj_base
+from masakari.objects import host as host_obj
 from masakari.objects import segment as segment_obj
 from masakari import test
 from masakari.tests.unit.api.openstack import fakes
@@ -34,6 +35,7 @@ def _make_segment_obj(segment_dict):
 def _make_segments_list(segments_list):
     return segment_obj.FailoverSegment(objects=[
         _make_segment_obj(a) for a in segments_list])
+
 
 FAILOVER_SEGMENT_LIST = [
     {"name": "segment1", "id": "1", "service_type": "COMPUTE",
@@ -51,6 +53,42 @@ FAILOVER_SEGMENT = {"name": "segment1", "id": "1", "description": "something",
                     "uuid": uuidsentinel.fake_segment}
 
 FAILOVER_SEGMENT = _make_segment_obj(FAILOVER_SEGMENT)
+
+
+def _make_host_obj(host_dict):
+    return host_obj.Host(**host_dict)
+
+
+def _make_hosts_list(hosts_list):
+    return host_obj.Host(objects=[
+        _make_host_obj(a) for a in hosts_list])
+
+
+HOST_LIST = [
+    {"name": "host_1", "id": "1", "reserved": False,
+     "on_maintenance": False, "type": "fake",
+     "control_attributes": "fake-control_attributes",
+     "uuid": uuidsentinel.fake_host_1,
+     "failover_segment_id": uuidsentinel.fake_segment1},
+
+    {"name": "host_2", "id": "2", "reserved": False,
+     "on_maintenance": False, "type": "fake",
+     "control_attributes": "fake-control_attributes",
+     "uuid": uuidsentinel.fake_host_2,
+     "failover_segment_id": uuidsentinel.fake_segment1}
+]
+
+HOST_LIST = _make_hosts_list(HOST_LIST)
+
+HOST = {
+    "name": "host_1", "id": "1", "reserved": False,
+    "on_maintenance": False, "type": "fake",
+    "control_attributes": "fake-control_attributes",
+    "uuid": uuidsentinel.fake_host_1,
+    "failover_segment_id": uuidsentinel.fake_segment1
+}
+
+HOST = _make_host_obj(HOST)
 
 
 class FailoverSegmentAPITestCase(test.NoDBTestCase):
@@ -149,3 +187,127 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
                                                  uuidsentinel.fake_segment,
                                                  segment_data)
         self._assert_segment_data(FAILOVER_SEGMENT, _make_segment_obj(result))
+
+
+class HostAPITestCase(test.NoDBTestCase):
+    """Test Case for host api."""
+
+    def setUp(self):
+        super(HostAPITestCase, self).setUp()
+        self.host_api = ha_api.HostAPI()
+        self.req = fakes.HTTPRequest.blank(
+            '/v1/segments/%s/hosts' % uuidsentinel.fake_segment,
+            use_admin_context=True)
+        self.context = self.req.environ['masakari.context']
+
+    def _assert_host_data(self, expected, actual):
+        self.assertTrue(obj_base.obj_equal_prims(expected, actual),
+                        "The host objects were not equal")
+
+    @mock.patch.object(host_obj.HostList, 'get_all')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_get_all(self, mock_get, mock_get_all):
+        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        mock_get_all.return_value = HOST_LIST
+
+        result = self.host_api.get_all(self.context, self.req,
+                                       uuidsentinel.fake_segment)
+        self._assert_host_data(HOST_LIST, _make_hosts_list(result))
+
+    @mock.patch.object(host_obj.HostList, 'get_all')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_get_all_marker_not_found(self, mock_get, mock_get_all):
+        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        mock_get_all.side_effect = exception.MarkerNotFound
+        self.req = fakes.HTTPRequest.blank(
+            '/v1/segments/%s/hosts?limit=100' % uuidsentinel.fake_segment1,
+            use_admin_context=True)
+        self.assertRaises(exception.MarkerNotFound, self.host_api.get_all,
+                          self.context, self.req, uuidsentinel.fake_segment1)
+
+    def test_get_all_marker_negative(self):
+
+        self.req = fakes.HTTPRequest.blank(
+            '/v1/segments/%s/hosts?limit=-1' % uuidsentinel.fake_segment1,
+            use_admin_context=True)
+        self.assertRaises(exc.HTTPBadRequest, self.host_api.get_all,
+                          self.context, self.req, uuidsentinel.fake_segment1)
+
+    @mock.patch.object(host_obj.HostList, 'get_all')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_get_all_by_type(self, mock_get, mock_get_all):
+        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        self.req = fakes.HTTPRequest.blank(
+            '/v1/segments/%s/hosts?type=fake' % uuidsentinel.fake_segment,
+            use_admin_context=True)
+        self.host_api.get_all(self.context, self.req,
+                              uuidsentinel.fake_segment)
+        mock_get_all.assert_called_once_with(
+            self.context, filters={
+                'type': 'fake',
+                'failover_segment_id': uuidsentinel.fake_segment
+            }, sort_keys=['id'], sort_dirs=['asc'], limit=1000, marker=None)
+
+    @mock.patch.object(host_obj.HostList, 'get_all')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_get_all_invalid_sort_dir(self, mock_get, mock_get_all):
+        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        mock_get_all.side_effect = exception.InvalidInput
+        self.req = fakes.HTTPRequest.blank(
+            '/v1/segments/%s/hosts?sort_dir=abcd' % uuidsentinel.fake_segment,
+            use_admin_context=True)
+        self.assertRaises(exception.InvalidInput, self.host_api.get_all,
+                          self.context, self.req, uuidsentinel.fake_segment)
+
+    @mock.patch.object(host_obj, 'Host',
+                       return_value=_make_host_obj(HOST))
+    @mock.patch.object(host_obj.Host, 'create')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_create(self, mock_get, mock_host_obj, mock_create):
+        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        host_data = {
+            "name": "host-1", "type": "fake-type",
+            "reserved": False,
+            "on_maintenance": False,
+            "control_attributes": "fake-control_attributes"
+        }
+        mock_host_obj.create = mock.Mock()
+        result = self.host_api.create_host(self.context,
+                                           uuidsentinel.fake_segment1,
+                                           host_data)
+        self._assert_host_data(HOST, _make_host_obj(result))
+
+    @mock.patch.object(host_obj.Host, 'get_by_uuid')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_get_host(self, mock_get, mock_get_host):
+        mock_get_host.return_value = HOST
+        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        result = self.host_api.get_host(self.context,
+                                        uuidsentinel.fake_segment,
+                                        uuidsentinel.fake_host_1)
+        self._assert_host_data(HOST, _make_host_obj(result))
+
+    @mock.patch.object(host_obj.Host, 'get_by_uuid')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_get_host_not_found(self, mock_get, mock_get_host):
+        self.assertRaises(exception.HostNotFound,
+                          self.host_api.get_host, self.context,
+                          uuidsentinel.fake_segment,
+                          "123")
+
+    @mock.patch.object(host_obj, 'Host',
+                       return_value=_make_host_obj(HOST))
+    @mock.patch.object(host_obj.Host, 'save')
+    @mock.patch.object(host_obj.Host, 'get_by_uuid')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_update(self, mock_segment_get, mock_get,
+                    mock_update, mock_host_obj):
+        mock_segment_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        host_data = {"name": "host_1"}
+        mock_get.return_value = _make_host_obj(HOST)
+        mock_host_obj.update = mock.Mock()
+        result = self.host_api.update_host(self.context,
+                                           uuidsentinel.fake_segment,
+                                           uuidsentinel.fake_host_1,
+                                           host_data)
+        self._assert_host_data(HOST, _make_host_obj(result))
