@@ -656,6 +656,8 @@ object_data = {
     'FailoverSegmentList': '1.0-dfc5c6f5704d24dcaa37b0bbb03cbe60',
     'Host': '1.0-803264cd1563db37d0bf7cff48e34c1d',
     'HostList': '1.0-25ebe1b17fbd9f114fae8b6a10d198c0',
+    'Notification': '1.0-eedfa3c203c100897021bd23f0ddf68c',
+    'NotificationList': '1.0-25ebe1b17fbd9f114fae8b6a10d198c0',
     'MyObj': '1.6-ee7b607402fbfb3390a92ab7199e0d88',
     'MyOwnedObject': '1.0-fec853730bd02d54cc32771dd67f08a0'
 }

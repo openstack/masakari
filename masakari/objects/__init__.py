@@ -19,4 +19,5 @@ def register_all():
     # function in order for it to be registered by services that may
     # need to receive it via RPC.
     __import__('masakari.objects.host')
+    __import__('masakari.objects.notification')
     __import__('masakari.objects.segment')
