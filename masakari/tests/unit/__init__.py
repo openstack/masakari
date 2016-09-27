@@ -17,7 +17,7 @@
 :mod:`masakari.tests.unit` -- Masakari Unittests
 =====================================================
 
-.. automodule:: nova.tests.unit
+.. automodule:: masakari.tests.unit
    :platform: Unix
 """
 
