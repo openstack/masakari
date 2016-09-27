@@ -13,15 +13,33 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import socket
+
 from oslo_config import cfg
 
 service_opts = [
+    cfg.StrOpt('host',
+               default=socket.gethostname(),
+               help='''
+Hostname, FQDN or IP address of this host. Must be valid within AMQP key.
+
+Possible values:
+
+* String with hostname, FQDN or IP address. Default is hostname of this host.
+'''),
+    cfg.StrOpt('engine_manager',
+               default='masakari.engine.manager.MasakariManager',
+               help='Full class name for the Manager for masakari engine'),
     cfg.IntOpt('report_interval',
                default=10,
                help='Seconds between nodes reporting state to datastore'),
     cfg.BoolOpt('periodic_enable',
                 default=True,
                 help='Enable periodic tasks'),
+    cfg.IntOpt('periodic_interval_max',
+               default=300,
+               help='Max interval time between periodic tasks execution in '
+                    'seconds.'),
     cfg.IntOpt('periodic_fuzzy_delay',
                default=60,
                help='Range of seconds to randomly delay when starting the'

@@ -18,8 +18,10 @@ from oslo_config import cfg
 from masakari.conf import api
 from masakari.conf import base
 from masakari.conf import database
+from masakari.conf import engine
 from masakari.conf import exceptions
 from masakari.conf import osapi_v1
+from masakari.conf import paths
 from masakari.conf import service
 from masakari.conf import ssl
 from masakari.conf import wsgi
@@ -29,8 +31,10 @@ CONF = cfg.CONF
 api.register_opts(CONF)
 base.register_opts(CONF)
 database.register_opts(CONF)
+engine.register_opts(CONF)
 exceptions.register_opts(CONF)
 osapi_v1.register_opts(CONF)
+paths.register_opts(CONF)
 ssl.register_opts(CONF)
 service.register_opts(CONF)
 wsgi.register_opts(CONF)

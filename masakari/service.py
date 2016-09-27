@@ -15,16 +15,152 @@
 
 """Generic Node base class for all workers that run on hosts."""
 
+import os
+import random
+import sys
+
 from oslo_concurrency import processutils
+from oslo_log import log as logging
 from oslo_service import service
+from oslo_utils import importutils
 
 import masakari.conf
+from masakari import context
 from masakari import exception
-from masakari.i18n import _
+from masakari.i18n import _, _LE, _LI
+from masakari import utils
+from masakari import version
 from masakari import wsgi
 
 
+LOG = logging.getLogger(__name__)
+
 CONF = masakari.conf.CONF
+
+
+class Service(service.Service):
+    """Service object for binaries running on hosts.
+
+    A service takes a manager and enables rpc by listening to queues based
+    on topic. It also periodically runs tasks on the manager.
+    """
+
+    def __init__(self, host, binary, topic, manager,
+                 periodic_enable=None, periodic_fuzzy_delay=None,
+                 periodic_interval_max=None):
+        super(Service, self).__init__()
+        self.host = host
+        self.binary = binary
+        self.topic = topic
+        self.manager_class_name = manager
+        manager_class = importutils.import_class(self.manager_class_name)
+        self.manager = manager_class(host=self.host)
+        self.periodic_enable = periodic_enable
+        self.periodic_fuzzy_delay = periodic_fuzzy_delay
+        self.periodic_interval_max = periodic_interval_max
+
+    def __repr__(self):
+        return "<%(cls_name)s: host=%(host)s, binary=%(binary)s, " \
+               "manager_class_name=%(manager)s>" %\
+               {
+                   'cls_name': self.__class__.__name__,
+                   'host': self.host,
+                   'binary': self.binary,
+                   'manager': self.manager_class_name
+               }
+
+    def start(self):
+        verstr = version.version_string_with_package()
+        LOG.info(_LI('Starting %(topic)s (version %(version)s)'), {
+            'topic': self.topic,
+            'version': verstr
+        })
+        self.basic_config_check()
+
+        if self.periodic_enable:
+            if self.periodic_fuzzy_delay:
+                initial_delay = random.randint(0, self.periodic_fuzzy_delay)
+            else:
+                initial_delay = None
+
+            self.tg.add_dynamic_timer(
+                self.periodic_tasks,
+                initial_delay=initial_delay,
+                periodic_interval_max=self.periodic_interval_max)
+
+    def __getattr__(self, key):
+        manager = self.__dict__.get('manager', None)
+        return getattr(manager, key)
+
+    @classmethod
+    def create(cls, host=None, binary=None, topic=None, manager=None,
+               periodic_enable=None, periodic_fuzzy_delay=None,
+               periodic_interval_max=None):
+        """Instantiates class and passes back application object.
+
+        :param host: defaults to CONF.host
+        :param binary: defaults to basename of executable
+        :param topic: defaults to bin_name - 'masakari-' part
+        :param manager: defaults to CONF.<topic>_manager
+        :param periodic_enable: defaults to CONF.periodic_enable
+        :param periodic_fuzzy_delay: defaults to CONF.periodic_fuzzy_delay
+        :param periodic_interval_max: if set, the max time to wait between runs
+
+        """
+        if not host:
+            host = CONF.host
+        if not binary:
+            binary = os.path.basename(sys.argv[0])
+        if not topic:
+            topic = binary.rpartition('masakari-')[2]
+        if not manager:
+            manager_cls = ('%s_manager' %
+                           binary.rpartition('masakari-')[2])
+            manager = CONF.get(manager_cls, None)
+        if periodic_enable is None:
+            periodic_enable = CONF.periodic_enable
+        if periodic_fuzzy_delay is None:
+            periodic_fuzzy_delay = CONF.periodic_fuzzy_delay
+        if periodic_interval_max is None:
+            periodic_interval_max = CONF.periodic_interval_max
+
+        service_obj = cls(host, binary, topic, manager,
+                          periodic_enable=periodic_enable,
+                          periodic_fuzzy_delay=periodic_fuzzy_delay,
+                          periodic_interval_max=periodic_interval_max)
+
+        return service_obj
+
+    def kill(self):
+        """Destroy the service object in the datastore.
+
+        NOTE: Although this method is not used anywhere else than tests, it is
+        convenient to have it here, so the tests might easily and in clean way
+        stop and remove the service_ref.
+
+        """
+        self.stop()
+
+    def stop(self):
+        super(Service, self).stop()
+
+    def periodic_tasks(self, raise_on_error=False):
+        """Tasks to be run at a periodic interval."""
+        ctxt = context.get_admin_context()
+        return self.manager.periodic_tasks(ctxt, raise_on_error=raise_on_error)
+
+    def basic_config_check(self):
+        """Perform basic config checks before starting processing."""
+        # Make sure the tempdir exists and is writable
+        try:
+            with utils.tempdir():
+                pass
+        except Exception as e:
+            LOG.error(_LE('Temporary directory is invalid: %s'), e)
+            sys.exit(1)
+
+    def reset(self):
+        self.manager.reset()
 
 
 class WSGIService(service.Service):

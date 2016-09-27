@@ -89,6 +89,7 @@ class TestCase(testtools.TestCase):
 
         self.useFixture(conf_fixture.ConfFixture(CONF))
         mox_fixture = self.useFixture(moxstubout.MoxStubout())
+        self.mox = mox_fixture.mox
         self.stubs = mox_fixture.stubs
         self.policy = self.useFixture(policy_fixture.PolicyFixture())
 
