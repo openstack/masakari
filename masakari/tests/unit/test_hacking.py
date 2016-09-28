@@ -271,7 +271,7 @@ class HackingTestCase(test.NoDBTestCase):
             "msg = _('My message')",
             "masakari/tests/other_files.py"))), 0)
         self.assertEqual(len(list(checks.check_explicit_underscore_import(
-            "from cinder.i18n import _, _LW",
+            "from masakari.i18n import _, _LW",
             "masakari/tests/other_files2.py"))), 0)
         self.assertEqual(len(list(checks.check_explicit_underscore_import(
             "msg = _('My message')",
