@@ -153,13 +153,14 @@ function init_masakari {
 # start_masakari() - Start running processes, including screen
 function start_masakari {
     run_process masakari-api "$MASAKARI_BIN_DIR/masakari-api --config-file=$MASAKARI_CONF --debug"
+    run_process masakari-engine "$MASAKARI_BIN_DIR/masakari-engine --config-file=$MASAKARI_CONF --debug"
 }
 
 # stop_masakari() - Stop running processes
 function stop_masakari {
     # Kill the masakari screen windows
     local serv
-    for serv in masakari-api; do
+    for serv in masakari-engine masakari-api; do
         stop_process $serv
     done
 }

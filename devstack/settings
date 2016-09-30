@@ -31,5 +31,5 @@ MASAKARI_SERVICE_PORT=${MANILA_SERVICE_PORT:-15868}
 # Tell Tempest this project is present
 TEMPEST_SERVICES+=,masakari
 
-enable_service masakari masakari-api
+enable_service masakari masakari-api masakari-engine
 
