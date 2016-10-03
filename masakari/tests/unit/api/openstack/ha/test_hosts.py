@@ -23,6 +23,7 @@ from masakari import exception
 from masakari.ha import api as ha_api
 from masakari.objects import base as obj_base
 from masakari.objects import host as host_obj
+from masakari.objects import segment as segment_obj
 from masakari import test
 from masakari.tests.unit.api.openstack import fakes
 from masakari.tests import uuidsentinel
@@ -83,25 +84,56 @@ class HostTestCase(test.NoDBTestCase):
         self.assertTrue(obj_base.obj_equal_prims(expected, actual),
                         "The host objects were not equal")
 
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     @mock.patch.object(ha_api.HostAPI, 'get_all')
-    def test_index(self, mock_get_all):
-
+    def test_index(self, mock_get_all, mock_segment):
+        mock_segment.return_value = mock.Mock()
         mock_get_all.return_value = HOST_LIST
 
         result = self.controller.index(self.req, uuidsentinel.fake_segment1)
         result = result['hosts']
         self._assert_host_data(HOST_LIST, _make_hosts_list(result))
 
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     @mock.patch.object(ha_api.HostAPI, 'get_all')
-    def test_index_marker_not_found(self, mock_get_all):
+    def test_index_marker_not_found(self, mock_get_all, mock_segment):
         req = fakes.HTTPRequest.blank('/v1/segments/%s/hosts?marker=123456' % (
             uuidsentinel.fake_segment1), use_admin_context=True)
+        mock_segment.return_value = mock.Mock()
         mock_get_all.side_effect = exception.MarkerNotFound
         self.assertRaises(exc.HTTPBadRequest, self.controller.index,
                           req, uuidsentinel.fake_segment1)
 
+    def test_get_all_marker_negative(self):
+
+        req = fakes.HTTPRequest.blank('/v1/segments/%s/hosts?limit=-1' % (
+            uuidsentinel.fake_segment1), use_admin_context=True)
+        self.assertRaises(exc.HTTPBadRequest, self.controller.index,
+                          req, uuidsentinel.fake_segment1)
+
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid',
+                       return_value=mock.Mock())
+    def test_index_invalid_sort_key(self, mock_segment):
+
+        req = fakes.HTTPRequest.blank('/v1/segments/%s/hosts?sort_key=abcd' % (
+            uuidsentinel.fake_segment1), use_admin_context=True)
+        self.assertRaises(exc.HTTPBadRequest, self.controller.index, req,
+                          uuidsentinel.fake_segment1)
+
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid',
+                       return_value=mock.Mock())
+    def test_index_invalid_sort_dir(self, mock_segment):
+
+        req = fakes.HTTPRequest.blank('/v1/segments/%s/hosts?sort_dir=abcd' % (
+            uuidsentinel.fake_segment1), use_admin_context=True)
+        self.assertRaises(exc.HTTPBadRequest, self.controller.index, req,
+                          uuidsentinel.fake_segment1)
+
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     @mock.patch.object(ha_api.HostAPI, 'get_all')
-    def test_index_failover_segment_not_found(self, mock_get_all):
+    def test_index_failover_segment_not_found(self, mock_get_all,
+                                              mock_segment):
+        mock_segment.return_value = mock.Mock()
         mock_get_all.side_effect = exception.FailoverSegmentNotFound
         self.assertRaises(exc.HTTPNotFound, self.controller.index,
                           self.req, uuidsentinel.fake_segment1)

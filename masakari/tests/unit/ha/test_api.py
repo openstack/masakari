@@ -17,7 +17,6 @@
 
 import mock
 from oslo_utils import timeutils
-from webob import exc
 
 from masakari import exception
 from masakari.ha import api as ha_api
@@ -156,7 +155,10 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
 
         mock_get_all.return_value = FAILOVER_SEGMENT_LIST
 
-        result = self.segment_api.get_all(self.context, self.req)
+        result = self.segment_api.get_all(self.context, filters=None,
+                                          sort_keys=None,
+                                          sort_dirs=None, limit=None,
+                                          marker=None)
         self._assert_segment_data(FAILOVER_SEGMENT_LIST,
                                   _make_segments_list(result))
 
@@ -164,35 +166,28 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
     def test_get_all_marker_not_found(self, mock_get_all):
 
         mock_get_all.side_effect = exception.MarkerNotFound
-        self.req = fakes.HTTPRequest.blank('/v1/segments?limit=100',
-                                           use_admin_context=True)
+
         self.assertRaises(exception.MarkerNotFound, self.segment_api.get_all,
-                          self.context, self.req)
-
-    def test_get_all_marker_negative(self):
-
-        self.req = fakes.HTTPRequest.blank('/v1/segments?limit=-1',
-                                           use_admin_context=True)
-        self.assertRaises(exc.HTTPBadRequest, self.segment_api.get_all,
-                          self.context, self.req)
+                          self.context, filters=None, sort_keys=None,
+                          sort_dirs=None, limit=None, marker=None)
 
     @mock.patch.object(segment_obj.FailoverSegmentList, 'get_all')
     def test_get_all_by_recovery_method(self, mock_get_all):
-        self.req = fakes.HTTPRequest.blank('/v1/segments?recovery_method=auto',
-                                           use_admin_context=True)
-        self.segment_api.get_all(self.context, self.req)
-        mock_get_all.assert_called_once_with(self.context, filters={
-            'recovery_method': 'auto'}, sort_keys=[
-            'name'], sort_dirs=['asc'], limit=1000, marker=None)
+        filters = {'recovery_method': 'auto'}
+        self.segment_api.get_all(self.context, filters=filters,
+                                 sort_keys=None, sort_dirs=None,
+                                 limit=None, marker=None)
+        mock_get_all.assert_called_once_with(self.context, filters=filters,
+                                             sort_keys=None, sort_dirs=None,
+                                             limit=None, marker=None)
 
     @mock.patch.object(segment_obj.FailoverSegmentList, 'get_all')
     def test_get_all_invalid_sort_dir(self, mock_get_all):
 
         mock_get_all.side_effect = exception.InvalidInput
-        self.req = fakes.HTTPRequest.blank('/v1/segments?sort_dir=abcd',
-                                           use_admin_context=True)
         self.assertRaises(exception.InvalidInput, self.segment_api.get_all,
-                          self.context, self.req)
+                          self.context, filters=None, sort_keys=None,
+                          sort_dirs=['abcd'], limit=None, marker=None)
 
     @mock.patch.object(segment_obj, 'FailoverSegment',
                        return_value=_make_segment_obj(FAILOVER_SEGMENT))
@@ -256,8 +251,10 @@ class HostAPITestCase(test.NoDBTestCase):
         mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
         mock_get_all.return_value = HOST_LIST
 
-        result = self.host_api.get_all(self.context, self.req,
-                                       uuidsentinel.fake_segment)
+        result = self.host_api.get_all(self.context,
+                                       filters=None, sort_keys=['created_at'],
+                                       sort_dirs=['desc'], limit=None,
+                                       marker=None)
         self._assert_host_data(HOST_LIST, _make_hosts_list(result))
 
     @mock.patch.object(host_obj.HostList, 'get_all')
@@ -265,45 +262,32 @@ class HostAPITestCase(test.NoDBTestCase):
     def test_get_all_marker_not_found(self, mock_get, mock_get_all):
         mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
         mock_get_all.side_effect = exception.MarkerNotFound
-        self.req = fakes.HTTPRequest.blank(
-            '/v1/segments/%s/hosts?limit=100' % uuidsentinel.fake_segment1,
-            use_admin_context=True)
+
         self.assertRaises(exception.MarkerNotFound, self.host_api.get_all,
-                          self.context, self.req, uuidsentinel.fake_segment1)
-
-    def test_get_all_marker_negative(self):
-
-        self.req = fakes.HTTPRequest.blank(
-            '/v1/segments/%s/hosts?limit=-1' % uuidsentinel.fake_segment1,
-            use_admin_context=True)
-        self.assertRaises(exc.HTTPBadRequest, self.host_api.get_all,
-                          self.context, self.req, uuidsentinel.fake_segment1)
+                          self.context, filters=None, sort_keys=['created_at'],
+                          sort_dirs=['desc'], limit=None,
+                          marker=None)
 
     @mock.patch.object(host_obj.HostList, 'get_all')
-    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
-    def test_get_all_by_type(self, mock_get, mock_get_all):
-        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
-        self.req = fakes.HTTPRequest.blank(
-            '/v1/segments/%s/hosts?type=fake' % uuidsentinel.fake_segment,
-            use_admin_context=True)
-        self.host_api.get_all(self.context, self.req,
-                              uuidsentinel.fake_segment)
-        mock_get_all.assert_called_once_with(
-            self.context, filters={
-                'type': 'fake',
-                'failover_segment_id': uuidsentinel.fake_segment
-            }, sort_keys=['id'], sort_dirs=['asc'], limit=1000, marker=None)
+    def test_get_all_by_type(self, mock_get):
+        filters = {'type': 'SSH',
+                   'failover_segment_id': uuidsentinel.fake_segment}
+        self.host_api.get_all(self.context, filters, sort_keys='created_at',
+                              sort_dirs='desc', limit=None, marker=None)
+        mock_get.assert_called_once_with(self.context, filters=filters,
+                                         sort_keys='created_at',
+                                         sort_dirs='desc',
+                                         limit=None, marker=None)
 
     @mock.patch.object(host_obj.HostList, 'get_all')
-    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
-    def test_get_all_invalid_sort_dir(self, mock_get, mock_get_all):
-        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
-        mock_get_all.side_effect = exception.InvalidInput
-        self.req = fakes.HTTPRequest.blank(
-            '/v1/segments/%s/hosts?sort_dir=abcd' % uuidsentinel.fake_segment,
-            use_admin_context=True)
+    def test_get_all_invalid_sort_dir(self, mock_get):
+
+        mock_get.side_effect = exception.InvalidInput
+
         self.assertRaises(exception.InvalidInput, self.host_api.get_all,
-                          self.context, self.req, uuidsentinel.fake_segment)
+                          self.context, filters=None, sort_keys=None,
+                          sort_dirs=['abcd'], limit=None,
+                          marker=None)
 
     @mock.patch.object(host_obj, 'Host',
                        return_value=_make_host_obj(HOST))
