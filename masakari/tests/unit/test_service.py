@@ -27,6 +27,7 @@ from oslo_service import service as _service
 
 from masakari import exception
 from masakari import manager
+from masakari import rpc
 from masakari import service
 from masakari import test
 from masakari import wsgi
@@ -79,7 +80,8 @@ class ServiceTestCase(test.NoDBTestCase):
               "test_service.FakeManager>"
         self.assertEqual(exp, repr(serv))
 
-    def test_parent_graceful_shutdown(self):
+    @mock.patch.object(rpc, 'get_server')
+    def test_parent_graceful_shutdown(self, mock_rpc):
         self.manager_mock = self.mox.CreateMock(FakeManager)
         self.mox.StubOutWithMock(sys.modules[__name__],
                 'FakeManager', use_mock_anything=True)
@@ -101,6 +103,9 @@ class ServiceTestCase(test.NoDBTestCase):
         serv.start()
 
         serv.stop()
+
+        serv.rpcserver.start.assert_called_once_with()
+        serv.rpcserver.stop.assert_called_once_with()
 
     def test_reset(self):
         serv = service.Service(self.host,

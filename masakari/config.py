@@ -16,6 +16,7 @@ from oslo_log import log
 from masakari.common import config
 import masakari.conf
 from masakari.db.sqlalchemy import api as sqlalchemy_api
+from masakari import rpc
 from masakari import version
 
 
@@ -28,12 +29,16 @@ def parse_args(argv, default_config_files=None, configure_db=True,
     # We use the oslo.log default log levels which includes suds=INFO
     # and add only the extra levels that Masakari needs
     log.set_defaults(default_log_levels=log.get_default_log_levels())
+    rpc.set_defaults(control_exchange='masakari')
     config.set_middleware_defaults()
 
     CONF(argv[1:],
          project='masakari',
          version=version.version_string(),
          default_config_files=default_config_files)
+
+    if init_rpc:
+        rpc.init(CONF)
 
     if configure_db:
         sqlalchemy_api.configure(CONF)
