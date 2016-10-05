@@ -15,6 +15,7 @@
 
 import copy
 
+import mock
 from oslo_serialization import jsonutils
 import webob
 
@@ -211,7 +212,8 @@ class VersionsTest(test.NoDBTestCase):
     def wsgi_app(self):
         return fakes.wsgi_app_v1(init_only=('versions',))
 
-    def test_get_version_list_302(self):
+    @mock.patch('masakari.rpc.get_client')
+    def test_get_version_list_302(self, mock_get_client):
         req = webob.Request.blank('/v1')
         req.accept = "application/json"
         res = req.get_response(self.wsgi_app)
@@ -219,7 +221,8 @@ class VersionsTest(test.NoDBTestCase):
         redirect_req = webob.Request.blank('/v1/')
         self.assertEqual(redirect_req.url, res.location)
 
-    def test_get_version_1_versions_invalid(self):
+    @mock.patch('masakari.rpc.get_client')
+    def test_get_version_1_versions_invalid(self, mock_get_client):
         req = webob.Request.blank('/v1/versions/1234/foo')
         req.accept = "application/json"
         res = req.get_response(self.wsgi_app)

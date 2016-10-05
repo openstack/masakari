@@ -25,6 +25,7 @@ workflows.
 from oslo_log import log as logging
 import oslo_messaging as messaging
 
+from masakari.i18n import _LI
 from masakari import manager
 
 
@@ -41,3 +42,13 @@ class MasakariManager(manager.Manager):
         LOG.debug("Initializing Masakari Manager.")
         super(MasakariManager, self).__init__(service_name="engine",
                                              *args, **kwargs)
+
+    def process_notification(self, context, notification=None):
+        """Processes the notification"""
+        LOG.info(_LI('Processing notification'
+                     ' %s'), notification.notification_uuid)
+
+        # TODO(Dinesh_Bhor) Add duplicate notification check based on
+        # notification created_time and config parameter.
+
+        # TODO(Dinesh_Bhor) Execute workflow to process notification.

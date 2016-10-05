@@ -20,6 +20,7 @@ from oslo_utils import timeutils
 from webob import exc
 
 from masakari.api.openstack.ha import notifications
+from masakari.engine import rpcapi as engine_rpcapi
 from masakari import exception
 from masakari.ha import api as ha_api
 from masakari.objects import base as obj_base
@@ -79,7 +80,8 @@ class NotificationTestCase(test.NoDBTestCase):
 
     bad_request = exception.ValidationError
 
-    def setUp(self):
+    @mock.patch.object(engine_rpcapi, 'EngineAPI')
+    def setUp(self, mock_rpc):
         super(NotificationTestCase, self).setUp()
         self.controller = notifications.NotificationsController()
         self.req = fakes.HTTPRequest.blank('/v1/notifications',
@@ -256,7 +258,8 @@ class NotificationTestCase(test.NoDBTestCase):
 class NotificationCasePolicyNotAuthorized(test.NoDBTestCase):
     """Test Case for notifications non admin."""
 
-    def setUp(self):
+    @mock.patch.object(engine_rpcapi, 'EngineAPI')
+    def setUp(self, mock_rpc):
         super(NotificationCasePolicyNotAuthorized, self).setUp()
         self.controller = notifications.NotificationsController()
         self.req = fakes.HTTPRequest.blank('/v1/notifications')

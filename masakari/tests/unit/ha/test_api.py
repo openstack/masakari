@@ -18,6 +18,7 @@
 import mock
 from oslo_utils import timeutils
 
+from masakari.engine import rpcapi as engine_rpcapi
 from masakari import exception
 from masakari.ha import api as ha_api
 from masakari.objects import base as obj_base
@@ -346,7 +347,8 @@ class HostAPITestCase(test.NoDBTestCase):
 class NotificationAPITestCase(test.NoDBTestCase):
     """Test Case for notification api."""
 
-    def setUp(self):
+    @mock.patch.object(engine_rpcapi, 'EngineAPI')
+    def setUp(self, mock_rpc):
         super(NotificationAPITestCase, self).setUp()
         self.notification_api = ha_api.NotificationAPI()
         self.req = fakes.HTTPRequest.blank('/v1/notifications',

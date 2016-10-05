@@ -13,7 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import oslo_messaging as messaging
+
 import masakari.conf
+from masakari.objects import base as objects_base
 from masakari import rpc
 
 CONF = masakari.conf.CONF
@@ -32,3 +35,15 @@ class EngineAPI(rpc.RPCAPI):
     RPC_API_VERSION = '1.0'
     TOPIC = CONF.masakari_topic
     BINARY = 'masakari-engine'
+
+    def __init__(self):
+        super(EngineAPI, self).__init__()
+        target = messaging.Target(topic=self.TOPIC,
+                                  version=self.RPC_API_VERSION)
+        serializer = objects_base.MasakariObjectSerializer()
+        self.client = rpc.get_client(target, serializer=serializer)
+
+    def process_notification(self, context, notification):
+        version = '1.0'
+        cctxt = self.client.prepare(version=version)
+        cctxt.cast(context, 'process_notification', notification=notification)

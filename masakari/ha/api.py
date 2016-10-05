@@ -15,6 +15,7 @@
 from oslo_log import log as logging
 from oslo_utils import uuidutils
 
+from masakari.engine import rpcapi as engine_rpcapi
 from masakari import exception
 from masakari import objects
 from masakari.objects import fields
@@ -174,6 +175,9 @@ class HostAPI(object):
 
 class NotificationAPI(object):
 
+    def __init__(self):
+        self.engine_rpcapi = engine_rpcapi.EngineAPI()
+
     def create_notification(self, context, notification_data):
         """Create notification"""
 
@@ -191,13 +195,12 @@ class NotificationAPI(object):
         notification.source_host_uuid = host_object.uuid
         notification.payload = notification_data.get('payload')
 
-        # TODO(Dinesh_Bhor) Duplicate notifications will be decided in
-        # masakari-engine and rejected accordingly.
+        # TODO(Dinesh_Bhor) If host for which notification received is
+        # on_maintenance mode then set notification status to 'IGNORED'.
 
         notification.create()
 
-        # TODO(Dinesh_Bhor) RPC CAST call will be made to masakari-engine
-        # service along with notification_object to process this notification.
+        self.engine_rpcapi.process_notification(context, notification)
 
         return notification
 

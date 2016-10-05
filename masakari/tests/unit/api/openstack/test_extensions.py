@@ -33,7 +33,8 @@ class fake_bad_extension(object):
 
 class ExtensionLoadingTestCase(test.NoDBTestCase):
 
-    def test_extensions_loaded(self):
+    @mock.patch('masakari.rpc.get_client')
+    def test_extensions_loaded(self, mock_get_client):
         app = ha.APIRouterV1()
         self.assertIn('extensions', app._loaded_extension_info.extensions)
 
@@ -41,8 +42,9 @@ class ExtensionLoadingTestCase(test.NoDBTestCase):
         loaded_ext_info = extension_info.LoadedExtensionInfo()
         self.assertFalse(loaded_ext_info._check_extension(fake_bad_extension))
 
+    @mock.patch('masakari.rpc.get_client')
     @mock.patch('masakari.api.openstack.APIRouterV1._register_resources_list')
-    def test_extensions_inherit(self, mock_register):
+    def test_extensions_inherit(self, mock_register, mock_get_client):
         app = ha.APIRouterV1()
         self.assertIn('extensions', app._loaded_extension_info.extensions)
 
