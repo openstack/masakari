@@ -203,6 +203,22 @@ class ObjectListBase(ovoo_base.ObjectListBase):
             return primitive.get(key, default)
 
 
+class MasakariObjectSerializer(ovoo_base.VersionedObjectSerializer):
+    """A Masakari Object Serializer.
+
+       This implements the Oslo Serializer interface and provides
+       the ability to serialize and deserialize MasakariObject entities.
+       Any service that needs to accept or return MasakariObjects
+       as arguments or result values should pass this to its RPCClient
+       and RPCServer objects.
+
+    """
+    OBJ_BASE_CLASS = MasakariObject
+
+    def __init__(self):
+        super(MasakariObjectSerializer, self).__init__()
+
+
 def obj_make_list(context, list_obj, item_cls, db_list, **extra_args):
     """Construct an object list from a list of primitives.
 
