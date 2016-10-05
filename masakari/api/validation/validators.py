@@ -22,6 +22,7 @@ import re
 
 import jsonschema
 from jsonschema import exceptions as jsonschema_exc
+from oslo_utils import timeutils
 import six
 
 from masakari.api.validation import parameter_types
@@ -82,6 +83,16 @@ def _soft_validate_additional_properties(validator,
     else:
         for prop in extra_properties:
             del instance[prop]
+
+
+@jsonschema.FormatChecker.cls_checks('date-time')
+def _validate_datetime_format(instance):
+    try:
+        timeutils.parse_isotime(instance)
+    except ValueError:
+        return False
+    else:
+        return True
 
 
 @jsonschema.FormatChecker.cls_checks('name', exception.InvalidName)

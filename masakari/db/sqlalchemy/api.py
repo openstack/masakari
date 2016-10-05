@@ -502,8 +502,8 @@ def notifications_get_all_by_filters(
                                                sort_keys,
                                                marker=marker_row,
                                                sort_dirs=sort_dirs)
-    except db_exc.InvalidSortKey:
-        raise exception.InvalidSortKey()
+    except db_exc.InvalidSortKey as err:
+        raise exception.InvalidSortKey(err.message)
 
     return query.all()
 

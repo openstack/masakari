@@ -18,6 +18,7 @@ from oslo_utils import uuidutils
 from masakari.api.openstack import common
 from masakari import exception
 from masakari import objects
+from masakari.objects import fields
 
 LOG = logging.getLogger(__name__)
 
@@ -195,3 +196,68 @@ class HostAPI(object):
         # in future.
         host = objects.Host.get_by_uuid(context, id)
         host.destroy()
+
+
+class NotificationAPI(object):
+
+    def create_notification(self, context, notification_data):
+        """Create notification"""
+
+        # Check whether host from which the notification came is already
+        # present in failover segment or not
+        host_name = notification_data.get('hostname')
+        host_object = objects.Host.get_by_name(context, host_name)
+
+        notification = objects.Notification(context=context)
+
+        # Populate notification object for create
+        notification.type = notification_data.get('type')
+        notification.generated_time = notification_data.get('generated_time')
+        notification.status = fields.NotificationStatus.NEW
+        notification.source_host_uuid = host_object.uuid
+        notification.payload = notification_data.get('payload')
+
+        # TODO(Dinesh_Bhor) Duplicate notifications will be decided in
+        # masakari-engine and rejected accordingly.
+
+        notification.create()
+
+        # TODO(Dinesh_Bhor) RPC CAST call will be made to masakari-engine
+        # service along with notification_object to process this notification.
+
+        return notification
+
+    def get_all(self, context, filters=None, sort_keys=None,
+                sort_dirs=None, limit=None, marker=None):
+        """Get all notifications filtered by one of the given parameters.
+
+        If there is no filter it will retrieve all notifications in the system.
+
+        The results will be sorted based on the list of sort keys in the
+        'sort_keys' parameter (first value is primary sort key, second value is
+        secondary sort ket, etc.). For each sort key, the associated sort
+        direction is based on the list of sort directions in the 'sort_dirs'
+        parameter.
+        """
+        LOG.debug("Searching by: %s", str(filters))
+
+        limited_notifications = (objects.NotificationList.
+                                 get_all(context, filters, sort_keys,
+                                         sort_dirs, limit, marker))
+
+        return limited_notifications
+
+    def get_notification(self, context, notification_uuid):
+        """Get a single notification with the given notification_uuid."""
+        if uuidutils.is_uuid_like(notification_uuid):
+            LOG.debug("Fetching notification by "
+                      "UUID", notification_uuid=notification_uuid)
+
+            notification = objects.Notification.get_by_uuid(context,
+                                                            notification_uuid)
+        else:
+            LOG.debug("Failed to fetch notification by "
+                      "uuid %s", notification_uuid)
+            raise exception.NotificationNotFound(id=notification_uuid)
+
+        return notification

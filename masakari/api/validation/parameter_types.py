@@ -151,3 +151,20 @@ boolean = {
              False, 'False', 'FALSE', 'false', '0', 'OFF', 'Off', 'off',
              'NO', 'No', 'no'],
 }
+
+
+hostname = {
+    'type': 'string', 'minLength': 1, 'maxLength': 255,
+    'pattern': '^[a-zA-Z0-9-._]*$',
+}
+
+
+payload = {
+    'type': 'object',
+    'patternProperties': {
+        '^[a-zA-Z0-9-_:. ]{1,255}$': {
+            'type': 'string', 'maxLength': 255
+        }
+    },
+    'additionalProperties': False
+}

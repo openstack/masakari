@@ -16,12 +16,14 @@
 """Tests for the failover segment api."""
 
 import mock
+from oslo_utils import timeutils
 from webob import exc
 
 from masakari import exception
 from masakari.ha import api as ha_api
 from masakari.objects import base as obj_base
 from masakari.objects import host as host_obj
+from masakari.objects import notification as notification_obj
 from masakari.objects import segment as segment_obj
 from masakari import test
 from masakari.tests.unit.api.openstack import fakes
@@ -89,6 +91,50 @@ HOST = {
 }
 
 HOST = _make_host_obj(HOST)
+
+
+def _make_notification_obj(notification_dict):
+    return notification_obj.Notification(**notification_dict)
+
+
+def _make_notifications_list(notifications_list):
+    return notification_obj.Notification(objects=[
+        _make_notification_obj(a) for a in notifications_list])
+
+NOW = timeutils.utcnow().replace(microsecond=0)
+
+NOTIFICATION_DATA = {"type": "VM", "id": 1,
+                     "payload":
+                         {'event': 'STOPPED', 'host_status': 'NORMAL',
+                          'cluster_status': 'ONLINE'},
+                     "source_host_uuid": uuidsentinel.fake_host,
+                     "generated_time": NOW,
+                     "status": "running",
+                     "notification_uuid": uuidsentinel.fake_notification,
+                     "created_at": NOW,
+                     "updated_at": None,
+                     "deleted_at": None,
+                     "deleted": 0
+                     }
+
+NOTIFICATION = _make_notification_obj(NOTIFICATION_DATA)
+
+NOTIFICATION_LIST = [
+    {"type": "VM", "id": 1, "payload": {'event': 'STOPPED',
+                                        'host_status': 'NORMAL',
+                                        'cluster_status': 'ONLINE'},
+     "source_host_uuid": uuidsentinel.fake_host, "generated_time": NOW,
+     "status": "running", "notification_uuid": uuidsentinel.fake_notification,
+     "created_at": NOW, "updated_at": None, "deleted_at": None, "deleted": 0},
+
+    {"type": "PROCESS", "id": 2, "payload": {'event': 'STOPPED',
+                                             'process_name': 'fake_process'},
+     "source_host_uuid": uuidsentinel.fake_host1, "generated_time": NOW,
+     "status": "running", "notification_uuid": uuidsentinel.fake_notification1,
+     "created_at": NOW, "updated_at": None, "deleted_at": None, "deleted": 0},
+]
+
+NOTIFICATION_LIST = _make_notifications_list(NOTIFICATION_LIST)
 
 
 class FailoverSegmentAPITestCase(test.NoDBTestCase):
@@ -311,3 +357,95 @@ class HostAPITestCase(test.NoDBTestCase):
                                            uuidsentinel.fake_host_1,
                                            host_data)
         self._assert_host_data(HOST, _make_host_obj(result))
+
+
+class NotificationAPITestCase(test.NoDBTestCase):
+    """Test Case for notification api."""
+
+    def setUp(self):
+        super(NotificationAPITestCase, self).setUp()
+        self.notification_api = ha_api.NotificationAPI()
+        self.req = fakes.HTTPRequest.blank('/v1/notifications',
+                                           use_admin_context=True)
+        self.context = self.req.environ['masakari.context']
+
+    def _assert_notification_data(self, expected, actual):
+        self.assertTrue(obj_base.obj_equal_prims(expected, actual),
+                        "The notification objects were not equal")
+
+    @mock.patch.object(notification_obj, 'Notification')
+    @mock.patch.object(notification_obj.Notification, 'create')
+    @mock.patch.object(host_obj.Host, 'get_by_name')
+    def test_create(self, mock_host_obj, mock_create, mock_notification_obj):
+        notification_data = {"hostname": "fake_host",
+                             "payload": {"event": "STOPPED",
+                                         "host_status": "NORMAL",
+                                         "cluster_status": "ONLINE"},
+                             "type": "VM",
+                             "generated_time": "2016-10-13T09:11:21.656788"}
+        mock_host_obj.return_value = HOST
+        mock_notification_obj.return_value = NOTIFICATION
+
+        result = (self.notification_api.
+                  create_notification(self.context, notification_data))
+
+        self._assert_notification_data(NOTIFICATION,
+                                       _make_notification_obj(result))
+
+    @mock.patch.object(notification_obj.Notification, 'get_by_uuid')
+    def test_get_notification(self, mock_get_notification):
+
+        mock_get_notification.return_value = NOTIFICATION
+
+        result = (self.notification_api.
+                  get_notification(self.context,
+                                   uuidsentinel.fake_notification))
+        self._assert_notification_data(NOTIFICATION,
+                                       _make_notification_obj(result))
+
+    @mock.patch.object(notification_obj.Notification, 'get_by_uuid')
+    def test_get_notification_not_found(self, mock_get_notification):
+
+        self.assertRaises(exception.NotificationNotFound,
+                          self.notification_api.get_notification,
+                          self.context, '123')
+
+    @mock.patch.object(notification_obj.NotificationList, 'get_all')
+    def test_get_all(self, mock_get_all):
+
+        mock_get_all.return_value = NOTIFICATION_LIST
+
+        result = self.notification_api.get_all(self.context, self.req)
+        self._assert_notification_data(NOTIFICATION_LIST,
+                                       _make_notifications_list(result))
+
+    @mock.patch.object(notification_obj.NotificationList, 'get_all')
+    def test_get_all_marker_not_found(self, mock_get_all):
+
+        mock_get_all.side_effect = exception.MarkerNotFound
+        self.req = fakes.HTTPRequest.blank('/v1/notifications?limit=100',
+                                           use_admin_context=True)
+        self.assertRaises(exception.MarkerNotFound,
+                          self.notification_api.get_all,
+                          self.context, self.req)
+
+    @mock.patch.object(notification_obj.NotificationList, 'get_all')
+    def test_get_all_by_status(self, mock_get_all):
+        self.req = fakes.HTTPRequest.blank('/v1/notifications?status=new',
+                                           use_admin_context=True)
+        self.notification_api.get_all(self.context, filters={'status': 'new'},
+                                      sort_keys='generated_time',
+                                      sort_dirs='asc', limit=1000, marker=None)
+        mock_get_all.assert_called_once_with(self.context, {'status': 'new'},
+                                             'generated_time', 'asc',
+                                             1000, None)
+
+    @mock.patch.object(notification_obj.NotificationList, 'get_all')
+    def test_get_all_invalid_sort_dir(self, mock_get_all):
+
+        mock_get_all.side_effect = exception.InvalidInput
+        self.req = fakes.HTTPRequest.blank('/v1/notifications?sort_dir=abcd',
+                                           use_admin_context=True)
+        self.assertRaises(exception.InvalidInput,
+                          self.notification_api.get_all,
+                          self.context, self.req)

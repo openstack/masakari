@@ -19,6 +19,7 @@ policy_data = """
 
     "os_masakari_api:extensions": "",
     "os_masakari_api:segments": "",
-    "os_masakari_api:os-hosts": ""
+    "os_masakari_api:os-hosts": "",
+    "os_masakari_api:notifications": ""
 }
 """

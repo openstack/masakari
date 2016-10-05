@@ -292,3 +292,72 @@ class PaginationParamsTest(test.NoDBTestCase):
         req = webob.Request.blank('/?limit=20&page_size=5')
         self.assertEqual(common.get_pagination_params(req),
                          {'page_size': 5, 'limit': 20})
+
+
+class SortParamTest(test.NoDBTestCase):
+
+    def test_get_sort_params_defaults(self):
+        # Verifies the default sort key and direction.
+        sort_keys, sort_dirs = common.get_sort_params({})
+        self.assertEqual(['created_at'], sort_keys)
+        self.assertEqual(['desc'], sort_dirs)
+
+    def test_get_sort_params_override_defaults(self):
+        # Verifies that the defaults can be overriden.
+        sort_keys, sort_dirs = common.get_sort_params({}, default_key='key1',
+                                                      default_dir='dir1')
+        self.assertEqual(['key1'], sort_keys)
+        self.assertEqual(['dir1'], sort_dirs)
+
+        sort_keys, sort_dirs = common.get_sort_params({}, default_key=None,
+                                                      default_dir=None)
+        self.assertEqual([], sort_keys)
+        self.assertEqual([], sort_dirs)
+
+    def test_get_sort_params_single_value(self):
+        # Verifies a single sort key and direction.
+        params = webob.multidict.MultiDict()
+        params.add('sort_key', 'key1')
+        params.add('sort_dir', 'dir1')
+        sort_keys, sort_dirs = common.get_sort_params(params)
+        self.assertEqual(['key1'], sort_keys)
+        self.assertEqual(['dir1'], sort_dirs)
+
+    def test_get_sort_params_single_with_default(self):
+        # Verifies a single sort value with a default.
+        params = webob.multidict.MultiDict()
+        params.add('sort_key', 'key1')
+        sort_keys, sort_dirs = common.get_sort_params(params)
+        self.assertEqual(['key1'], sort_keys)
+        # sort_key was supplied, sort_dir should be defaulted
+        self.assertEqual(['desc'], sort_dirs)
+
+        params = webob.multidict.MultiDict()
+        params.add('sort_dir', 'dir1')
+        sort_keys, sort_dirs = common.get_sort_params(params)
+        self.assertEqual(['created_at'], sort_keys)
+        # sort_dir was supplied, sort_key should be defaulted
+        self.assertEqual(['dir1'], sort_dirs)
+
+    def test_get_sort_params_multiple_values(self):
+        # Verifies multiple sort parameter values.
+        params = webob.multidict.MultiDict()
+        params.add('sort_key', 'key1')
+        params.add('sort_key', 'key2')
+        params.add('sort_key', 'key3')
+        params.add('sort_dir', 'dir1')
+        params.add('sort_dir', 'dir2')
+        params.add('sort_dir', 'dir3')
+        sort_keys, sort_dirs = common.get_sort_params(params)
+        self.assertEqual(['key1', 'key2', 'key3'], sort_keys)
+        self.assertEqual(['dir1', 'dir2', 'dir3'], sort_dirs)
+        # Also ensure that the input parameters are not modified
+        sort_key_vals = []
+        sort_dir_vals = []
+        while 'sort_key' in params:
+            sort_key_vals.append(params.pop('sort_key'))
+        while 'sort_dir' in params:
+            sort_dir_vals.append(params.pop('sort_dir'))
+        self.assertEqual(['key1', 'key2', 'key3'], sort_key_vals)
+        self.assertEqual(['dir1', 'dir2', 'dir3'], sort_dir_vals)
+        self.assertEqual(0, len(params))
