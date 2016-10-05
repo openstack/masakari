@@ -44,7 +44,8 @@ class FakeManager(manager.Manager):
 class ServiceManagerTestCase(test.NoDBTestCase):
     """Test cases for Services."""
 
-    def test_message_gets_to_manager(self):
+    @mock.patch.object(rpc, 'init')
+    def test_message_gets_to_manager(self, mock_rpc_init):
         serv = service.Service('test',
                                'test',
                                'test',
@@ -61,14 +62,16 @@ class ServiceTestCase(test.NoDBTestCase):
         self.binary = 'masakari-engine'
         self.topic = 'fake'
 
-    def test_create(self):
+    @mock.patch.object(rpc, 'init')
+    def test_create(self, mock_rpc_init):
 
         app = service.Service.create(host=self.host, binary=self.binary,
                 topic=self.topic)
 
         self.assertTrue(app)
 
-    def test_repr(self):
+    @mock.patch.object(rpc, 'init')
+    def test_repr(self, mock_rpc_init):
         # Test if a Service object is correctly represented, for example in
         # log files.
         serv = service.Service(self.host,
@@ -80,8 +83,9 @@ class ServiceTestCase(test.NoDBTestCase):
               "test_service.FakeManager>"
         self.assertEqual(exp, repr(serv))
 
+    @mock.patch.object(rpc, 'init')
     @mock.patch.object(rpc, 'get_server')
-    def test_parent_graceful_shutdown(self, mock_rpc):
+    def test_parent_graceful_shutdown(self, mock_rpc, mock_rpc_init):
         self.manager_mock = self.mox.CreateMock(FakeManager)
         self.mox.StubOutWithMock(sys.modules[__name__],
                 'FakeManager', use_mock_anything=True)
@@ -107,7 +111,8 @@ class ServiceTestCase(test.NoDBTestCase):
         serv.rpcserver.start.assert_called_once_with()
         serv.rpcserver.stop.assert_called_once_with()
 
-    def test_reset(self):
+    @mock.patch.object(rpc, 'init')
+    def test_reset(self, mock_rpc_init):
         serv = service.Service(self.host,
                                self.binary,
                                self.topic,

@@ -20,6 +20,7 @@ from oslo_db import api as oslo_db_api
 from oslo_db import exception as db_exc
 from oslo_db.sqlalchemy import enginefacade
 from oslo_db.sqlalchemy import utils as sqlalchemyutils
+from oslo_utils import timeutils
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import null
@@ -485,8 +486,17 @@ def notifications_get_all_by_filters(
         query = query.filter(models.Notification.type == filters['type'])
 
     if 'status' in filters:
-        query = query.filter(models.Notification.status == filters[
-            'status'])
+        status = filters['status']
+        if isinstance(status, (list, tuple, set, frozenset)):
+            column_attr = getattr(models.Notification, 'status')
+            query = query.filter(column_attr.in_(status))
+        else:
+            query = query.filter(models.Notification.status == status)
+
+    if 'generated-since' in filters:
+        generated_since = timeutils.normalize_time(filters['generated-since'])
+        query = query.filter(
+            models.Notification.generated_time >= generated_since)
 
     marker_row = None
     if marker is not None:

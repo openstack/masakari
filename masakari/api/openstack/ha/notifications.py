@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_utils import timeutils
 from webob import exc
 
 from masakari.api.openstack import common
@@ -22,7 +23,7 @@ from masakari.api.openstack import wsgi
 from masakari.api import validation
 from masakari import exception
 from masakari.ha import api as notification_api
-
+from masakari.i18n import _
 
 ALIAS = 'notifications'
 authorize = extensions.os_masakari_authorizer(ALIAS)
@@ -34,7 +35,7 @@ class NotificationsController(wsgi.Controller):
     def __init__(self):
         self.api = notification_api.NotificationAPI()
 
-    @extensions.expected_errors((400, 403))
+    @extensions.expected_errors((400, 403, 409))
     @validation.schema(schema.create)
     def create(self, req, body):
         """Creates a new notification."""
@@ -43,10 +44,13 @@ class NotificationsController(wsgi.Controller):
 
         notification_data = body['notification']
         try:
-            notification = (self.api.
-                            create_notification(context, notification_data))
+            notification = self.api.create_notification(
+                context, notification_data)
         except exception.HostNotFoundByName as err:
             raise exc.HTTPBadRequest(explanation=err.format_message())
+        except (exception.DuplicateNotification,
+                exception.HostOnMaintenanceError) as err:
+            raise exc.HTTPConflict(explanation=err.format_message())
 
         return {'notification': notification}
 
@@ -66,6 +70,14 @@ class NotificationsController(wsgi.Controller):
                 filters['source_host_uuid'] = req.params['source_host_uuid']
             if 'type' in req.params:
                 filters['type'] = req.params['type']
+            if 'generated-since' in req.params:
+                try:
+                    parsed = timeutils.parse_isotime(
+                        req.params['generated-since'])
+                except ValueError:
+                    msg = _('Invalid generated-since value')
+                    raise exc.HTTPBadRequest(explanation=msg)
+                filters['generated-since'] = parsed
 
             notifications = self.api.get_all(context, filters, sort_keys,
                                              sort_dirs, limit, marker)

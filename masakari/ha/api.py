@@ -12,14 +12,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
+
 from oslo_log import log as logging
 from oslo_utils import strutils
 from oslo_utils import uuidutils
 
+import masakari.conf
 from masakari.engine import rpcapi as engine_rpcapi
 from masakari import exception
+from masakari.i18n import _
 from masakari import objects
 from masakari.objects import fields
+
+
+CONF = masakari.conf.CONF
 
 LOG = logging.getLogger(__name__)
 
@@ -188,6 +195,29 @@ class NotificationAPI(object):
     def __init__(self):
         self.engine_rpcapi = engine_rpcapi.EngineAPI()
 
+    @staticmethod
+    def _is_duplicate_notification(context, notification):
+        # Get all the notifications by filters
+
+        filters = {
+            'type': notification.type,
+            'status': [fields.NotificationStatus.NEW,
+                       fields.NotificationStatus.RUNNING],
+            'source_host_uuid': notification.source_host_uuid,
+            'generated-since': (notification.generated_time -
+                datetime.timedelta(
+                    seconds=CONF.duplicate_notification_detection_interval))
+        }
+        notifications_list = objects.NotificationList.get_all(context,
+                                                              filters=filters)
+        for db_notification in notifications_list:
+            # if payload is same notification should be considered as
+            # duplicate
+            if db_notification.payload == notification.payload:
+                return True
+
+        return False
+
     def create_notification(self, context, notification_data):
         """Create notification"""
 
@@ -195,21 +225,33 @@ class NotificationAPI(object):
         # present in failover segment or not
         host_name = notification_data.get('hostname')
         host_object = objects.Host.get_by_name(context, host_name)
+        host_on_maintenance = host_object.on_maintenance
+
+        if host_on_maintenance:
+            message = (_("Notification received from host %(host)s of type "
+                         "'%(type)s' is ignored as the host is already under "
+                         "maintenance.") % {
+                'host': host_name,
+                'type': notification_data.get('type')
+            })
+            raise exception.HostOnMaintenanceError(message=message)
 
         notification = objects.Notification(context=context)
 
         # Populate notification object for create
         notification.type = notification_data.get('type')
         notification.generated_time = notification_data.get('generated_time')
-        notification.status = fields.NotificationStatus.NEW
         notification.source_host_uuid = host_object.uuid
         notification.payload = notification_data.get('payload')
+        notification.status = fields.NotificationStatus.NEW
 
-        # TODO(Dinesh_Bhor) If host for which notification received is
-        # on_maintenance mode then set notification status to 'IGNORED'.
+        if self._is_duplicate_notification(context, notification):
+            message = (_("Notification received from host %(host)s of "
+                         " type '%(type)s' is duplicate.") %
+                       {'host': host_name, 'type': notification.type})
+            raise exception.DuplicateNotification(message=message)
 
         notification.create()
-
         self.engine_rpcapi.process_notification(context, notification)
 
         return notification

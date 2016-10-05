@@ -15,6 +15,7 @@
 
 """Tests for the failover segment api."""
 
+import copy
 import mock
 from oslo_utils import timeutils
 
@@ -394,8 +395,10 @@ class HostAPITestCase(test.NoDBTestCase):
             'reserved': False, 'type': 'fake',
             'control_attributes': 'fake-control_attributes'
         }
-        HOST._context = self.context
-        mock_host_object.return_value = HOST
+
+        FAKE_HOST = copy.deepcopy(HOST)
+        FAKE_HOST._context = self.context
+        mock_host_object.return_value = FAKE_HOST
         self.host_api.update_host(self.context,
                                   uuidsentinel.fake_segment1,
                                   uuidsentinel.fake_host_1,
@@ -420,10 +423,13 @@ class NotificationAPITestCase(test.NoDBTestCase):
         self.assertTrue(obj_base.obj_equal_prims(expected, actual),
                         "The notification objects were not equal")
 
+    @mock.patch.object(notification_obj.NotificationList, 'get_all')
     @mock.patch.object(notification_obj, 'Notification')
     @mock.patch.object(notification_obj.Notification, 'create')
     @mock.patch.object(host_obj.Host, 'get_by_name')
-    def test_create(self, mock_host_obj, mock_create, mock_notification_obj):
+    def test_create(self, mock_host_obj, mock_create, mock_notification_obj,
+                    mock_get_all):
+        mock_get_all.return_value = NOTIFICATION_LIST
         notification_data = {"hostname": "fake_host",
                              "payload": {"event": "STOPPED",
                                          "host_status": "NORMAL",

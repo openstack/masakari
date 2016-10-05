@@ -24,6 +24,7 @@ import sys
 import tempfile
 
 import eventlet
+from oslo_concurrency import lockutils
 from oslo_context import context as common_context
 from oslo_log import log as logging
 from oslo_utils import importutils
@@ -39,6 +40,8 @@ from masakari import safe_utils
 CONF = masakari.conf.CONF
 
 LOG = logging.getLogger(__name__)
+
+synchronized = lockutils.synchronized_with_prefix('masakari-')
 
 
 def utf8(value):

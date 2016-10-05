@@ -25,9 +25,13 @@ workflows.
 from oslo_log import log as logging
 import oslo_messaging as messaging
 
+import masakari.conf
 from masakari.i18n import _LI
 from masakari import manager
+from masakari.objects import fields
+from masakari import utils
 
+CONF = masakari.conf.CONF
 
 LOG = logging.getLogger(__name__)
 
@@ -45,10 +49,28 @@ class MasakariManager(manager.Manager):
 
     def process_notification(self, context, notification=None):
         """Processes the notification"""
-        LOG.info(_LI('Processing notification'
-                     ' %s'), notification.notification_uuid)
+        @utils.synchronized(notification.source_host_uuid)
+        def do_process_notification(notification):
+            LOG.info(_LI('Processing notification %s'),
+                     notification.notification_uuid)
 
-        # TODO(Dinesh_Bhor) Add duplicate notification check based on
-        # notification created_time and config parameter.
+            update_data = {
+                'status': fields.NotificationStatus.RUNNING,
+            }
+            notification.update(update_data)
+            notification.save()
 
-        # TODO(Dinesh_Bhor) Execute workflow to process notification.
+            if notification.type == fields.NotificationType.PROCESS:
+                # TODO(Dinesh_Bhor) Execute workflow for process-failure
+                #  notification.
+                pass
+            elif notification.type == fields.NotificationType.VM:
+                # TODO(Dinesh_Bhor) Execute workflow for instnace-failure
+                # notification.
+                pass
+            elif notification.type == fields.NotificationType.COMPUTE_HOST:
+                # TODO(Dinesh_Bhor) Execute workflow for host-failure
+                # notification.
+                pass
+
+        do_process_notification(notification)

@@ -276,3 +276,13 @@ class ObjectActionError(MasakariException):
 
 class OrphanedObjectError(MasakariException):
     msg_fmt = _('Cannot call %(method)s on orphaned %(objtype)s object')
+
+
+class DuplicateNotification(Invalid):
+    msg_fmt = _('Duplicate notification received for type: %(type)s')
+    code = 409
+
+
+class HostOnMaintenanceError(Invalid):
+    msg_fmt = _('Host %(host_name)s is already under maintenance.')
+    code = 409

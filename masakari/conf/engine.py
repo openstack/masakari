@@ -40,7 +40,22 @@ whenever an RPC call to the masakari engine is made.
 ]
 
 
-ALL_OPTS = (rpcapi_opts)
+notification_opts = [
+    cfg.IntOpt('duplicate_notification_detection_interval',
+               default=180,
+               min=0,
+               help="Interval in seconds for identifying duplicate "
+                    "notifications. If the notification received is identical "
+                    "to the previous ones whose status is either new or "
+                    "running and if it's created_timestamp and the current "
+                    "timestamp is less than this config option value, then "
+                    "the notification will be considered as duplicate and "
+                    "it will be ignored."
+               ),
+]
+
+
+ALL_OPTS = (rpcapi_opts + notification_opts)
 
 
 def register_opts(conf):
