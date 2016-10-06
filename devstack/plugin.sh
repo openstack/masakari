@@ -24,13 +24,6 @@ set +o xtrace
 # Functions
 # ---------
 
-# Test if any Masakari services are enabled
-# is_masakari_enabled
-function is_masakari_enabled {
-    [[ ,${ENABLED_SERVICES} =~ ,"masakari-api" ]] && return 0
-    return 1
-}
-
 # setup_masakari_logging() - Adds logging configuration to conf files
 function setup_masakari_logging {
     local CONF=$1
