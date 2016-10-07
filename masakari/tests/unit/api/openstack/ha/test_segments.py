@@ -90,6 +90,25 @@ class FailoverSegmentTestCase(test.NoDBTestCase):
         self.assertRaises(exc.HTTPBadRequest, self.controller.index,
                           fake_request)
 
+    def test_get_all_marker_negative(self):
+
+        fake_request = fakes.HTTPRequest.blank('/v1/segments?limit=-1',
+                                               use_admin_context=True)
+        self.assertRaises(exc.HTTPBadRequest, self.controller.index,
+                          fake_request)
+
+    def test_index_invalid_sort_key(self):
+
+        req = fakes.HTTPRequest.blank('/v1/segments?sort_key=abcd',
+                                      use_admin_context=True)
+        self.assertRaises(exc.HTTPBadRequest, self.controller.index, req)
+
+    def test_index_invalid_sort_dir(self):
+
+        req = fakes.HTTPRequest.blank('/v1/segments?sort_dir=abcd',
+                                      use_admin_context=True)
+        self.assertRaises(exc.HTTPBadRequest, self.controller.index, req)
+
     @mock.patch.object(ha_api.FailoverSegmentAPI, 'create_segment')
     def test_create(self, mock_create):
         body = {

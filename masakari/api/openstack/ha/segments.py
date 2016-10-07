@@ -15,6 +15,7 @@
 
 from webob import exc
 
+from masakari.api.openstack import common
 from masakari.api.openstack import extensions
 from masakari.api.openstack.ha.schemas import segments as schema
 from masakari.api.openstack import wsgi
@@ -40,10 +41,22 @@ class SegmentsController(wsgi.Controller):
         authorize(context)
 
         try:
-            segments = self.api.get_all(context, req)
+            limit, marker = common.get_limit_and_marker(req)
+            sort_keys, sort_dirs = common.get_sort_params(req.params)
+
+            filters = {}
+            if 'recovery_method' in req.params:
+                filters['recovery_method'] = req.params['recovery_method']
+            if 'service_type' in req.params:
+                filters['service_type'] = req.params['service_type']
+
+            segments = self.api.get_all(context, filters=filters,
+                                        sort_keys=sort_keys,
+                                        sort_dirs=sort_dirs, limit=limit,
+                                        marker=marker)
         except exception.MarkerNotFound as e:
             raise exc.HTTPBadRequest(explanation=e.format_message())
-        except exception.InvalidInput as e:
+        except exception.Invalid as e:
             raise exc.HTTPBadRequest(explanation=e.format_message())
 
         return {'segments': segments}

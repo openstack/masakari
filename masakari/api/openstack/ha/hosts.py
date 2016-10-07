@@ -17,12 +17,14 @@
 
 from webob import exc
 
+from masakari.api.openstack import common
 from masakari.api.openstack import extensions
 from masakari.api.openstack.ha.schemas import hosts as schema
 from masakari.api.openstack import wsgi
 from masakari.api import validation
 from masakari import exception
 from masakari.ha import api as host_api
+from masakari import objects
 
 ALIAS = "os-hosts"
 authorize = extensions.os_masakari_authorizer(ALIAS)
@@ -41,10 +43,36 @@ class HostsController(wsgi.Controller):
         authorize(context)
 
         try:
-            hosts = self.api.get_all(context, req, segment_id)
+            filters = {}
+            limit, marker = common.get_limit_and_marker(req)
+            sort_keys, sort_dirs = common.get_sort_params(req.params)
+
+            segment = objects.FailoverSegment.get_by_uuid(context,
+                                                          segment_id)
+
+            filters['failover_segment_id'] = segment.uuid
+            if 'name' in req.params:
+                filters['name'] = req.params['name']
+
+            if 'type' in req.params:
+                filters['type'] = req.params['type']
+
+            if 'control_attributes' in req.params:
+                filters['control_attributes'] = req.params[
+                    'control_attributes']
+
+            if 'on_maintenance' in req.params:
+                filters['on_maintenance'] = req.params['on_maintenance']
+
+            if 'reserved' in req.params:
+                filters['reserved'] = req.params['reserved']
+
+            hosts = self.api.get_all(context, filters=filters,
+                                     sort_keys=sort_keys, sort_dirs=sort_dirs,
+                                     limit=limit, marker=marker)
         except exception.MarkerNotFound as ex:
             raise exc.HTTPBadRequest(explanation=ex.format_message())
-        except exception.InvalidInput as e:
+        except exception.Invalid as e:
             raise exc.HTTPBadRequest(explanation=e.format_message())
         except exception.FailoverSegmentNotFound as ex:
             raise exc.HTTPNotFound(explanation=ex.format_message())

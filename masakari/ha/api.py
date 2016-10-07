@@ -15,7 +15,6 @@
 from oslo_log import log as logging
 from oslo_utils import uuidutils
 
-from masakari.api.openstack import common
 from masakari import exception
 from masakari import objects
 from masakari.objects import fields
@@ -40,7 +39,8 @@ class FailoverSegmentAPI(object):
 
         return segment
 
-    def get_all(self, context, req):
+    def get_all(self, context, filters=None, sort_keys=None,
+                sort_dirs=None, limit=None, marker=None):
         """Get all failover segments filtered by one of the given parameters.
 
         If there is no filter it will retrieve all segments in the system.
@@ -51,20 +51,13 @@ class FailoverSegmentAPI(object):
         direction is based on the list of sort directions in the 'sort_dirs'
         parameter.
         """
-        sort_key = req.params.get('sort_key') or 'name'
-        sort_dir = req.params.get('sort_dir') or 'asc'
-        limit, marker = common.get_limit_and_marker(req)
 
-        filters = {}
-        if 'recovery_method' in req.params:
-            filters['recovery_method'] = req.params['recovery_method']
-        if 'service_type' in req.params:
-            filters['service_type'] = req.params['service_type']
+        LOG.debug("Searching by: %s", str(filters))
 
         limited_segments = (objects.FailoverSegmentList.
                             get_all(context, filters=filters,
-                                    sort_keys=[sort_key],
-                                    sort_dirs=[sort_dir], limit=limit,
+                                    sort_keys=sort_keys,
+                                    sort_dirs=sort_dirs, limit=limit,
                                     marker=marker))
 
         return limited_segments
@@ -121,35 +114,16 @@ class HostAPI(object):
 
         return host
 
-    def get_all(self, context, req, segment_uuid):
+    def get_all(self, context, filters=None, sort_keys=None,
+                sort_dirs=None, limit=None, marker=None):
         """Get all hosts by filter"""
-        filters = {}
-        sort_keys = req.params.get('sort_key') or 'id'
-        sort_dirs = req.params.get('sort_dir') or 'asc'
-        limit, marker = common.get_limit_and_marker(req)
 
-        segment = objects.FailoverSegment.get_by_uuid(context, segment_uuid)
-
-        filters['failover_segment_id'] = segment.uuid
-        if 'name' in req.params:
-            filters['name'] = req.params['name']
-
-        if 'type' in req.params:
-            filters['type'] = req.params['type']
-
-        if 'control_attributes' in req.params:
-            filters['control_attributes'] = req.params['control_attributes']
-
-        if 'on_maintenance' in req.params:
-            filters['on_maintenance'] = req.params['on_maintenance']
-
-        if 'reserved' in req.params:
-            filters['reserved'] = req.params['reserved']
+        LOG.debug("Searching by: %s", str(filters))
 
         limited_hosts = objects.HostList.get_all(context,
                                                  filters=filters,
-                                                 sort_keys=[sort_keys],
-                                                 sort_dirs=[sort_dirs],
+                                                 sort_keys=sort_keys,
+                                                 sort_dirs=sort_dirs,
                                                  limit=limit,
                                                  marker=marker)
 
