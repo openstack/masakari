@@ -21,6 +21,7 @@ import sys
 
 from oslo_concurrency import processutils
 from oslo_log import log as logging
+import oslo_messaging as messaging
 from oslo_service import service
 from oslo_utils import importutils
 
@@ -28,6 +29,8 @@ import masakari.conf
 from masakari import context
 from masakari import exception
 from masakari.i18n import _, _LE, _LI
+from masakari.objects import base as objects_base
+from masakari import rpc
 from masakari import utils
 from masakari import version
 from masakari import wsgi
@@ -49,11 +52,16 @@ class Service(service.Service):
                  periodic_enable=None, periodic_fuzzy_delay=None,
                  periodic_interval_max=None):
         super(Service, self).__init__()
+
+        if not rpc.initialized():
+            rpc.init(CONF)
+
         self.host = host
         self.binary = binary
         self.topic = topic
         self.manager_class_name = manager
         manager_class = importutils.import_class(self.manager_class_name)
+        self.rpcserver = None
         self.manager = manager_class(host=self.host)
         self.periodic_enable = periodic_enable
         self.periodic_fuzzy_delay = periodic_fuzzy_delay
@@ -76,6 +84,14 @@ class Service(service.Service):
             'version': verstr
         })
         self.basic_config_check()
+
+        LOG.debug("Creating RPC server for service %s", self.topic)
+
+        target = messaging.Target(topic=self.topic, server=self.host)
+        endpoints = [self.manager]
+        serializer = objects_base.MasakariObjectSerializer()
+        self.rpcserver = rpc.get_server(target, endpoints, serializer)
+        self.rpcserver.start()
 
         if self.periodic_enable:
             if self.periodic_fuzzy_delay:
@@ -142,6 +158,12 @@ class Service(service.Service):
         self.stop()
 
     def stop(self):
+        # Try to shut the connection down, but if we get any sort of
+        # errors, go ahead and ignore them.. as we're shutting down anyway
+        try:
+            self.rpcserver.stop()
+        except Exception:
+            pass
         super(Service, self).stop()
 
     def periodic_tasks(self, raise_on_error=False):
