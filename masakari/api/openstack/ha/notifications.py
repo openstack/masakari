@@ -34,7 +34,7 @@ class NotificationsController(wsgi.Controller):
     def __init__(self):
         self.api = notification_api.NotificationAPI()
 
-    @extensions.expected_errors((403, 404))
+    @extensions.expected_errors((400, 403))
     @validation.schema(schema.create)
     def create(self, req, body):
         """Creates a new notification."""
@@ -46,7 +46,7 @@ class NotificationsController(wsgi.Controller):
             notification = (self.api.
                             create_notification(context, notification_data))
         except exception.HostNotFoundByName as err:
-            raise exc.HTTPNotFound(explanation=err.format_message())
+            raise exc.HTTPBadRequest(explanation=err.format_message())
 
         return {'notification': notification}
 

@@ -163,7 +163,7 @@ class NotificationTestCase(test.NoDBTestCase):
                              "type": "VM",
                              "generated_time": "2016-09-13T09:11:21.656788"}}
         mock_create.side_effect = exception.HostNotFoundByName
-        self.assertRaises(exc.HTTPNotFound, self.controller.create,
+        self.assertRaises(exc.HTTPBadRequest, self.controller.create,
                           self.req, body=body)
 
     def test_create_with_no_notification_in_body(self):
