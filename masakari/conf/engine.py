@@ -40,6 +40,16 @@ whenever an RPC call to the masakari engine is made.
 ]
 
 
+driver_opts = [
+    cfg.StrOpt(
+        'notification_driver',
+        default='taskflow_driver',
+        help="""
+Defines which driver to use for executing notification workflows.
+"""),
+]
+
+
 notification_opts = [
     cfg.IntOpt('duplicate_notification_detection_interval',
                default=180,
@@ -55,7 +65,7 @@ notification_opts = [
 ]
 
 
-ALL_OPTS = (rpcapi_opts + notification_opts)
+ALL_OPTS = (rpcapi_opts + notification_opts + driver_opts)
 
 
 def register_opts(conf):

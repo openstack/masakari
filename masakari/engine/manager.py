@@ -26,6 +26,7 @@ from oslo_log import log as logging
 import oslo_messaging as messaging
 
 import masakari.conf
+from masakari.engine import driver
 from masakari.i18n import _LI
 from masakari import manager
 from masakari.objects import fields
@@ -46,6 +47,8 @@ class MasakariManager(manager.Manager):
         LOG.debug("Initializing Masakari Manager.")
         super(MasakariManager, self).__init__(service_name="engine",
                                              *args, **kwargs)
+
+        self.driver = driver.load_masakari_driver(masakari_driver)
 
     def process_notification(self, context, notification=None):
         """Processes the notification"""

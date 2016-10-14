@@ -60,6 +60,13 @@ def utf8(value):
     return value.encode('utf-8')
 
 
+def check_isinstance(obj, cls):
+    """Checks that obj is of type cls, and lets PyLint infer types."""
+    if isinstance(obj, cls):
+        return obj
+    raise Exception(_('Expected object of type: %s') % (str(cls)))
+
+
 def monkey_patch():
     """If the CONF.monkey_patch set as True,
     this function patches a decorator
