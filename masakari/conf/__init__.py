@@ -20,6 +20,7 @@ from masakari.conf import base
 from masakari.conf import database
 from masakari.conf import engine
 from masakari.conf import exceptions
+from masakari.conf import nova
 from masakari.conf import osapi_v1
 from masakari.conf import paths
 from masakari.conf import service
@@ -33,6 +34,7 @@ base.register_opts(CONF)
 database.register_opts(CONF)
 engine.register_opts(CONF)
 exceptions.register_opts(CONF)
+nova.register_opts(CONF)
 osapi_v1.register_opts(CONF)
 paths.register_opts(CONF)
 ssl.register_opts(CONF)

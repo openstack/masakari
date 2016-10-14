@@ -127,7 +127,7 @@ class RequestContext(context.RequestContext):
             # Only include required parts of service_catalog
             self.service_catalog = [
                 s for s in service_catalog if s.get('type') in (
-                    'key-manager')]
+                    'compute', 'identity')]
         else:
             # if list is empty or none
             self.service_catalog = []

@@ -113,6 +113,12 @@ function configure_masakari {
 
         configure_auth_token_middleware $MASAKARI_CONF masakari $MASAKARI_AUTH_CACHE_DIR
     fi
+
+    # Set os_privileged_user credentials (used for connecting nova service)
+    iniset $MASAKARI_CONF DEFAULT os_privileged_user_name nova
+    iniset $MASAKARI_CONF DEFAULT os_privileged_user_password "$SERVICE_PASSWORD"
+    iniset $MASAKARI_CONF DEFAULT os_privileged_user_tenant "$SERVICE_PROJECT_NAME"
+    iniset $MASAKARI_CONF DEFAULT graceful_shutdown_timeout "$SERVICE_GRACEFUL_SHUTDOWN_TIMEOUT"
 }
 
 # install_masakari() - Collect source and prepare

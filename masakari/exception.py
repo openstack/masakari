@@ -155,6 +155,19 @@ class MasakariException(Exception):
         return self.args[0]
 
 
+class APIException(MasakariException):
+    msg_fmt = _("Error while requesting %(service)s API.")
+
+    def __init__(self, message=None, **kwargs):
+        if 'service' not in kwargs:
+            kwargs['service'] = 'unknown'
+        super(APIException, self).__init__(message, **kwargs)
+
+
+class APITimeout(APIException):
+    msg_fmt = _("Timeout while requesting %(service)s API.")
+
+
 class Invalid(MasakariException):
     msg_fmt = _("Bad Request - Invalid Parameters")
     code = 400
