@@ -62,6 +62,15 @@ notification_opts = [
                     "the notification will be considered as duplicate and "
                     "it will be ignored."
                ),
+    cfg.IntOpt('wait_period_after_service_disabled',
+               default=180,
+               help='Wait until service is disabled'),
+    cfg.IntOpt('wait_period_after_evacuation',
+               default=90,
+               help='Wait until instance is evacuated'),
+    cfg.IntOpt('verify_interval',
+               default=1,
+               help='The monitoring interval for looping'),
 ]
 
 

@@ -19,8 +19,18 @@ Driver TaskFlowDriver:
     Execute notification workflows using taskflow.
 """
 
+from oslo_log import log as logging
 
+from masakari.compute import nova
 from masakari.engine import driver
+from masakari.engine.drivers.taskflow import base
+from masakari.engine.drivers.taskflow import host_failure
+from masakari import exception
+from masakari.i18n import _
+from masakari.objects import fields
+
+
+LOG = logging.getLogger(__name__)
 
 
 class TaskFlowDriver(driver.NotificationDriver):
@@ -29,7 +39,43 @@ class TaskFlowDriver(driver.NotificationDriver):
 
     def execute_host_failure(self, context, host_name, recovery_method,
                              notification_uuid):
-        raise NotImplementedError()
+        novaclient = nova.API()
+        # get flow for host failure
+        process_what = {
+            'context': context,
+            'host_name': host_name
+        }
+
+        try:
+            if recovery_method == fields.FailoverSegmentRecoveryMethod.AUTO:
+                flow_engine = host_failure.get_auto_flow(novaclient,
+                                                         process_what)
+            elif recovery_method == (
+                    fields.FailoverSegmentRecoveryMethod.RESERVED_HOST):
+                raise NotImplementedError(_("Flow not implemented for "
+                                            "recovery_method"),
+                                          recovery_method)
+            elif recovery_method == (
+                    fields.FailoverSegmentRecoveryMethod.AUTO_PRIORITY):
+                raise NotImplementedError(_("Flow not implemented for "
+                                            "recovery_method"),
+                                          recovery_method)
+            elif recovery_method == (
+                    fields.FailoverSegmentRecoveryMethod.RH_PRIORITY):
+                raise NotImplementedError(_("Flow not implemented for "
+                                            "recovery_method"),
+                                          recovery_method)
+        except Exception:
+            msg = (_('Failed to create host failure flow.'),
+                   notification_uuid)
+            LOG.exception(msg)
+            raise exception.MasakariException(msg)
+
+        # Attaching this listener will capture all of the notifications that
+        # taskflow sends out and redirect them to a more useful log for
+        # masakari's debugging (or error reporting) usage.
+        with base.DynamicLogListener(flow_engine, logger=LOG):
+            flow_engine.run()
 
     def execute_instance_failure(self, context, instance_uuid,
                                  notification_uuid):

@@ -299,3 +299,7 @@ class DuplicateNotification(Invalid):
 class HostOnMaintenanceError(Invalid):
     msg_fmt = _('Host %(host_name)s is already under maintenance.')
     code = 409
+
+
+class AutoRecoveryFailureException(MasakariException):
+    msg_fmt = _('Failed to execute auto recovery method.')
