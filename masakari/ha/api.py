@@ -13,6 +13,7 @@
 #    under the License.
 
 from oslo_log import log as logging
+from oslo_utils import strutils
 from oslo_utils import uuidutils
 
 from masakari.engine import rpcapi as engine_rpcapi
@@ -140,8 +141,10 @@ class HostAPI(object):
         host.failover_segment_id = segment.uuid
         host.type = host_data.get('type')
         host.control_attributes = host_data.get('control_attributes')
-        host.on_maintenance = host_data.get('on_maintenance', False)
-        host.reserved = host_data.get('reserved', False)
+        host.on_maintenance = strutils.bool_from_string(
+            host_data.get('on_maintenance', False), strict=True)
+        host.reserved = strutils.bool_from_string(
+            host_data.get('reserved', False), strict=True)
 
         host.create()
         return host
@@ -155,6 +158,13 @@ class HostAPI(object):
         # or not. Various constraints will be applied for updating host
         # in future.
         host = objects.Host.get_by_uuid(context, id)
+        if 'on_maintenance' in host_data:
+            host_data['on_maintenance'] = strutils.bool_from_string(
+                host_data['on_maintenance'], strict=True)
+        if 'reserved' in host_data:
+            host_data['reserved'] = strutils.bool_from_string(
+                host_data['reserved'], strict=True)
+
         host.update(host_data)
 
         host.save()

@@ -308,6 +308,37 @@ class HostAPITestCase(test.NoDBTestCase):
                                            host_data)
         self._assert_host_data(HOST, _make_host_obj(result))
 
+    @mock.patch('oslo_utils.uuidutils.generate_uuid')
+    @mock.patch('masakari.db.host_create')
+    @mock.patch.object(host_obj.Host, '_from_db_object')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_create_convert_boolean_attributes(self, mock_get_segment,
+                                               mock__from_db_object,
+                                               mock_host_create,
+                                               mock_generate_uuid):
+        host_data = {
+            "name": "host-1", "type": "fake-type",
+            "reserved": 'On',
+            "on_maintenance": '0',
+            "control_attributes": "fake-control_attributes"
+        }
+
+        expected_data = {
+            'reserved': True, 'name': 'host-1',
+            'control_attributes': 'fake-control_attributes',
+            'on_maintenance': False,
+            'uuid': uuidsentinel.fake_uuid,
+            'failover_segment_id': uuidsentinel.fake_segment,
+            'type': 'fake-type'
+        }
+        mock_host_create.create = mock.Mock()
+        mock_get_segment.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        mock_generate_uuid.return_value = uuidsentinel.fake_uuid
+        self.host_api.create_host(self.context,
+                                  uuidsentinel.fake_segment1,
+                                  host_data)
+        mock_host_create.assert_called_with(self.context, expected_data)
+
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_get_host(self, mock_get, mock_get_host):
@@ -342,6 +373,36 @@ class HostAPITestCase(test.NoDBTestCase):
                                            uuidsentinel.fake_host_1,
                                            host_data)
         self._assert_host_data(HOST, _make_host_obj(result))
+
+    @mock.patch.object(host_obj.Host, '_from_db_object')
+    @mock.patch.object(host_obj.Host, 'get_by_uuid')
+    @mock.patch('masakari.db.host_update')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_update_convert_boolean_attributes(self, mock_segment,
+                                               mock_host_update,
+                                               mock_host_object,
+                                               mock__from_db_object, ):
+        host_data = {
+            "reserved": 'Off',
+            "on_maintenance": 'True',
+        }
+
+        expected_data = {
+            'name': 'host_1', 'uuid': uuidsentinel.fake_host_1,
+            'on_maintenance': True,
+            'failover_segment_id': uuidsentinel.fake_segment1,
+            'reserved': False, 'type': 'fake',
+            'control_attributes': 'fake-control_attributes'
+        }
+        HOST._context = self.context
+        mock_host_object.return_value = HOST
+        self.host_api.update_host(self.context,
+                                  uuidsentinel.fake_segment1,
+                                  uuidsentinel.fake_host_1,
+                                  host_data)
+        mock_host_update.assert_called_with(self.context,
+                                            uuidsentinel.fake_host_1,
+                                            expected_data)
 
 
 class NotificationAPITestCase(test.NoDBTestCase):
