@@ -168,6 +168,11 @@ class APITimeout(APIException):
     msg_fmt = _("Timeout while requesting %(service)s API.")
 
 
+class Conflict(MasakariException):
+    msg_fmt = _("Conflict")
+    code = 409
+
+
 class Invalid(MasakariException):
     msg_fmt = _("Bad Request - Invalid Parameters")
     code = 400
@@ -303,3 +308,19 @@ class HostOnMaintenanceError(Invalid):
 
 class AutoRecoveryFailureException(MasakariException):
     msg_fmt = _('Failed to execute auto recovery method.')
+
+
+class InstanceRecoveryFailureException(MasakariException):
+    msg_fmt = _('Failed to execute instance recovery workflow.')
+
+
+class SkipInstanceRecoveryException(MasakariException):
+    msg_fmt = _('Skiping execution of instance recovery workflow.')
+
+
+class SkipProcessRecoveryException(MasakariException):
+    msg_fmt = _('Skiping execution of process recovery workflow.')
+
+
+class ProcessRecoveryFailureException(MasakariException):
+    msg_fmt = _('Failed to execute process recovery workflow.')

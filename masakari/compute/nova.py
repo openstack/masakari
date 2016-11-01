@@ -75,6 +75,9 @@ def translate_nova_exception(method):
                 nova_exception.NotFound) as exc:
             err_msg = encodeutils.exception_to_unicode(exc)
             _reraise(exception.NotFound(reason=err_msg))
+        except nova_exception.Conflict as exc:
+            err_msg = encodeutils.exception_to_unicode(exc)
+            _reraise(exception.Conflict(reason=err_msg))
         return res
     return wrapper
 
@@ -208,6 +211,14 @@ class API(object):
             nova.services.enable(host_name, 'nova-compute')
 
     @translate_nova_exception
+    def is_service_down(self, context, host_name, binary):
+        """Check whether service is up or down on given host."""
+        nova = novaclient(context, admin_endpoint=True,
+                          privileged_user=True)
+        service = nova.services.list(host=host_name, binary=binary)[0]
+        return service.status == 'disabled'
+
+    @translate_nova_exception
     def evacuate_instance(self, context, uuid, target=None,
                           on_shared_storage=True):
         """Evacuate an instance from failed host to specified host."""
@@ -237,3 +248,21 @@ class API(object):
         msg = (_LI('Call get server command for instance %(uuid)s'))
         LOG.info(msg, {'uuid': uuid})
         return nova.servers.get(uuid)
+
+    @translate_nova_exception
+    def stop_server(self, context, uuid):
+        """Stop a server."""
+        nova = novaclient(context, admin_endpoint=True,
+                          privileged_user=True)
+        msg = (_LI('Call stop server command for instance %(uuid)s'))
+        LOG.info(msg, {'uuid': uuid})
+        return nova.servers.stop(uuid)
+
+    @translate_nova_exception
+    def start_server(self, context, uuid):
+        """Start a server."""
+        nova = novaclient(context, admin_endpoint=True,
+                          privileged_user=True)
+        msg = (_LI('Call start server command for instance %(uuid)s'))
+        LOG.info(msg, {'uuid': uuid})
+        return nova.servers.start(uuid)

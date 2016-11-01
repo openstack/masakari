@@ -28,7 +28,7 @@ import oslo_messaging as messaging
 import masakari.conf
 from masakari.engine import driver
 from masakari import exception
-from masakari.i18n import _, _LI, _LW
+from masakari.i18n import _LI, _LW
 from masakari import manager
 from masakari import objects
 from masakari.objects import fields
@@ -52,12 +52,115 @@ class MasakariManager(manager.Manager):
 
         self.driver = driver.load_masakari_driver(masakari_driver)
 
+    def _handle_notification_type_process(self, context, notification):
+        notification_status = fields.NotificationStatus.FINISHED
+        notification_event = notification.payload.get('event')
+        process_name = notification.payload.get('process_name')
+
+        if notification_event.upper() == 'STARTED':
+            LOG.info(_LI("Notification type '%(type)s' received for host "
+                         "'%(host_uuid)s': '%(process_name)s' has been "
+                         "%(event)s."), {
+                'type': notification.type,
+                'host_uuid': notification.source_host_uuid,
+                'process_name': process_name,
+                'event': notification_event
+            })
+        elif notification_event.upper() == 'STOPPED':
+            host_obj = objects.Host.get_by_uuid(
+                context, notification.source_host_uuid)
+            host_name = host_obj.name
+
+            # Mark host on_maintenance mode as True
+            update_data = {
+                'on_maintenance': True,
+            }
+            host_obj.update(update_data)
+            host_obj.save()
+
+            try:
+                self.driver.execute_process_failure(
+                    context, process_name, host_name,
+                    notification.notification_uuid)
+            except exception.SkipProcessRecoveryException:
+                notification_status = fields.NotificationStatus.FINISHED
+            except (exception.MasakariException,
+                    exception.ProcessRecoveryFailureException):
+                notification_status = fields.NotificationStatus.ERROR
+        else:
+            LOG.warning(_LW("Invalid event: %(event)s received for "
+                            "notification type: %(notification_type)s"), {
+                'event': notification_event,
+                'notification_type': notification.type
+            })
+            notification_status = fields.NotificationStatus.IGNORED
+
+        return notification_status
+
+    def _handle_notification_type_instance(self, context, notification):
+        notification_status = fields.NotificationStatus.FINISHED
+        try:
+            self.driver.execute_instance_failure(
+                context, notification.payload.get('instance_uuid'),
+                notification.notification_uuid)
+        except exception.SkipInstanceRecoveryException:
+            notification_status = fields.NotificationStatus.FINISHED
+        except (exception.MasakariException,
+                exception.InstanceRecoveryFailureException):
+            notification_status = fields.NotificationStatus.ERROR
+
+        return notification_status
+
+    def _handle_notification_type_host(self, context, notification):
+        notification_status = fields.NotificationStatus.FINISHED
+        notification_event = notification.payload.get('event')
+
+        if notification_event.upper() == 'STARTED':
+            LOG.info(_LI("Notification type '%(type)s' received for host "
+                         "'%(host_uuid)s' has been %(event)s."), {
+                'type': notification.type,
+                'host_uuid': notification.source_host_uuid,
+                'event': notification_event
+            })
+        elif notification_event.upper() == 'STOPPED':
+            host_obj = objects.Host.get_by_uuid(
+                context, notification.source_host_uuid)
+            host_name = host_obj.name
+            recovery_method = host_obj.failover_segment.recovery_method
+
+            # Mark host on_maintenance mode as True
+            update_data = {
+                'on_maintenance': True,
+            }
+            host_obj.update(update_data)
+            host_obj.save()
+
+            try:
+                self.driver.execute_host_failure(
+                    context, host_name, recovery_method,
+                    notification.notification_uuid)
+            except (exception.MasakariException,
+                    exception.AutoRecoveryFailureException):
+                notification_status = fields.NotificationStatus.ERROR
+        else:
+            LOG.warning(_LW("Invalid event: %(event)s received for "
+                            "notification type: %(type)s"), {
+                'event': notification_event,
+                'type': notification.type
+            })
+            notification_status = fields.NotificationStatus.IGNORED
+
+        return notification_status
+
     def process_notification(self, context, notification=None):
         """Processes the notification"""
         @utils.synchronized(notification.source_host_uuid)
         def do_process_notification(notification):
-            LOG.info(_LI('Processing notification %s'),
-                     notification.notification_uuid)
+            LOG.info(_LI('Processing notification %(notification_uuid)s of '
+                         'type: %(type)s'), {
+                'notification_uuid': notification.notification_uuid,
+                'type': notification.type
+            })
 
             update_data = {
                 'status': fields.NotificationStatus.RUNNING,
@@ -65,52 +168,15 @@ class MasakariManager(manager.Manager):
             notification.update(update_data)
             notification.save()
 
-            notification_status = fields.NotificationStatus.FINISHED
             if notification.type == fields.NotificationType.PROCESS:
-                # TODO(Dinesh_Bhor) Execute workflow for process-failure
-                #  notification.
-                raise NotImplementedError(_("Flow not implemented for "
-                                            "notification type"),
-                                          notification.type)
+                notification_status = self._handle_notification_type_process(
+                    context, notification)
             elif notification.type == fields.NotificationType.VM:
-                # TODO(Dinesh_Bhor) Execute workflow for instnace-failure
-                # notification.
-                raise NotImplementedError(_("Flow not implemented for "
-                                            "notification type"),
-                                          notification.type)
+                notification_status = self._handle_notification_type_instance(
+                    context, notification)
             elif notification.type == fields.NotificationType.COMPUTE_HOST:
-                notification_event = notification.payload.get('event')
-                if notification_event.upper() == 'STARTED':
-                    LOG.info(_LI("Notification event: '%(event)s' received "
-                                 "for host: '%(host_uuid)s'."), {
-                        'event': notification_event,
-                        'host_uuid': notification.source_host_uuid
-                    })
-                    notification_status = fields.NotificationStatus.FINISHED
-                elif notification_event.upper() == 'STOPPED':
-                    host_obj = objects.Host.get_by_uuid(
-                        context, notification.source_host_uuid)
-                    host_name = host_obj.name
-                    recovery_method = host_obj.failover_segment.recovery_method
-                    # Mark host on_maintenance mode as True
-                    update_data = {
-                        'on_maintenance': True,
-                    }
-                    host_obj.update(update_data)
-                    host_obj.save()
-                    try:
-                        self.driver.execute_host_failure(
-                            context, host_name,
-                            recovery_method, notification.notification_uuid)
-                    except (exception.MasakariException,
-                            exception.AutoRecoveryFailureException):
-                        notification_status = fields.NotificationStatus.ERROR
-                else:
-                    LOG.warning(_LW("Invalid event: %(event)s received for "
-                                    "notification: %(notification_uuid)s"), {
-                        'event': notification_event,
-                        'notification_uuid': notification.notification_uuid})
-                    notification_status = fields.NotificationStatus.IGNORED
+                notification_status = self._handle_notification_type_host(
+                    context, notification)
 
             LOG.info(_LI("Notification %(notification_uuid)s exits with "
                          "%(status)s."), {
