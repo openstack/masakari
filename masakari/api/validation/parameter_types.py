@@ -144,6 +144,12 @@ description = {
 }
 
 
+type = {
+    'type': ['string', 'null'], 'minLength': 0, 'maxLength': 255,
+    'pattern': '^[a-zA-Z0-9]*$',
+}
+
+
 boolean = {
     'type': ['boolean', 'string'],
     'enum': [True, 'True', 'TRUE', 'true', '1', 'ON', 'On', 'on',
