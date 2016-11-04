@@ -12,7 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_utils import timeutils
 from oslo_utils import uuidutils
+
+from masakari import objects
+from masakari.tests import uuidsentinel
+
+NOW = timeutils.utcnow().replace(microsecond=0)
 
 
 class FakeNovaClient(object):
@@ -105,3 +111,33 @@ class FakeNovaClient(object):
     def __init__(self):
         self.servers = FakeNovaClient.ServerManager()
         self.services = FakeNovaClient.Services()
+
+
+def create_fake_notification(type="VM", id=1, payload=None,
+                             source_host_uuid=uuidsentinel.fake_host,
+                             generated_time=NOW, status="new",
+                             notification_uuid=uuidsentinel.fake_notification):
+    return objects.Notification(
+        type=type, id=id, payload=payload, source_host_uuid=source_host_uuid,
+        generated_time=generated_time, status=status,
+        notification_uuid=notification_uuid)
+
+
+def create_fake_host(name='fake_host', id=1, reserved=False,
+                     on_maintenance=False, type='SSH',
+                     control_attributes='fake',
+                     uuid=uuidsentinel.fake_host,
+                     failover_segment_id=uuidsentinel.fake_segment):
+    return objects.Host(
+        name=name, id=id, reserved=reserved, on_maintenance=on_maintenance,
+        type=type, control_attributes=control_attributes, uuid=uuid,
+        failover_segment_id=failover_segment_id)
+
+
+def create_fake_failover_segment(name='fake_segment', id=1, description=None,
+                                 service_type='COMPUTE',
+                                 recovery_method="auto",
+                                 uuid=uuidsentinel.fake_segment):
+    return objects.FailoverSegment(
+        name=name, id=id, description=description, service_type=service_type,
+        recovery_method=recovery_method, uuid=uuid)

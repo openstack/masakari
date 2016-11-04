@@ -28,114 +28,22 @@ from masakari.objects import notification as notification_obj
 from masakari.objects import segment as segment_obj
 from masakari import test
 from masakari.tests.unit.api.openstack import fakes
+from masakari.tests.unit import fakes as fakes_data
 from masakari.tests import uuidsentinel
+
+NOW = timeutils.utcnow().replace(microsecond=0)
 
 
 def _make_segment_obj(segment_dict):
     return segment_obj.FailoverSegment(**segment_dict)
 
 
-def _make_segments_list(segments_list):
-    return segment_obj.FailoverSegment(objects=[
-        _make_segment_obj(a) for a in segments_list])
-
-
-FAILOVER_SEGMENT_LIST = [
-    {"name": "segment1", "id": "1", "service_type": "COMPUTE",
-     "recovery_method": "auto", "uuid": uuidsentinel.fake_segment,
-     "description": "failover_segment for compute"},
-
-    {"name": "segment2", "id": "2", "service_type": "CINDER",
-     "recovery_method": "reserved_host", "uuid": uuidsentinel.fake_segment2,
-     "description": "failover_segment for cinder"}]
-
-FAILOVER_SEGMENT_LIST = _make_segments_list(FAILOVER_SEGMENT_LIST)
-
-FAILOVER_SEGMENT = {"name": "segment1", "id": "1", "description": "something",
-                    "service_type": "COMPUTE", "recovery_method": "auto",
-                    "uuid": uuidsentinel.fake_segment}
-
-FAILOVER_SEGMENT = _make_segment_obj(FAILOVER_SEGMENT)
-
-
 def _make_host_obj(host_dict):
     return host_obj.Host(**host_dict)
 
 
-def _make_hosts_list(hosts_list):
-    return host_obj.Host(objects=[
-        _make_host_obj(a) for a in hosts_list])
-
-
-HOST_LIST = [
-    {"name": "host_1", "id": "1", "reserved": False,
-     "on_maintenance": False, "type": "fake",
-     "control_attributes": "fake-control_attributes",
-     "uuid": uuidsentinel.fake_host_1,
-     "failover_segment_id": uuidsentinel.fake_segment1},
-
-    {"name": "host_2", "id": "2", "reserved": False,
-     "on_maintenance": False, "type": "fake",
-     "control_attributes": "fake-control_attributes",
-     "uuid": uuidsentinel.fake_host_2,
-     "failover_segment_id": uuidsentinel.fake_segment1}
-]
-
-HOST_LIST = _make_hosts_list(HOST_LIST)
-
-HOST = {
-    "name": "host_1", "id": "1", "reserved": False,
-    "on_maintenance": False, "type": "fake",
-    "control_attributes": "fake-control_attributes",
-    "uuid": uuidsentinel.fake_host_1,
-    "failover_segment_id": uuidsentinel.fake_segment1
-}
-
-HOST = _make_host_obj(HOST)
-
-
 def _make_notification_obj(notification_dict):
     return notification_obj.Notification(**notification_dict)
-
-
-def _make_notifications_list(notifications_list):
-    return notification_obj.Notification(objects=[
-        _make_notification_obj(a) for a in notifications_list])
-
-NOW = timeutils.utcnow().replace(microsecond=0)
-
-NOTIFICATION_DATA = {"type": "VM", "id": 1,
-                     "payload":
-                         {'event': 'STOPPED', 'host_status': 'NORMAL',
-                          'cluster_status': 'ONLINE'},
-                     "source_host_uuid": uuidsentinel.fake_host,
-                     "generated_time": NOW,
-                     "status": "running",
-                     "notification_uuid": uuidsentinel.fake_notification,
-                     "created_at": NOW,
-                     "updated_at": None,
-                     "deleted_at": None,
-                     "deleted": 0
-                     }
-
-NOTIFICATION = _make_notification_obj(NOTIFICATION_DATA)
-
-NOTIFICATION_LIST = [
-    {"type": "VM", "id": 1, "payload": {'event': 'STOPPED',
-                                        'host_status': 'NORMAL',
-                                        'cluster_status': 'ONLINE'},
-     "source_host_uuid": uuidsentinel.fake_host, "generated_time": NOW,
-     "status": "running", "notification_uuid": uuidsentinel.fake_notification,
-     "created_at": NOW, "updated_at": None, "deleted_at": None, "deleted": 0},
-
-    {"type": "PROCESS", "id": 2, "payload": {'event': 'STOPPED',
-                                             'process_name': 'fake_process'},
-     "source_host_uuid": uuidsentinel.fake_host1, "generated_time": NOW,
-     "status": "running", "notification_uuid": uuidsentinel.fake_notification1,
-     "created_at": NOW, "updated_at": None, "deleted_at": None, "deleted": 0},
-]
-
-NOTIFICATION_LIST = _make_notifications_list(NOTIFICATION_LIST)
 
 
 class FailoverSegmentAPITestCase(test.NoDBTestCase):
@@ -147,6 +55,11 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
         self.req = fakes.HTTPRequest.blank('/v1/segments',
                                            use_admin_context=True)
         self.context = self.req.environ['masakari.context']
+        self.failover_segment = fakes_data.create_fake_failover_segment(
+            name="segment1", id=1, description="something",
+            service_type="COMPUTE", recovery_method="auto",
+            uuid=uuidsentinel.fake_segment
+        )
 
     def _assert_segment_data(self, expected, actual):
         self.assertTrue(obj_base.obj_equal_prims(expected, actual),
@@ -154,15 +67,21 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
 
     @mock.patch.object(segment_obj.FailoverSegmentList, 'get_all')
     def test_get_all(self, mock_get_all):
-
-        mock_get_all.return_value = FAILOVER_SEGMENT_LIST
-
+        fake_failover_segment = fakes_data.create_fake_failover_segment(
+            name="segment2", id=2, description="something",
+            service_type="COMPUTE", recovery_method="auto",
+            uuid=uuidsentinel.fake_segment_2
+        )
+        fake_failover_segment_list = [self.failover_segment,
+                                     fake_failover_segment]
+        mock_get_all.return_value = fake_failover_segment_list
         result = self.segment_api.get_all(self.context, filters=None,
                                           sort_keys=None,
                                           sort_dirs=None, limit=None,
                                           marker=None)
-        self._assert_segment_data(FAILOVER_SEGMENT_LIST,
-                                  _make_segments_list(result))
+        for i in range(len(result)):
+            self._assert_segment_data(fake_failover_segment_list[i],
+                                      _make_segment_obj(result[i]))
 
     @mock.patch.object(segment_obj.FailoverSegmentList, 'get_all')
     def test_get_all_marker_not_found(self, mock_get_all):
@@ -191,26 +110,27 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
                           self.context, filters=None, sort_keys=None,
                           sort_dirs=['abcd'], limit=None, marker=None)
 
-    @mock.patch.object(segment_obj, 'FailoverSegment',
-                       return_value=_make_segment_obj(FAILOVER_SEGMENT))
+    @mock.patch.object(segment_obj, 'FailoverSegment')
     @mock.patch.object(segment_obj.FailoverSegment, 'create')
-    def test_create(self, mock_segment_obj, mock_create):
+    def test_create(self, mock_segment_create, mock_segment_obj):
         segment_data = {"name": "segment1",
                         "service_type": "COMPUTE",
                         "recovery_method": "auto",
                         "description": "something"}
+        mock_segment_obj.return_value = self.failover_segment
         mock_segment_obj.create = mock.Mock()
         result = self.segment_api.create_segment(self.context, segment_data)
-        self._assert_segment_data(FAILOVER_SEGMENT, _make_segment_obj(result))
+        self._assert_segment_data(
+            self.failover_segment, _make_segment_obj(result))
 
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_get_segment(self, mock_get_segment):
 
-        mock_get_segment.return_value = FAILOVER_SEGMENT
+        mock_get_segment.return_value = self.failover_segment
 
         result = self.segment_api.get_segment(self.context,
                                               uuidsentinel.fake_segment)
-        self._assert_segment_data(FAILOVER_SEGMENT, _make_segment_obj(result))
+        self._assert_segment_data(self.failover_segment, result)
 
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_get_segment_not_found(self, mock_get_segment):
@@ -218,18 +138,18 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
         self.assertRaises(exception.FailoverSegmentNotFound,
                           self.segment_api.get_segment, self.context, '123')
 
-    @mock.patch.object(segment_obj, 'FailoverSegment',
-                       return_value=_make_segment_obj(FAILOVER_SEGMENT))
+    @mock.patch.object(segment_obj, 'FailoverSegment')
     @mock.patch.object(segment_obj.FailoverSegment, 'save')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_update(self, mock_get, mock_update, mock_segment_obj):
         segment_data = {"name": "segment1"}
-        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        mock_get.return_value = self.failover_segment
+        mock_segment_obj.return_value = self.failover_segment
         mock_segment_obj.update = mock.Mock()
         result = self.segment_api.update_segment(self.context,
                                                  uuidsentinel.fake_segment,
                                                  segment_data)
-        self._assert_segment_data(FAILOVER_SEGMENT, _make_segment_obj(result))
+        self._assert_segment_data(self.failover_segment, result)
 
 
 class HostAPITestCase(test.NoDBTestCase):
@@ -242,6 +162,17 @@ class HostAPITestCase(test.NoDBTestCase):
             '/v1/segments/%s/hosts' % uuidsentinel.fake_segment,
             use_admin_context=True)
         self.context = self.req.environ['masakari.context']
+        self.failover_segment = fakes_data.create_fake_failover_segment(
+            name="segment1", id=1, description="something",
+            service_type="COMPUTE", recovery_method="auto",
+            uuid=uuidsentinel.fake_segment
+        )
+        self.host = fakes_data.create_fake_host(
+            name="host_1", id=1, reserved=False, on_maintenance=False,
+            type="fake", control_attributes="fake-control_attributes",
+            uuid=uuidsentinel.fake_host_1,
+            failover_segment_id=uuidsentinel.fake_segment1
+        )
 
     def _assert_host_data(self, expected, actual):
         self.assertTrue(obj_base.obj_equal_prims(expected, actual),
@@ -250,19 +181,28 @@ class HostAPITestCase(test.NoDBTestCase):
     @mock.patch.object(host_obj.HostList, 'get_all')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_get_all(self, mock_get, mock_get_all):
-        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
-        mock_get_all.return_value = HOST_LIST
+        mock_get.return_value = self.failover_segment
+        fake_host = fakes_data.create_fake_host(
+            name="host_2", id=2, reserved=False, on_maintenance=False,
+            type="fake", control_attributes="fake-control_attributes",
+            uuid=uuidsentinel.fake_host_2,
+            failover_segment_id=uuidsentinel.fake_segment1
+        )
+        fake_host_list = [self.host, fake_host]
+        mock_get_all.return_value = fake_host_list
 
         result = self.host_api.get_all(self.context,
                                        filters=None, sort_keys=['created_at'],
                                        sort_dirs=['desc'], limit=None,
                                        marker=None)
-        self._assert_host_data(HOST_LIST, _make_hosts_list(result))
+        for i in range(len(result)):
+            self._assert_host_data(
+                fake_host_list[i], _make_host_obj(result[i]))
 
     @mock.patch.object(host_obj.HostList, 'get_all')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_get_all_marker_not_found(self, mock_get, mock_get_all):
-        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        mock_get.return_value = self.failover_segment
         mock_get_all.side_effect = exception.MarkerNotFound
 
         self.assertRaises(exception.MarkerNotFound, self.host_api.get_all,
@@ -291,23 +231,23 @@ class HostAPITestCase(test.NoDBTestCase):
                           sort_dirs=['abcd'], limit=None,
                           marker=None)
 
-    @mock.patch.object(host_obj, 'Host',
-                       return_value=_make_host_obj(HOST))
+    @mock.patch.object(host_obj, 'Host')
     @mock.patch.object(host_obj.Host, 'create')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
-    def test_create(self, mock_get, mock_host_obj, mock_create):
-        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+    def test_create(self, mock_get, mock_host_create, mock_host_obj):
+        mock_get.return_value = self.failover_segment
         host_data = {
             "name": "host-1", "type": "fake-type",
             "reserved": False,
             "on_maintenance": False,
             "control_attributes": "fake-control_attributes"
         }
+        mock_host_obj.return_value = self.host
         mock_host_obj.create = mock.Mock()
         result = self.host_api.create_host(self.context,
                                            uuidsentinel.fake_segment1,
                                            host_data)
-        self._assert_host_data(HOST, _make_host_obj(result))
+        self._assert_host_data(self.host, _make_host_obj(result))
 
     @mock.patch('oslo_utils.uuidutils.generate_uuid')
     @mock.patch('masakari.db.host_create')
@@ -333,7 +273,7 @@ class HostAPITestCase(test.NoDBTestCase):
             'type': 'fake-type'
         }
         mock_host_create.create = mock.Mock()
-        mock_get_segment.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        mock_get_segment.return_value = self.failover_segment
         mock_generate_uuid.return_value = uuidsentinel.fake_uuid
         self.host_api.create_host(self.context,
                                   uuidsentinel.fake_segment1,
@@ -343,12 +283,12 @@ class HostAPITestCase(test.NoDBTestCase):
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_get_host(self, mock_get, mock_get_host):
-        mock_get_host.return_value = HOST
-        mock_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        mock_get_host.return_value = self.host
+        mock_get.return_value = self.failover_segment
         result = self.host_api.get_host(self.context,
                                         uuidsentinel.fake_segment,
                                         uuidsentinel.fake_host_1)
-        self._assert_host_data(HOST, _make_host_obj(result))
+        self._assert_host_data(self.host, result)
 
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
@@ -358,22 +298,22 @@ class HostAPITestCase(test.NoDBTestCase):
                           uuidsentinel.fake_segment,
                           "123")
 
-    @mock.patch.object(host_obj, 'Host',
-                       return_value=_make_host_obj(HOST))
+    @mock.patch.object(host_obj, 'Host')
     @mock.patch.object(host_obj.Host, 'save')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_update(self, mock_segment_get, mock_get,
                     mock_update, mock_host_obj):
-        mock_segment_get.return_value = _make_segment_obj(FAILOVER_SEGMENT)
+        mock_segment_get.return_value = self.failover_segment
         host_data = {"name": "host_1"}
-        mock_get.return_value = _make_host_obj(HOST)
+        mock_get.return_value = self.host
+        mock_host_obj.return_value = self.host
         mock_host_obj.update = mock.Mock()
         result = self.host_api.update_host(self.context,
                                            uuidsentinel.fake_segment,
                                            uuidsentinel.fake_host_1,
                                            host_data)
-        self._assert_host_data(HOST, _make_host_obj(result))
+        self._assert_host_data(self.host, result)
 
     @mock.patch.object(host_obj.Host, '_from_db_object')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
@@ -396,9 +336,8 @@ class HostAPITestCase(test.NoDBTestCase):
             'control_attributes': 'fake-control_attributes'
         }
 
-        FAKE_HOST = copy.deepcopy(HOST)
-        FAKE_HOST._context = self.context
-        mock_host_object.return_value = FAKE_HOST
+        mock_host_object.return_value = self.host
+        self.host._context = self.context
         self.host_api.update_host(self.context,
                                   uuidsentinel.fake_segment1,
                                   uuidsentinel.fake_host_1,
@@ -418,6 +357,21 @@ class NotificationAPITestCase(test.NoDBTestCase):
         self.req = fakes.HTTPRequest.blank('/v1/notifications',
                                            use_admin_context=True)
         self.context = self.req.environ['masakari.context']
+        self.host = fakes_data.create_fake_host(
+            name="host_1", id=1, reserved=False, on_maintenance=False,
+            type="fake", control_attributes="fake-control_attributes",
+            uuid=uuidsentinel.fake_host_1,
+            failover_segment_id=uuidsentinel.fake_segment1
+        )
+        self.notification = fakes_data.create_fake_notification(
+            type="VM", id=1, payload={
+                'event': 'STOPPED', 'host_status': 'NORMAL',
+                'cluster_status': 'ONLINE'
+            },
+            source_host_uuid=uuidsentinel.fake_host, generated_time=NOW,
+            status="running",
+            notification_uuid=uuidsentinel.fake_notification
+        )
 
     def _assert_notification_data(self, expected, actual):
         self.assertTrue(obj_base.obj_equal_prims(expected, actual),
@@ -429,32 +383,89 @@ class NotificationAPITestCase(test.NoDBTestCase):
     @mock.patch.object(host_obj.Host, 'get_by_name')
     def test_create(self, mock_host_obj, mock_create, mock_notification_obj,
                     mock_get_all):
-        mock_get_all.return_value = NOTIFICATION_LIST
+        fake_notification = fakes_data.create_fake_notification(
+            type="COMPUTE_HOST", id=2, payload={
+                'event': 'STARTED', 'host_status': 'NORMAL',
+                'cluster_status': 'ONLINE'
+            },
+            source_host_uuid=uuidsentinel.fake_host, generated_time=NOW,
+            status="running",
+            notification_uuid=uuidsentinel.fake_notification_2
+        )
+        fake_notification_list = [self.notification, fake_notification]
+        mock_get_all.return_value = fake_notification_list
         notification_data = {"hostname": "fake_host",
-                             "payload": {"event": "STOPPED",
+                             "payload": {"event": "STARTED",
                                          "host_status": "NORMAL",
-                                         "cluster_status": "ONLINE"},
+                                         "cluster_status": "OFFLINE"},
                              "type": "VM",
                              "generated_time": "2016-10-13T09:11:21.656788"}
-        mock_host_obj.return_value = HOST
-        mock_notification_obj.return_value = NOTIFICATION
+        mock_host_obj.return_value = self.host
+        mock_notification_obj.return_value = self.notification
 
         result = (self.notification_api.
                   create_notification(self.context, notification_data))
 
-        self._assert_notification_data(NOTIFICATION,
-                                       _make_notification_obj(result))
+        self._assert_notification_data(
+            self.notification, _make_notification_obj(result))
+
+    @mock.patch.object(host_obj.Host, 'get_by_name')
+    def test_create_host_on_maintenance(self, mock_host):
+        self.host.on_maintenance = True
+        mock_host.return_value = self.host
+        notification_data = {"hostname": "host_1",
+                             "payload": {"event": "STOPPED",
+                                         "host_status": "NORMAL",
+                                         "cluster_status": "ONLINE"},
+                             "type": "COMPUTE_HOST",
+                             "generated_time": str(NOW)}
+
+        self.assertRaises(exception.HostOnMaintenanceError,
+                          self.notification_api.create_notification,
+                          self.context, notification_data)
+
+    @mock.patch.object(host_obj.Host, 'get_by_name')
+    def test_create_duplicate_notification(self, mock_host):
+        mock_host.return_value = self.host
+        self.notification_api._is_duplicate_notification = mock.Mock(
+            return_value=True)
+        notification_data = {"hostname": "host_1",
+                             "payload": {'event': 'STOPPED',
+                                         'host_status': 'NORMAL',
+                                         'cluster_status': 'ONLINE'},
+                             "type": "COMPUTE_HOST",
+                             "generated_time": str(NOW)}
+
+        self.assertRaises(exception.DuplicateNotification,
+                          self.notification_api.create_notification,
+                          self.context, notification_data)
+
+    @mock.patch.object(notification_obj.NotificationList, 'get_all')
+    def test_create_is_duplicate_true(self, mock_get_all):
+        mock_get_all.return_value = [self.notification, ]
+
+        self.assertTrue(self.notification_api._is_duplicate_notification(
+            self.context, self.notification))
+
+    @mock.patch.object(notification_obj.NotificationList, 'get_all')
+    def test_create_is_duplicate_false(self, mock_get_all):
+        mock_get_all.return_value = [self.notification, ]
+        FAKE_NOTIFICATION = copy.deepcopy(self.notification)
+        FAKE_NOTIFICATION.payload = {'event': 'STOPPED',
+                                     'host_status': 'UNKNOWN',
+                                     'cluster_status': 'OFFLINE'}
+        self.assertFalse(self.notification_api._is_duplicate_notification(
+            self.context, FAKE_NOTIFICATION))
 
     @mock.patch.object(notification_obj.Notification, 'get_by_uuid')
     def test_get_notification(self, mock_get_notification):
 
-        mock_get_notification.return_value = NOTIFICATION
+        mock_get_notification.return_value = self.notification
 
         result = (self.notification_api.
                   get_notification(self.context,
                                    uuidsentinel.fake_notification))
-        self._assert_notification_data(NOTIFICATION,
-                                       _make_notification_obj(result))
+        self._assert_notification_data(self.notification, result)
 
     @mock.patch.object(notification_obj.Notification, 'get_by_uuid')
     def test_get_notification_not_found(self, mock_get_notification):
@@ -465,12 +476,22 @@ class NotificationAPITestCase(test.NoDBTestCase):
 
     @mock.patch.object(notification_obj.NotificationList, 'get_all')
     def test_get_all(self, mock_get_all):
-
-        mock_get_all.return_value = NOTIFICATION_LIST
+        fake_notification = fakes_data.create_fake_notification(
+            type="VM", id=2, payload={
+                'event': 'STOPPED', 'host_status': 'NORMAL',
+                'cluster_status': 'ONLINE'
+            },
+            source_host_uuid=uuidsentinel.fake_host, generated_time=NOW,
+            status="running",
+            notification_uuid=uuidsentinel.fake_notification_2
+        )
+        fake_notification_list = [self.notification, fake_notification]
+        mock_get_all.return_value = fake_notification_list
 
         result = self.notification_api.get_all(self.context, self.req)
-        self._assert_notification_data(NOTIFICATION_LIST,
-                                       _make_notifications_list(result))
+        for i in range(len(result)):
+            self._assert_notification_data(
+                fake_notification_list[i], result[i])
 
     @mock.patch.object(notification_obj.NotificationList, 'get_all')
     def test_get_all_marker_not_found(self, mock_get_all):
