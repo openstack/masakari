@@ -39,13 +39,13 @@ def _make_hosts_list(hosts_list):
 
 HOST_LIST = [
     {"name": "host_1", "id": "1", "reserved": False,
-     "on_maintenance": False, "type": "fake-type",
+     "on_maintenance": False, "type": "fake",
      "control_attributes": "fake-control_attributes",
      "uuid": uuidsentinel.fake_host_1,
      "failover_segment_id": uuidsentinel.fake_segment1},
 
     {"name": "host_2", "id": "2", "reserved": False,
-     "on_maintenance": False, "type": "fake-type",
+     "on_maintenance": False, "type": "fake",
      "control_attributes": "fake-control_attributes",
      "uuid": uuidsentinel.fake_host_2,
      "failover_segment_id": uuidsentinel.fake_segment1}
@@ -55,7 +55,7 @@ HOST_LIST = _make_hosts_list(HOST_LIST)
 
 HOST = {
     "name": "host_1", "id": "1", "reserved": False,
-    "on_maintenance": False, "type": "fake-type",
+    "on_maintenance": False, "type": "fake",
     "control_attributes": "fake-control_attributes",
     "uuid": uuidsentinel.fake_host_1,
     "failover_segment_id": uuidsentinel.fake_segment1
@@ -143,7 +143,7 @@ class HostTestCase(test.NoDBTestCase):
         mock_create.return_value = HOST
         body = {
             "host": {
-                "name": "host-1", "type": "fake-type",
+                "name": "host-1", "type": "fake",
                 "reserved": False,
                 "on_maintenance": False,
                 "control_attributes": "fake-control_attributes"
@@ -161,7 +161,7 @@ class HostTestCase(test.NoDBTestCase):
                                    HostExists(name='host-1'))
         body = {
             "host": {
-                "name": "host-1", "type": "fake-type",
+                "name": "host-1", "type": "fake",
                 "reserved": False,
                 "on_maintenance": False,
                 "control_attributes": "fake-control_attributes"
@@ -172,7 +172,7 @@ class HostTestCase(test.NoDBTestCase):
 
     def test_create_with_no_host(self):
         body = {
-            "name": "host-1", "type": "fake-type",
+            "name": "host-1", "type": "fake",
             "reserved": False,
             "on_maintenance": False,
             "control_attributes": "fake-control_attributes"
@@ -183,7 +183,7 @@ class HostTestCase(test.NoDBTestCase):
     def test_create_with_no_name(self):
         body = {
             "host": {
-                "type": "fake-type",
+                "type": "fake",
                 "reserved": False,
                 "on_maintenance": False,
                 "control_attributes": "fake-control_attributes"
@@ -195,7 +195,7 @@ class HostTestCase(test.NoDBTestCase):
     def test_create_name_with_leading_trailing_spaces(self):
         body = {
             "host": {
-                "name": " host-1 ", "type": "fake-type",
+                "name": " host-1 ", "type": "fake",
                 "reserved": False,
                 "on_maintenance": False,
                 "control_attributes": "fake-control_attributes"
@@ -207,7 +207,7 @@ class HostTestCase(test.NoDBTestCase):
     def test_create_with_null_name(self):
         body = {
             "host": {
-                "name": "", "type": "fake-type",
+                "name": "", "type": "fake",
                 "reserved": False,
                 "on_maintenance": False,
                 "control_attributes": "fake-control_attributes"
@@ -219,7 +219,7 @@ class HostTestCase(test.NoDBTestCase):
     def test_create_with_name_too_long(self):
         body = {
             "host": {
-                "name": "host-1" * 255, "type": "fake-type",
+                "name": "host-1" * 255, "type": "fake",
                 "reserved": False,
                 "on_maintenance": False,
                 "control_attributes": "fake-control_attributes"
@@ -231,7 +231,7 @@ class HostTestCase(test.NoDBTestCase):
     def test_create_with_extra_invalid_arg(self):
         body = {
             "host": {
-                "name": "host-1", "type": "fake-type",
+                "name": "host-1", "type": "fake",
                 "reserved": False,
                 "on_maintenance": False,
                 "control_attributes": "fake-control_attributes",
@@ -266,7 +266,7 @@ class HostTestCase(test.NoDBTestCase):
 
         body = {
             "host": {
-                "name": "host-1", "type": "fake-type", "reserved": False,
+                "name": "host-1", "type": "fake", "reserved": False,
                 "on_maintenance": False,
                 "control_attributes": "fake-control_attributes"
             }
@@ -353,6 +353,42 @@ class HostTestCase(test.NoDBTestCase):
                 self.req, uuidsentinel.fake_segment1,
                           uuidsentinel.fake_host_3)
 
+    def test_create_with_type_too_long(self):
+        body = {
+            "host": {
+                "name": "host-1", "type": "x" * 256,
+                "reserved": False,
+                "on_maintenance": False,
+                "control_attributes": "fake-control_attributes"
+            }
+        }
+        self.assertRaises(self.bad_request, self.controller.create,
+                          self.req, uuidsentinel.fake_segment1, body=body)
+
+    def test_create_with_type_special_characters(self):
+        body = {
+            "host": {
+                "name": "host-1", "type": "x_y",
+                "reserved": False,
+                "on_maintenance": False,
+                "control_attributes": "fake-control_attributes"
+            }
+        }
+        self.assertRaises(self.bad_request, self.controller.create,
+                          self.req, uuidsentinel.fake_segment1, body=body)
+
+    def test_update_with_type_too_long(self):
+        test_metadata = {"host": {"type": "x" * 256}}
+        self.assertRaises(self.bad_request, self.controller.update,
+                          self.req, uuidsentinel.fake_segment1,
+                          uuidsentinel.fake_host_1, body=test_metadata)
+
+    def test_update_with_type_special_characters(self):
+        test_metadata = {"host": {"type": "x_y"}}
+        self.assertRaises(self.bad_request, self.controller.update,
+                          self.req, uuidsentinel.fake_segment1,
+                          uuidsentinel.fake_host_1, body=test_metadata)
+
 
 class HostTestCasePolicyNotAuthorized(test.NoDBTestCase):
     """Test Case for host non admin."""
@@ -383,7 +419,7 @@ class HostTestCasePolicyNotAuthorized(test.NoDBTestCase):
     def test_create_no_admin(self):
         body = {
             "host": {
-                "name": "host-1", "type": "fake-type", "reserved": False,
+                "name": "host-1", "type": "fake", "reserved": False,
                 "on_maintenance": False,
                 "control_attributes": "fake-control_attributes"
             }
@@ -404,7 +440,7 @@ class HostTestCasePolicyNotAuthorized(test.NoDBTestCase):
     def test_update_no_admin(self):
         body = {
             "host": {
-                "name": "host-1", "type": "fake-type", "reserved": False,
+                "name": "host-1", "type": "fake", "reserved": False,
                 "on_maintenance": False,
                 "control_attributes": "fake-control_attributes",
             }

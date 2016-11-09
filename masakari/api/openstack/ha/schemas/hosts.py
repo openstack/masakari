@@ -24,7 +24,7 @@ _base = {
             'type': 'object',
             'properties': {
                 'name': parameter_types.name,
-                'type': parameter_types.description,
+                'type': parameter_types.type,
                 'control_attributes': parameter_types.description,
                 'reserved': parameter_types.boolean,
                 'on_maintenance': parameter_types.boolean
