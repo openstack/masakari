@@ -26,7 +26,7 @@ fi
 MASAKARI_MANAGE=$MASAKARI_BIN_DIR/masakari-manage
 
 # Public facing bits
-MASAKARI_SERVICE_PORT=${MANILA_SERVICE_PORT:-15868}
+MASAKARI_SERVICE_PORT=${MASAKARI_SERVICE_PORT:-15868}
 
 # Tell Tempest this project is present
 TEMPEST_SERVICES+=,masakari
