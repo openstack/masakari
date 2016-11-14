@@ -40,6 +40,8 @@ class InstanceFailureTestCase(test.TestCase):
         # reduce the wait period.
         self.override_config('wait_period_after_power_off', 2)
         self.override_config('wait_period_after_power_on', 2)
+        self.override_config("process_all_instances",
+                             False, "instance_failure")
 
     def _test_stop_instance(self):
         task = instance_failure.StopInstanceTask(self.novaclient)
@@ -129,6 +131,29 @@ class InstanceFailureTestCase(test.TestCase):
         self.assertRaises(
             exception.SkipInstanceRecoveryException, task.execute,
             self.ctxt, self.instance_id)
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    def test_instance_failure_flow_not_ha_enabled_but_conf_option_is_set(
+            self, _mock_novaclient):
+        # Setting this config option to True indicates masakari has to recover
+        # the instance irrespective of whether it is HA_Enabled or not.
+        self.override_config("process_all_instances",
+                             True, "instance_failure")
+        _mock_novaclient.return_value = self.fake_client
+
+        # create test data
+        self.fake_client.servers.create(self.instance_id,
+                                        host="fake-host", vm_state="resized")
+
+        # test StopInstanceTask
+        self._test_stop_instance()
+
+        # test StartInstanceTask
+        task = instance_failure.StartInstanceTask(self.novaclient)
+        task.execute(self.ctxt, self.instance_id)
+
+        # test ConfirmInstanceActiveTask
+        self._test_confirm_instance_is_active()
 
     @mock.patch('masakari.compute.nova.novaclient')
     def test_instance_failure_flow_start_failed(self, _mock_novaclient):

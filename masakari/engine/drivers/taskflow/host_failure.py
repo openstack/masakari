@@ -54,7 +54,7 @@ class DisableComputeServiceTask(base.MasakariTask):
 
 class PrepareHAEnabledInstancesTask(base.MasakariTask):
     """Get all HA_Enabled instances."""
-    default_provides = set(["ha_enabled_instances"])
+    default_provides = set(["instance_list"])
 
     def __init__(self, novaclient):
         requires = ["host_name"]
@@ -63,29 +63,34 @@ class PrepareHAEnabledInstancesTask(base.MasakariTask):
         self.novaclient = novaclient
 
     def execute(self, context, host_name):
-        all_instances = self.novaclient.get_servers(context, host_name)
-        ha_enabled_instances = (
-            [instance for instance in all_instances
-             if strutils.bool_from_string(instance.metadata.get('HA_Enabled',
-                                                                False),
-                                          strict=True)])
+        instance_list = self.novaclient.get_servers(context, host_name)
+
+        if CONF.host_failure.evacuate_all_instances:
+            instance_list = sorted(
+                instance_list, key=lambda k: strutils.bool_from_string(
+                    k.metadata.get('HA_Enabled', False)), reverse=True)
+        else:
+            instance_list = (
+                [instance for instance in instance_list if
+                 strutils.bool_from_string(instance.metadata.get('HA_Enabled',
+                                                                 False))])
 
         return {
-            "ha_enabled_instances": ha_enabled_instances,
+            "instance_list": instance_list,
         }
 
 
 class AutoEvacuationInstancesTask(base.MasakariTask):
-    default_provides = set(["ha_enabled_instances"])
+    default_provides = set(["instance_list"])
 
     def __init__(self, novaclient):
-        requires = ["ha_enabled_instances"]
+        requires = ["instance_list"]
         super(AutoEvacuationInstancesTask, self).__init__(addons=[ACTION],
                                                 requires=requires)
         self.novaclient = novaclient
 
-    def execute(self, context, ha_enabled_instances):
-        for instance in ha_enabled_instances:
+    def execute(self, context, instance_list):
+        for instance in instance_list:
             vm_state = getattr(instance, "OS-EXT-STS:vm_state")
             if vm_state in ['active', 'error', 'resized', 'stopped']:
                 # Evacuate API only evacuates an instance in
@@ -99,20 +104,20 @@ class AutoEvacuationInstancesTask(base.MasakariTask):
                 self.novaclient.evacuate_instance(context, instance.id)
 
         return {
-            "ha_enabled_instances": ha_enabled_instances,
+            "instance_list": instance_list,
         }
 
 
 class ConfirmEvacuationTask(base.MasakariTask):
     def __init__(self, novaclient):
-        requires = ["ha_enabled_instances", "host_name"]
+        requires = ["instance_list", "host_name"]
         super(ConfirmEvacuationTask, self).__init__(addons=[ACTION],
                                                 requires=requires)
         self.novaclient = novaclient
 
-    def execute(self, context, ha_enabled_instances, host_name):
+    def execute(self, context, instance_list, host_name):
         failed_evacuation_instances = []
-        for instance in ha_enabled_instances:
+        for instance in instance_list:
             def _wait_for_evacuation():
                 new_instance = self.novaclient.get_server(context, instance.id)
                 instance_host = getattr(new_instance,

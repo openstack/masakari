@@ -45,9 +45,12 @@ class StopInstanceTask(base.MasakariTask):
         """Stop the instance for recovery."""
         instance = self.novaclient.get_server(context, instance_uuid)
 
-        # If instance is not HA_Enabled then exit from the flow
-        if not strutils.bool_from_string(instance.metadata.get(
-                'HA_Enabled', False), strict=True):
+        # If an instance is not HA_Enabled and "process_all_instances" config
+        # option is also disabled, then there is no need to take any recovery
+        # action.
+        if not CONF.instance_failure.process_all_instances and not (
+                strutils.bool_from_string(
+                    instance.metadata.get('HA_Enabled', False))):
             LOG.info(_LI("Skipping recovery for instance: %s as it is "
                          "not Ha_Enabled."), instance_uuid)
             raise exception.SkipInstanceRecoveryException()
