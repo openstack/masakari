@@ -105,6 +105,11 @@ class TestCase(testtools.TestCase):
         """
         self.useFixture(fixtures.MonkeyPatch(old, new))
 
+    def override_config(self, name, override, group=None):
+        """Cleanly override CONF variables."""
+        CONF.set_override(name, override, group)
+        self.addCleanup(CONF.clear_override, name, group)
+
     def flags(self, **kw):
         """Override flag variables for a test."""
         group = kw.pop('group', None)
