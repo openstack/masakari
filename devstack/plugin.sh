@@ -44,7 +44,7 @@ function setup_masakari_logging {
 function create_masakari_accounts {
     if [[ "$ENABLED_SERVICES" =~ "masakari" ]]; then
 
-        create_service_user "masakari"
+        create_service_user "masakari" "admin"
 
         if [[ "$KEYSTONE_CATALOG_BACKEND" = 'sql' ]]; then
 
