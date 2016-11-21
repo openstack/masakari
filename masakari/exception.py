@@ -307,8 +307,8 @@ class HostOnMaintenanceError(Invalid):
     code = http.CONFLICT
 
 
-class AutoRecoveryFailureException(MasakariException):
-    msg_fmt = _('Failed to execute auto recovery method.')
+class HostRecoveryFailureException(MasakariException):
+    msg_fmt = _('Failed to execute host recovery.')
 
 
 class InstanceRecoveryFailureException(MasakariException):
@@ -321,6 +321,10 @@ class SkipInstanceRecoveryException(MasakariException):
 
 class SkipProcessRecoveryException(MasakariException):
     msg_fmt = _('Skipping execution of process recovery workflow.')
+
+
+class SkipHostRecoveryException(MasakariException):
+    msg_fmt = _('Skipping execution of host recovery workflow.')
 
 
 class ProcessRecoveryFailureException(MasakariException):
@@ -340,3 +344,11 @@ class FailoverSegmentInUse(Conflict):
 class HostInUse(Conflict):
     msg_fmt = _("Host %(uuid)s can't be updated as it is in-use to process "
                 "notifications.")
+
+
+class ReservedHostsUnavailable(MasakariException):
+    msg_fmt = _('No reserved_hosts available for evacuation.')
+
+
+class LockAlreadyAcquired(MasakariException):
+    msg_fmt = _('Lock is already acquired on %(resource)s.')

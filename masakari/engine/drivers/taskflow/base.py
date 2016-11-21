@@ -53,7 +53,8 @@ class MasakariTask(task.Task):
 class SpecialFormatter(formatters.FailureFormatter):
 
     # Exception is an excepted case, don't include traceback in log if fails.
-    _NO_TRACE_EXCEPTIONS = (exception.SkipInstanceRecoveryException,)
+    _NO_TRACE_EXCEPTIONS = (exception.SkipInstanceRecoveryException,
+                            exception.SkipHostRecoveryException)
 
     def __init__(self, engine):
         super(SpecialFormatter, self).__init__(engine)

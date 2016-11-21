@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Implemented workflow for 'reserved_host' recovery method in case of host
+    failure. Now operator can create or update failover segment with
+    'reserved_host' recovery method along with the existing 'auto' method.
+    When 'reserved_host' recovery_method is set to a failover segment,
+    operators should also add one or more hosts with reserved flag set as True.

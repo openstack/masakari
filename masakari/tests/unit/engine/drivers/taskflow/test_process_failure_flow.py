@@ -36,9 +36,9 @@ class ProcessFailureTestCase(test.TestCase):
         self.service_host = "fake-host"
         self.novaclient = nova.API()
         self.fake_client = fakes.FakeNovaClient()
-        # overriding 'wait_period_after_service_disabled' to 2 seconds to
-        # reduce the wait period.
-        self.override_config('wait_period_after_service_disabled', 2)
+        # overriding 'wait_period_after_service_update' to 2 seconds
+        # to reduce the wait period.
+        self.override_config('wait_period_after_service_update', 2)
 
     @mock.patch('masakari.compute.nova.novaclient')
     def test_compute_process_failure_flow(self, _mock_novaclient):

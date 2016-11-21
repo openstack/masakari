@@ -40,7 +40,7 @@ class TaskFlowDriver(driver.NotificationDriver):
         super(TaskFlowDriver, self).__init__()
 
     def execute_host_failure(self, context, host_name, recovery_method,
-                             notification_uuid):
+                             notification_uuid, reserved_host_list=None):
         novaclient = nova.API()
         # get flow for host failure
         process_what = {
@@ -54,9 +54,14 @@ class TaskFlowDriver(driver.NotificationDriver):
                                                          process_what)
             elif recovery_method == (
                     fields.FailoverSegmentRecoveryMethod.RESERVED_HOST):
-                raise NotImplementedError(_("Flow not implemented for "
-                                            "recovery_method"),
-                                          recovery_method)
+                if not reserved_host_list:
+                    msg = _('No reserved_hosts available for evacuation.')
+                    LOG.info(msg)
+                    raise exception.ReservedHostsUnavailable(message=msg)
+
+                process_what['reserved_host_list'] = reserved_host_list
+                flow_engine = host_failure.get_rh_flow(
+                    novaclient, process_what)
             elif recovery_method == (
                     fields.FailoverSegmentRecoveryMethod.AUTO_PRIORITY):
                 raise NotImplementedError(_("Flow not implemented for "
@@ -77,7 +82,10 @@ class TaskFlowDriver(driver.NotificationDriver):
         # taskflow sends out and redirect them to a more useful log for
         # masakari's debugging (or error reporting) usage.
         with base.DynamicLogListener(flow_engine, logger=LOG):
-            flow_engine.run()
+            try:
+                flow_engine.run()
+            except exception.LockAlreadyAcquired as ex:
+                raise exception.HostRecoveryFailureException(ex.message)
 
     def execute_instance_failure(self, context, instance_uuid,
                                  notification_uuid):

@@ -70,8 +70,9 @@ class ConfirmComputeNodeDisabledTask(base.MasakariTask):
         try:
             # add a timeout to the periodic call.
             periodic_call.start(interval=CONF.verify_interval)
-            etimeout.with_timeout(CONF.wait_period_after_service_disabled,
-                                  periodic_call.wait)
+            etimeout.with_timeout(
+                CONF.wait_period_after_service_update,
+                periodic_call.wait)
         except etimeout.Timeout:
             msg = _("Failed to disable service %(process_name)s") % {
                 'process_name': process_name

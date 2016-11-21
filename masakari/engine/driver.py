@@ -40,7 +40,7 @@ LOG = logging.getLogger(__name__)
 class NotificationDriver(object):
     @abc.abstractmethod
     def execute_host_failure(self, context, host_name, recovery_method,
-                             notification_uuid):
+                             notification_uuid, reserved_host_list=None):
         pass
 
     @abc.abstractmethod

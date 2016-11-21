@@ -216,15 +216,17 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
     @mock.patch.object(host_obj.Host, "save")
+    @mock.patch.object(host_obj.HostList, "get_all")
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_host_failure")
     @mock.patch.object(notification_obj.Notification, "save")
     def test_process_notification_type_compute_host_event_stopped(
-            self, mock_notification_save, mock_host_failure,
+            self, mock_notification_save, mock_host_failure, mock_get_all,
             mock_host_save, mock_host_obj):
         notification = self._get_compute_host_type_notification()
         mock_host_failure.side_effect = self._fake_notification_workflow()
         fake_host = fakes.create_fake_host()
+        mock_get_all.return_value = None
         fake_host.failover_segment = fakes.create_fake_failover_segment()
         mock_host_obj.return_value = fake_host
         self.engine.process_notification(self.context,
@@ -233,22 +235,76 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_host_failure.assert_called_once_with(
             self.context,
             fake_host.name, fake_host.failover_segment.recovery_method,
-            notification.notification_uuid)
+            notification.notification_uuid, reserved_host_list=None)
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
     @mock.patch.object(host_obj.Host, "save")
+    @mock.patch.object(host_obj.HostList, "get_all")
+    @mock.patch.object(notification_obj.Notification, "save")
+    def test_process_notification_host_failure_without_reserved_hosts(
+            self, mock_notification_save, mock_get_all,
+            mock_host_save, mock_host_obj):
+        reserved_host_list = []
+        mock_get_all.return_value = reserved_host_list
+
+        fake_host = fakes.create_fake_host()
+        fake_host.failover_segment = fakes.create_fake_failover_segment(
+            recovery_method='reserved_host')
+        mock_host_obj.return_value = fake_host
+
+        notification = self._get_compute_host_type_notification()
+
+        self.engine.process_notification(self.context,
+                                         notification=notification)
+
+        self.assertEqual("error", notification.status)
+
+    @mock.patch.object(host_obj.Host, "get_by_uuid")
+    @mock.patch.object(host_obj.Host, "save")
+    @mock.patch.object(host_obj.HostList, "get_all")
+    @mock.patch("masakari.engine.drivers.taskflow."
+                "TaskFlowDriver.execute_host_failure")
+    @mock.patch.object(notification_obj.Notification, "save")
+    def test_process_notification_host_failure_with_reserved_hosts(
+            self, mock_notification_save, mock_host_failure, mock_get_all,
+            mock_host_save, mock_host_obj):
+        reserved_host_list = [fakes.create_fake_host(reserved=True)]
+        mock_get_all.return_value = reserved_host_list
+
+        fake_host = fakes.create_fake_host()
+        fake_host.failover_segment = fakes.create_fake_failover_segment(
+            recovery_method='reserved_host')
+        mock_host_obj.return_value = fake_host
+
+        notification = self._get_compute_host_type_notification()
+        mock_host_failure.side_effect = self._fake_notification_workflow()
+
+        self.engine.process_notification(self.context,
+                                         notification=notification)
+
+        self.assertEqual("finished", notification.status)
+        mock_host_failure.assert_called_once_with(
+            self.context,
+            fake_host.name, fake_host.failover_segment.recovery_method,
+            notification.notification_uuid,
+            reserved_host_list=reserved_host_list)
+
+    @mock.patch.object(host_obj.Host, "get_by_uuid")
+    @mock.patch.object(host_obj.Host, "save")
+    @mock.patch.object(host_obj.HostList, "get_all")
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_host_failure")
     @mock.patch.object(notification_obj.Notification, "save")
     def test_process_notification_type_compute_host_recovery_exception(
-            self, mock_notification_save, mock_host_failure,
+            self, mock_notification_save, mock_host_failure, mock_get_all,
             mock_host_save, mock_host_obj):
         notification = self._get_compute_host_type_notification()
         fake_host = fakes.create_fake_host()
+        mock_get_all.return_value = None
         fake_host.failover_segment = fakes.create_fake_failover_segment()
         mock_host_obj.return_value = fake_host
         mock_host_failure.side_effect = self._fake_notification_workflow(
-            exc=exception.AutoRecoveryFailureException)
+            exc=exception.HostRecoveryFailureException)
         self.engine.process_notification(self.context,
                                          notification=notification)
         self.assertEqual("error", notification.status)

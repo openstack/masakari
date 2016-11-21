@@ -41,8 +41,6 @@ CONF = masakari.conf.CONF
 
 LOG = logging.getLogger(__name__)
 
-synchronized = lockutils.synchronized_with_prefix('masakari-')
-
 
 def utf8(value):
     """Try to turn a string into utf-8 if possible.
@@ -267,3 +265,27 @@ def validate_integer(value, name, min_value=None, max_value=None):
                            'max_value': max_value})
             )
     return value
+
+
+def synchronized(name, semaphores=None, blocking=False):
+    def wrap(f):
+        @six.wraps(f)
+        def inner(*args, **kwargs):
+            lock_name = 'masakari-%s' % name
+            int_lock = lockutils.internal_lock(lock_name,
+                                               semaphores=semaphores)
+            LOG.debug("Acquiring lock: %(lock_name)s on resource: "
+                      "%(resource)s", {'lock_name': lock_name,
+                                       'resource': f.__name__})
+
+            if not int_lock.acquire(blocking=blocking):
+                raise exception.LockAlreadyAcquired(resource=name)
+            try:
+                return f(*args, **kwargs)
+            finally:
+                LOG.debug("Releasing lock: %(lock_name)s on resource: "
+                          "%(resource)s", {'lock_name': lock_name,
+                                           'resource': f.__name__})
+                int_lock.release()
+        return inner
+    return wrap

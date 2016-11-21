@@ -145,12 +145,24 @@ class MasakariManager(manager.Manager):
             host_obj.update(update_data)
             host_obj.save()
 
+            reserved_host_list = None
+            if not recovery_method == (
+                    fields.FailoverSegmentRecoveryMethod.AUTO):
+                reserved_host_list = objects.HostList.get_all(
+                    context, filters={
+                        'failover_segment_id': host_obj.failover_segment_id,
+                        'reserved': True})
+
             try:
                 self.driver.execute_host_failure(
                     context, host_name, recovery_method,
-                    notification.notification_uuid)
-            except (exception.MasakariException,
-                    exception.AutoRecoveryFailureException):
+                    notification.notification_uuid,
+                    reserved_host_list=reserved_host_list)
+            except exception.SkipHostRecoveryException:
+                notification_status = fields.NotificationStatus.FINISHED
+            except (exception.HostRecoveryFailureException,
+                    exception.ReservedHostsUnavailable,
+                    exception.MasakariException):
                 notification_status = fields.NotificationStatus.ERROR
         else:
             LOG.warning(_LW("Invalid event: %(event)s received for "
@@ -163,7 +175,7 @@ class MasakariManager(manager.Manager):
         return notification_status
 
     def _process_notification(self, context, notification):
-        @utils.synchronized(notification.source_host_uuid)
+        @utils.synchronized(notification.source_host_uuid, blocking=True)
         def do_process_notification(notification):
             LOG.info(_LI('Processing notification %(notification_uuid)s of '
                          'type: %(type)s'), {
