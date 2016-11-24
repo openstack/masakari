@@ -16,6 +16,7 @@
 """Tests for the hosts api."""
 
 import mock
+from oslo_serialization import jsonutils
 from webob import exc
 
 from masakari.api.openstack.ha import hosts
@@ -79,6 +80,10 @@ class HostTestCase(test.NoDBTestCase):
     def setUp(self):
         super(HostTestCase, self).setUp()
         self._set_up()
+
+    @property
+    def app(self):
+        return fakes.wsgi_app_v1(init_only='os-hosts')
 
     def _assert_host_data(self, expected, actual):
         self.assertTrue(obj_base.obj_equal_prims(expected, actual),
@@ -153,6 +158,25 @@ class HostTestCase(test.NoDBTestCase):
                                         uuidsentinel.fake_segment1, body=body)
         result = result['host']
         self._assert_host_data(HOST, _make_host_obj(result))
+
+    @mock.patch('masakari.rpc.get_client')
+    @mock.patch.object(ha_api.HostAPI, 'create_host')
+    def test_create_success_with_201_response_code(
+        self, mock_client, mock_create):
+        body = {
+            "host": {
+                "name": "host-1", "type": "fake",
+                "reserved": False,
+                "on_maintenance": False,
+                "control_attributes": "fake-control_attributes"
+            }
+        }
+        fake_req = self.req
+        fake_req.headers['Content-Type'] = 'application/json'
+        fake_req.method = 'POST'
+        fake_req.body = jsonutils.dump_as_bytes(body)
+        resp = fake_req.get_response(self.app)
+        self.assertEqual(201, resp.status_code)
 
     @mock.patch.object(ha_api.HostAPI, 'create_host')
     def test_create_with_duplicate_host_name(self, mock_create):
@@ -344,6 +368,19 @@ class HostTestCase(test.NoDBTestCase):
         self.controller.delete(self.req, uuidsentinel.fake_segment1,
                                uuidsentinel.fake_host_1)
         self.assertTrue(mock_delete.called)
+
+    @mock.patch('masakari.rpc.get_client')
+    @mock.patch.object(ha_api.HostAPI, 'delete_host')
+    def test_delete_host_with_204_status(self, mock_client, mock_delete):
+        url = '/v1/segments/%(segment)s/hosts/%(host)s' % {
+            'segment': uuidsentinel.fake_segment1,
+            'host': uuidsentinel.fake_host_1
+        }
+        fake_req = fakes.HTTPRequest.blank(url, use_admin_context=True)
+        fake_req.headers['Content-Type'] = 'application/json'
+        fake_req.method = 'DELETE'
+        resp = fake_req.get_response(self.app)
+        self.assertEqual(204, resp.status_code)
 
     @mock.patch.object(ha_api.HostAPI, 'delete_host')
     def test_delete_host_not_found(self, mock_delete):

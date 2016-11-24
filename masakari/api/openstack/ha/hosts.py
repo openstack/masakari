@@ -79,6 +79,7 @@ class HostsController(wsgi.Controller):
 
         return {'hosts': hosts}
 
+    @wsgi.response(201)
     @extensions.expected_errors((403, 404, 409))
     @validation.schema(schema.create)
     def create(self, req, segment_id, body):
@@ -126,6 +127,7 @@ class HostsController(wsgi.Controller):
 
         return {'host': host}
 
+    @wsgi.response(204)
     @extensions.expected_errors((403, 404))
     def delete(self, req, segment_id, id):
         """Removes a host by id."""

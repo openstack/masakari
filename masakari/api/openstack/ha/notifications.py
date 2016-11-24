@@ -35,6 +35,7 @@ class NotificationsController(wsgi.Controller):
     def __init__(self):
         self.api = notification_api.NotificationAPI()
 
+    @wsgi.response(202)
     @extensions.expected_errors((400, 403, 409))
     @validation.schema(schema.create)
     def create(self, req, body):

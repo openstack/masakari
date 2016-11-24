@@ -16,6 +16,7 @@
 """Tests for the failover segment api."""
 
 import mock
+from oslo_serialization import jsonutils
 from webob import exc
 
 from masakari.api.openstack.ha import segments
@@ -67,6 +68,10 @@ class FailoverSegmentTestCase(test.NoDBTestCase):
         self.req = fakes.HTTPRequest.blank('/v1/segments',
                                            use_admin_context=True)
         self.context = self.req.environ['masakari.context']
+
+    @property
+    def app(self):
+        return fakes.wsgi_app_v1(init_only='segments')
 
     def _assert_segment_data(self, expected, actual):
         self.assertTrue(obj_base.obj_equal_prims(expected, actual),
@@ -138,6 +143,25 @@ class FailoverSegmentTestCase(test.NoDBTestCase):
                                    FailoverSegmentExists(name='segment1'))
         self.assertRaises(exc.HTTPConflict, self.controller.create,
                           self.req, body=body)
+
+    @mock.patch('masakari.rpc.get_client')
+    @mock.patch.object(ha_api.FailoverSegmentAPI, 'create_segment')
+    def test_create_success_with_201_response_code(
+        self, mock_client, mock_create):
+        body = {
+            "segment": {
+                "name": "segment1",
+                "service_type": "COMPUTE",
+                "recovery_method": "auto",
+                "description": "failover_segment for compute"
+            }
+        }
+        fake_req = self.req
+        fake_req.headers['Content-Type'] = 'application/json'
+        fake_req.method = 'POST'
+        fake_req.body = jsonutils.dump_as_bytes(body)
+        resp = fake_req.get_response(self.app)
+        self.assertEqual(201, resp.status_code)
 
     def test_create_with_no_segment(self):
         body = {
@@ -305,6 +329,16 @@ class FailoverSegmentTestCase(test.NoDBTestCase):
         mock_delete.side_effect = exception.FailoverSegmentNotFound
         self.assertRaises(exc.HTTPNotFound, self.controller.delete,
                 self.req, uuidsentinel.fake_segment)
+
+    @mock.patch('masakari.rpc.get_client')
+    @mock.patch.object(ha_api.FailoverSegmentAPI, 'delete_segment')
+    def test_delete_segment_with_204_status(self, mock_client, mock_delete):
+        url = '/v1/segments/%s' % uuidsentinel.fake_segment
+        fake_req = fakes.HTTPRequest.blank(url, use_admin_context=True)
+        fake_req.headers['Content-Type'] = 'application/json'
+        fake_req.method = 'DELETE'
+        resp = fake_req.get_response(self.app)
+        self.assertEqual(204, resp.status_code)
 
 
 class FailoverSegmentTestCasePolicyNotAuthorized(test.NoDBTestCase):

@@ -1,0 +1,23 @@
+---
+fixes:
+  - Following apis will return correct response codes now:
+    POST: notification create:
+          old_response: 200, new_response: 202
+
+    DELETE: notification delete:
+          old_response: 404, new_response: 405
+
+    PUT: notification update:
+          old_response: 404, new_response: 405
+
+    POST: Host create:
+          old_response: 200, new_response: 201
+
+    DELETE: Host delete:
+          old_response: 200, new_response: 204
+
+    POST: Failover-segment create:
+          old_response: 200, new_response: 201
+
+    DELETE: Failover-segment delete:
+          old_response: 200, new_response: 204

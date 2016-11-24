@@ -16,6 +16,7 @@
 """Tests for the notifications api."""
 
 import mock
+from oslo_serialization import jsonutils
 from oslo_utils import timeutils
 from webob import exc
 
@@ -88,6 +89,10 @@ class NotificationTestCase(test.NoDBTestCase):
                                            use_admin_context=True)
         self.context = self.req.environ['masakari.context']
 
+    @property
+    def app(self):
+        return fakes.wsgi_app_v1(init_only='os-hosts')
+
     def _assert_notification_data(self, expected, actual):
         self.assertTrue(obj_base.obj_equal_prims(expected, actual),
                         "The notifications objects were not equal")
@@ -141,6 +146,29 @@ class NotificationTestCase(test.NoDBTestCase):
                              "generated_time": "2016-09-13T09:11:21.656788"}})
         result = result['notification']
         test_objects.compare_obj(self, result, NOTIFICATION_DATA)
+
+    @mock.patch('masakari.rpc.get_client')
+    @mock.patch.object(ha_api.NotificationAPI, 'create_notification')
+    def test_create_success_with_201_response_code(
+        self, mock_client, mock_create):
+        body = {
+            "notification": {
+                "hostname": "fake_host",
+                "payload": {
+                    "event": "STOPPED",
+                    "host_status": "NORMAL",
+                    "cluster_status": "ONLINE"
+                },
+                "type": "VM",
+                "generated_time": NOW
+            }
+        }
+        fake_req = self.req
+        fake_req.headers['Content-Type'] = 'application/json'
+        fake_req.method = 'POST'
+        fake_req.body = jsonutils.dump_as_bytes(body)
+        resp = fake_req.get_response(self.app)
+        self.assertEqual(202, resp.status_code)
 
     def test_create_invalid_type(self):
         body = {
@@ -253,6 +281,24 @@ class NotificationTestCase(test.NoDBTestCase):
         mock_get_notification.side_effect = exception.NotificationNotFound
         self.assertRaises(exc.HTTPNotFound,
                           self.controller.show, self.req, "2")
+
+    @mock.patch('masakari.rpc.get_client')
+    def test_delete_notification(self, mock_client):
+        url = '/v1/notifications/%s' % uuidsentinel.fake_notification
+        fake_req = fakes.HTTPRequest.blank(url, use_admin_context=True)
+        fake_req.headers['Content-Type'] = 'application/json'
+        fake_req.method = 'DELETE'
+        resp = fake_req.get_response(self.app)
+        self.assertEqual(405, resp.status_code)
+
+    @mock.patch('masakari.rpc.get_client')
+    def test_update_notification(self, mock_client):
+        url = '/v1/notifications/%s' % uuidsentinel.fake_notification
+        fake_req = fakes.HTTPRequest.blank(url, use_admin_context=True)
+        fake_req.headers['Content-Type'] = 'application/json'
+        fake_req.method = 'PUT'
+        resp = fake_req.get_response(self.app)
+        self.assertEqual(405, resp.status_code)
 
 
 class NotificationCasePolicyNotAuthorized(test.NoDBTestCase):

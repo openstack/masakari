@@ -73,6 +73,7 @@ class SegmentsController(wsgi.Controller):
             raise exc.HTTPNotFound(explanation=e.format_message())
         return {'segment': segment}
 
+    @wsgi.response(201)
     @extensions.expected_errors((403, 409))
     @validation.schema(schema.create)
     def create(self, req, body):
@@ -104,6 +105,7 @@ class SegmentsController(wsgi.Controller):
 
         return {'segment': segment}
 
+    @wsgi.response(204)
     @extensions.expected_errors((403, 404))
     def delete(self, req, id):
         """Removes a segment by uuid."""

@@ -612,6 +612,8 @@ class Resource(wsgi.Application):
         except exception.MalformedRequestBody:
             msg = _("Malformed request body")
             return Fault(webob.exc.HTTPBadRequest(explanation=msg))
+        except webob.exc.HTTPMethodNotAllowed as e:
+            return Fault(e)
 
         if body:
             msg = _("Action: '%(action)s', calling method: %(meth)s, body: "
@@ -720,6 +722,14 @@ class Resource(wsgi.Application):
         except AttributeError:
             if (not self.wsgi_actions or
                     action not in _ROUTES_METHODS + ['action']):
+                if self.controller:
+                    msg = _("The request method: '%(method)s' with action: "
+                            "'%(action)s' is not allowed on this "
+                            "resource") % {
+                                'method': request.method, 'action': action
+                        }
+                    raise webob.exc.HTTPMethodNotAllowed(
+                        explanation=msg, body_template='${explanation}')
                 # Propagate the error
                 raise
         else:
