@@ -24,11 +24,13 @@ workflows.
 
 from oslo_log import log as logging
 import oslo_messaging as messaging
+from oslo_service import periodic_task
+from oslo_utils import timeutils
 
 import masakari.conf
 from masakari.engine import driver
 from masakari import exception
-from masakari.i18n import _LI, _LW
+from masakari.i18n import _LE, _LI, _LW
 from masakari import manager
 from masakari import objects
 from masakari.objects import fields
@@ -152,8 +154,7 @@ class MasakariManager(manager.Manager):
 
         return notification_status
 
-    def process_notification(self, context, notification=None):
-        """Processes the notification"""
+    def _process_notification(self, context, notification):
         @utils.synchronized(notification.source_host_uuid)
         def do_process_notification(notification):
             LOG.info(_LI('Processing notification %(notification_uuid)s of '
@@ -191,3 +192,46 @@ class MasakariManager(manager.Manager):
             notification.save()
 
         do_process_notification(notification)
+
+    def process_notification(self, context, notification=None):
+        """Processes the notification"""
+        self._process_notification(context, notification)
+
+    @periodic_task.periodic_task(
+        spacing=CONF.process_unfinished_notifications_interval)
+    def _process_unfinished_notifications(self, context):
+        filters = {
+            'status': [fields.NotificationStatus.ERROR,
+                       fields.NotificationStatus.NEW]
+        }
+        notifications_list = objects.NotificationList.get_all(context,
+                                                              filters=filters)
+
+        for notification in notifications_list:
+            if (notification.status == fields.NotificationStatus.ERROR or
+                    (notification.status == fields.NotificationStatus.NEW and
+                timeutils.is_older_than(
+                    notification.generated_time,
+                    CONF.retry_notification_new_status_interval))):
+                self._process_notification(context, notification)
+
+            # get updated notification from db after workflow execution
+            notification_db = objects.Notification.get_by_uuid(
+                context, notification.notification_uuid)
+
+            if notification_db.status == fields.NotificationStatus.ERROR:
+                # update notification status as failed
+                notification_status = fields.NotificationStatus.FAILED
+                update_data = {
+                    'status': notification_status
+                }
+
+                notification_db.update(update_data)
+                notification_db.save()
+                LOG.error(_LE(
+                    "Periodic task 'process_unfinished_notifications': "
+                    "Notification %(notification_uuid)s exits with "
+                    "status: %(status)s."), {
+                    'notification_uuid': notification.notification_uuid,
+                    'status': notification_status
+                })

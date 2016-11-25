@@ -19,7 +19,6 @@ Handles all requests to Nova.
 import functools
 import sys
 
-from keystoneauth1.access import service_catalog
 from keystoneauth1 import exceptions as keystone_exception
 import keystoneauth1.loading
 import keystoneauth1.session
@@ -88,16 +87,8 @@ def novaclient(context, timeout=None):
     @param timeout: Number of seconds to wait for an answer before raising a
         Timeout exception (None to disable)
     """
-    sc = context.service_catalog or []
-
     nova_catalog_info = CONF.nova_catalog_admin_info
     service_type, service_name, endpoint_type = nova_catalog_info.split(':')
-
-    # Extract the region if set in configuration
-    if CONF.os_region_name:
-        region_filter = {'region_name': CONF.os_region_name}
-    else:
-        region_filter = {}
 
     context = ctx.RequestContext(
         CONF.os_privileged_user_name, None,
@@ -107,22 +98,7 @@ def novaclient(context, timeout=None):
 
     # User needs to authenticate to Keystone before querying Nova, so we set
     # auth_url to the identity service endpoint
-    if CONF.os_privileged_user_auth_url:
-        url = CONF.os_privileged_user_auth_url
-    else:
-        # We then pass region_name, endpoint_type, etc. to the
-        # Client() constructor so that the final endpoint is
-        # chosen correctly.
-        try:
-            url = service_catalog.ServiceCatalogV2(sc).url_for(
-                service_type='identity',
-                interface=endpoint_type,
-                **region_filter)
-        except keystone_exception.EndpointNotFound:
-            url = service_catalog.ServiceCatalogV3(sc).url_for(
-                service_type='identity',
-                interface=endpoint_type,
-                **region_filter)
+    url = CONF.os_privileged_user_auth_url
 
     LOG.debug('Creating a Nova client using "%s" user',
               CONF.os_privileged_user_name)

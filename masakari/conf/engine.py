@@ -77,6 +77,18 @@ notification_opts = [
     cfg.IntOpt('wait_period_after_power_on',
                default=60,
                help='Number of seconds to wait for instance to start'),
+    cfg.IntOpt('process_unfinished_notifications_interval',
+               default=120,
+               help='Interval in seconds for processing notifications which '
+                    'are in error or new state.'),
+    cfg.IntOpt('retry_notification_new_status_interval',
+               default=60,
+               help="Interval in seconds for identifying notifications which "
+                    "are in new state. If the notification is in new state "
+                    "till this config option value after it's "
+                    "generated_time, then it is considered that notification "
+                    "is ignored by the messaging queue and will be processed "
+                    "by 'process_unfinished_notifications' periodic task."),
 ]
 
 

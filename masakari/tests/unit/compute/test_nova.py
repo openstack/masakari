@@ -39,6 +39,8 @@ class NovaClientTestCase(test.TestCase):
 
         self.override_config('os_privileged_user_name', 'adminuser')
         self.override_config('os_privileged_user_password', 'strongpassword')
+        self.override_config('os_privileged_user_auth_url',
+                             'http://keystonehost/identity_admin')
 
     @mock.patch('novaclient.api_versions.APIVersion')
     @mock.patch('novaclient.client.Client')
@@ -48,7 +50,7 @@ class NovaClientTestCase(test.TestCase):
                                         p_client, p_api_version):
         nova.novaclient(self.ctx)
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
-            auth_url='http://keystonehost:5000/v2.0',
+            auth_url='http://keystonehost/identity_admin',
             password='strongpassword', project_name=None, username='adminuser'
         )
         p_client.assert_called_once_with(
@@ -65,7 +67,7 @@ class NovaClientTestCase(test.TestCase):
                                          p_client, p_api_version):
         nova.novaclient(self.ctx)
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
-            auth_url='http://keystonehost:5000/v2.0',
+            auth_url='http://keystonehost/identity_admin',
             password='strongpassword', project_name=None, username='adminuser'
         )
         p_client.assert_called_once_with(
@@ -82,11 +84,9 @@ class NovaClientTestCase(test.TestCase):
                                                          p_plugin_loader,
                                                          p_client,
                                                          p_api_version):
-        self.override_config('os_privileged_user_auth_url',
-                             'http://privatekeystonehost:5000/v2.0')
         nova.novaclient(self.ctx)
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
-            auth_url='http://privatekeystonehost:5000/v2.0',
+            auth_url='http://keystonehost/identity_admin',
             password='strongpassword', project_name=None, username='adminuser'
         )
         p_client.assert_called_once_with(
@@ -97,19 +97,14 @@ class NovaClientTestCase(test.TestCase):
 
     @mock.patch('novaclient.api_versions.APIVersion')
     @mock.patch('novaclient.client.Client')
-    @mock.patch('keystoneauth1.access.service_catalog.ServiceCatalogV2.'
-                'url_for')
-    @mock.patch('keystoneauth1.access.service_catalog.ServiceCatalogV3.'
-                'url_for')
     @mock.patch('keystoneauth1.loading.get_plugin_loader')
     @mock.patch('keystoneauth1.session.Session')
     def test_nova_client_custom_region(self, p_session, p_plugin_loader,
-                                       p_catalogv3, p_catalogv2,
                                        p_client, p_api_version):
         self.override_config('os_region_name', 'farfaraway')
         nova.novaclient(self.ctx)
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
-            auth_url=p_catalogv2() or p_catalogv3(),
+            auth_url='http://keystonehost/identity_admin',
             password='strongpassword', project_name=None, username='adminuser'
         )
         p_client.assert_called_once_with(
