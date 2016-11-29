@@ -330,3 +330,13 @@ class ProcessRecoveryFailureException(MasakariException):
 class DBNotAllowed(MasakariException):
     msg_fmt = _('%(binary)s attempted direct database access which is '
                 'not allowed by policy')
+
+
+class FailoverSegmentInUse(Conflict):
+    msg_fmt = _("Failover segment %(uuid)s can't be updated as it is in-use "
+                "to process notifications.")
+
+
+class HostInUse(Conflict):
+    msg_fmt = _("Host %(uuid)s can't be updated as it is in-use to process "
+                "notifications.")

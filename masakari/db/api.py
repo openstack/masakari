@@ -147,6 +147,25 @@ def failover_segment_delete(context, segment_uuid):
     return IMPL.failover_segment_delete(context, segment_uuid)
 
 
+def is_failover_segment_under_recovery(context, failover_segment_id,
+                                       filters=None):
+    """Checks whether failover segment is used for processing any notification
+
+    :param context: context to query under
+    :param failover_segment_id: uuid of segment
+    :param filters: dictionary of filters; values that are lists, tuples,
+                    sets, or frozensets cause an 'IN' test to be performed,
+                    while exact matching ('==' operator) is used for other
+                    values.
+
+    :returns: Returns True if any of the host belonging to a failover segment
+              is being used for processing any notifications which are in
+              new, error or running status otherwise it will return False.
+    """
+    return IMPL.is_failover_segment_under_recovery(
+        context, failover_segment_id, filters=filters)
+
+
 # db apis for host
 
 

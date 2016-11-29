@@ -102,13 +102,14 @@ class SegmentsController(wsgi.Controller):
             segment = self.api.update_segment(context, id, segment_data)
         except exception.FailoverSegmentNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
-        except exception.FailoverSegmentExists as e:
+        except (exception.FailoverSegmentExists, exception.Conflict) as e:
             raise exc.HTTPConflict(explanation=e.format_message())
 
         return {'segment': segment}
 
     @wsgi.response(http.NO_CONTENT)
-    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND))
+    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND,
+                                 http.CONFLICT))
     def delete(self, req, id):
         """Removes a segment by uuid."""
         context = req.environ['masakari.context']
@@ -118,6 +119,8 @@ class SegmentsController(wsgi.Controller):
             self.api.delete_segment(context, id)
         except exception.FailoverSegmentNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
+        except exception.Conflict as e:
+            raise exc.HTTPConflict(explanation=e.format_message())
 
 
 class Segments(extensions.V1APIExtensionBase):

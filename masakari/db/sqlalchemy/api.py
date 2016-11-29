@@ -23,6 +23,7 @@ from oslo_db.sqlalchemy import utils as sqlalchemyutils
 from oslo_utils import timeutils
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func
 from sqlalchemy.sql import null
 
 import masakari.conf
@@ -320,13 +321,44 @@ def failover_segment_update(context, segment_uuid, values):
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 @main_context_manager.writer
 def failover_segment_delete(context, segment_uuid):
-
     count = model_query(context, models.FailoverSegment
                         ).filter_by(uuid=segment_uuid
                                     ).soft_delete(synchronize_session=False)
 
     if count == 0:
         raise exception.FailoverSegmentNotFound(id=segment_uuid)
+
+    model_query(context, models.Host).filter_by(
+        failover_segment_id=segment_uuid).soft_delete(
+        synchronize_session=False)
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.reader
+def is_failover_segment_under_recovery(context, failover_segment_id,
+                                       filters=None):
+    filters = filters or {}
+
+    # get all hosts against the failover_segment
+    inner_select = model_query(
+        context, models.Host, (models.Host.uuid,)).filter(
+            models.Host.failover_segment_id == failover_segment_id)
+
+    # check if any host has notification status as new, running or error
+    query = model_query(context, models.Notification,
+                        (func.count(models.Notification.id),))
+    if 'status' in filters:
+        status = filters['status']
+        if isinstance(status, (list, tuple, set, frozenset)):
+            column_attr = getattr(models.Notification, 'status')
+            query = query.filter(column_attr.in_(status))
+        else:
+            query = query.filter(models.Notification.status == status)
+
+    query = query.filter(
+        models.Notification.source_host_uuid.in_(inner_select.subquery()))
+
+    return query.first()[0] > 0
 
 
 # db apis for host

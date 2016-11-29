@@ -126,13 +126,14 @@ class HostsController(wsgi.Controller):
             raise exc.HTTPNotFound(explanation=e.format_message())
         except exception.FailoverSegmentNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
-        except exception.HostExists as e:
+        except (exception.HostExists, exception.Conflict) as e:
             raise exc.HTTPConflict(explanation=e.format_message())
 
         return {'host': host}
 
     @wsgi.response(http.NO_CONTENT)
-    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND))
+    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND,
+                                 http.CONFLICT))
     def delete(self, req, segment_id, id):
         """Removes a host by id."""
         context = req.environ['masakari.context']
@@ -143,6 +144,8 @@ class HostsController(wsgi.Controller):
             raise exc.HTTPNotFound(explanation=e.format_message())
         except exception.HostNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
+        except exception.Conflict as e:
+            raise exc.HTTPConflict(explanation=e.format_message())
 
 
 class Hosts(extensions.V1APIExtensionBase):

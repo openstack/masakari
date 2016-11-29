@@ -97,6 +97,10 @@ class FailoverSegment(base.MasakariPersistentObject, base.MasakariObject,
         db.failover_segment_delete(self._context, self.uuid)
         delattr(self, base.get_attrname('id'))
 
+    def is_under_recovery(self, filters=None):
+        return db.is_failover_segment_under_recovery(self._context, self.uuid,
+                                                     filters=filters)
+
 
 @base.MasakariObjectRegistry.register
 class FailoverSegmentList(base.ObjectListBase, base.MasakariObject):

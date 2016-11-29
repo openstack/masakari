@@ -31,6 +31,16 @@ CONF = masakari.conf.CONF
 LOG = logging.getLogger(__name__)
 
 
+def is_failover_segment_under_recovery(segment):
+    filters = {
+        'status': [fields.NotificationStatus.NEW,
+                   fields.NotificationStatus.RUNNING,
+                   fields.NotificationStatus.ERROR]
+    }
+
+    return segment.is_under_recovery(filters=filters)
+
+
 class FailoverSegmentAPI(object):
 
     def get_segment(self, context, segment_uuid):
@@ -87,11 +97,12 @@ class FailoverSegmentAPI(object):
     def update_segment(self, context, uuid, segment_data):
         """Update the properties of a failover segment."""
         segment = objects.FailoverSegment.get_by_uuid(context, uuid)
+        if is_failover_segment_under_recovery(segment):
+            msg = _("Failover segment %s can't be updated as "
+                    "it is in-use to process notifications.") % uuid
+            LOG.error(msg)
+            raise exception.FailoverSegmentInUse(msg)
 
-        # TODO(Dinesh_Bhor): Updating a segment will depend on many factors
-        # for e.g. whether a recovery action is in progress for the segment
-        # or not. Various constraints will be applied for updating failover
-        # segment in future.
         segment.update(segment_data)
         segment.save()
         return segment
@@ -99,10 +110,12 @@ class FailoverSegmentAPI(object):
     def delete_segment(self, context, uuid):
         """Deletes the segment."""
         segment = objects.FailoverSegment.get_by_uuid(context, uuid)
-        # TODO(Dinesh_Bhor): Deleting a segment will depend on many factors
-        # for e.g. whether a recovery action is in progress for the segment
-        # or not. Various constraints will be applied for deleting failover
-        # segment in future.
+        if is_failover_segment_under_recovery(segment):
+            msg = _("Failover segment (%s) can't be deleted as "
+                    "it is in-use to process notifications.") % uuid
+            LOG.error(msg)
+            raise exception.FailoverSegmentInUse(msg)
+
         segment.destroy()
 
 
@@ -158,13 +171,16 @@ class HostAPI(object):
 
     def update_host(self, context, segment_uuid, id, host_data):
         """Update the host"""
-        objects.FailoverSegment.get_by_uuid(context, segment_uuid)
+        segment = objects.FailoverSegment.get_by_uuid(context, segment_uuid)
 
-        # TODO(Dinesh_Bhor): Updating a host will depend on many factors
-        # for e.g. whether a recovery action is in progress for the host
-        # or not. Various constraints will be applied for updating host
-        # in future.
         host = objects.Host.get_by_uuid(context, id)
+
+        if is_failover_segment_under_recovery(segment):
+            msg = _("Host %s can't be updated as "
+                    "it is in-use to process notifications.") % host.uuid
+            LOG.error(msg)
+            raise exception.HostInUse(msg)
+
         if 'on_maintenance' in host_data:
             host_data['on_maintenance'] = strutils.bool_from_string(
                 host_data['on_maintenance'], strict=True)
@@ -180,13 +196,15 @@ class HostAPI(object):
 
     def delete_host(self, context, segment_uuid, id):
         """Delete the host"""
-        objects.FailoverSegment.get_by_uuid(context, segment_uuid)
+        segment = objects.FailoverSegment.get_by_uuid(context, segment_uuid)
 
-        # TODO(Dinesh_Bhor): Deleting a host will depend on many factors
-        # for e.g. whether a recovery action is in progress for the host
-        # or not. Various constraints will be applied for deleting host
-        # in future.
         host = objects.Host.get_by_uuid(context, id)
+        if is_failover_segment_under_recovery(segment):
+            msg = _("Host %s can't be deleted as "
+                    "it is in-use to process notifications.") % host.uuid
+            LOG.error(msg)
+            raise exception.HostInUse(msg)
+
         host.destroy()
 
 
