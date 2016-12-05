@@ -18,7 +18,7 @@ from oslo_config import cfg
 
 rpcapi_opts = [
     cfg.StrOpt("masakari_topic",
-            default="engine",
+            default="ha_engine",
             help="""
 This is the message queue topic that the masakari engine 'listens' on. It is
 used when the masakari engine is started up to configure the queue, and
