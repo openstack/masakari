@@ -42,7 +42,7 @@ class StopInstanceTask(base.MasakariTask):
         self.novaclient = novaclient
 
     def execute(self, context, instance_uuid):
-        # Get vm infomation.
+        """Stop the instance for recovery."""
         instance = self.novaclient.get_server(context, instance_uuid)
 
         vm_state = getattr(instance, 'OS-EXT-STS:vm_state')
@@ -76,7 +76,7 @@ class StopInstanceTask(base.MasakariTask):
             # stop the periodic call, in case of exceptions or Timeout.
             periodic_call.stop()
 
-        # If instance is not HA-Enabled then exit from the flow
+        # If instance is not HA_Enabled then exit from the flow
         if not strutils.bool_from_string(instance.metadata.get(
                 'HA_Enabled', False), strict=True):
             LOG.info(_LI("Skipping recovery for instance: %s as it is "
@@ -92,7 +92,7 @@ class StartInstanceTask(base.MasakariTask):
         self.novaclient = novaclient
 
     def execute(self, context, instance_uuid):
-        # Get vm infomation.
+        """Start the instance."""
         instance = self.novaclient.get_server(context, instance_uuid)
         vm_state = getattr(instance, 'OS-EXT-STS:vm_state')
         if vm_state == 'stopped':
