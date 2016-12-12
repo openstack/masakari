@@ -315,11 +315,11 @@ class InstanceRecoveryFailureException(MasakariException):
 
 
 class SkipInstanceRecoveryException(MasakariException):
-    msg_fmt = _('Skiping execution of instance recovery workflow.')
+    msg_fmt = _('Skipping execution of instance recovery workflow.')
 
 
 class SkipProcessRecoveryException(MasakariException):
-    msg_fmt = _('Skiping execution of process recovery workflow.')
+    msg_fmt = _('Skipping execution of process recovery workflow.')
 
 
 class ProcessRecoveryFailureException(MasakariException):

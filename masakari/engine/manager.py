@@ -179,7 +179,7 @@ class MasakariManager(manager.Manager):
                     context, notification)
 
             LOG.info(_LI("Notification %(notification_uuid)s exits with "
-                         "%(status)s."), {
+                         "status: %(status)s."), {
                 'notification_uuid': notification.notification_uuid,
                 'status': notification_status
             })
