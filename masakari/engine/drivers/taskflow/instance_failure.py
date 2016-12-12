@@ -45,6 +45,13 @@ class StopInstanceTask(base.MasakariTask):
         """Stop the instance for recovery."""
         instance = self.novaclient.get_server(context, instance_uuid)
 
+        # If instance is not HA_Enabled then exit from the flow
+        if not strutils.bool_from_string(instance.metadata.get(
+                'HA_Enabled', False), strict=True):
+            LOG.info(_LI("Skipping recovery for instance: %s as it is "
+                         "not Ha_Enabled."), instance_uuid)
+            raise exception.SkipInstanceRecoveryException()
+
         vm_state = getattr(instance, 'OS-EXT-STS:vm_state')
         if vm_state != 'stopped':
             if vm_state == 'resized':
@@ -75,13 +82,6 @@ class StopInstanceTask(base.MasakariTask):
         finally:
             # stop the periodic call, in case of exceptions or Timeout.
             periodic_call.stop()
-
-        # If instance is not HA_Enabled then exit from the flow
-        if not strutils.bool_from_string(instance.metadata.get(
-                'HA_Enabled', False), strict=True):
-            LOG.info(_LI("Skipping recovery for instance: %s as it is "
-                         "not Ha_Enabled."), instance_uuid)
-            raise exception.SkipInstanceRecoveryException()
 
 
 class StartInstanceTask(base.MasakariTask):
