@@ -16,6 +16,7 @@ import os
 
 from oslo_log import log as logging
 # For more information please visit: https://wiki.openstack.org/wiki/TaskFlow
+from taskflow import formatters
 from taskflow.listeners import base
 from taskflow.listeners import logging as logging_listener
 from taskflow import task
@@ -49,6 +50,23 @@ class MasakariTask(task.Task):
         return _make_task_name(cls, addons)
 
 
+class SpecialFormatter(formatters.FailureFormatter):
+
+    # Exception is an excepted case, don't include traceback in log if fails.
+    _NO_TRACE_EXCEPTIONS = (exception.SkipInstanceRecoveryException,)
+
+    def __init__(self, engine):
+        super(SpecialFormatter, self).__init__(engine)
+
+    def format(self, fail, atom_matcher):
+        if fail.check(*self._NO_TRACE_EXCEPTIONS) is not None:
+            exc_info = None
+            exc_details = '%s%s' % (os.linesep, fail.pformat(traceback=False))
+            return (exc_info, exc_details)
+        else:
+            return super(SpecialFormatter, self).format(fail, atom_matcher)
+
+
 class DynamicLogListener(logging_listener.DynamicLoggingListener):
     """This is used to attach to taskflow engines while they are running.
 
@@ -57,9 +75,6 @@ class DynamicLogListener(logging_listener.DynamicLoggingListener):
     for operations folks for monitoring and tracking of the resource actions
     and more...
     """
-
-    #: Exception is an excepted case, don't include traceback in log if fails.
-    _NO_TRACE_EXCEPTIONS = (exception.InvalidInput)
 
     def __init__(self, engine,
                  task_listen_for=base.DEFAULT_LISTEN_FOR,
@@ -71,12 +86,4 @@ class DynamicLogListener(logging_listener.DynamicLoggingListener):
             task_listen_for=task_listen_for,
             flow_listen_for=flow_listen_for,
             retry_listen_for=retry_listen_for,
-            log=logger)
-
-    def _format_failure(self, fail):
-        if fail.check(*self._NO_TRACE_EXCEPTIONS) is not None:
-            exc_info = None
-            exc_details = '%s%s' % (os.linesep, fail.pformat(traceback=False))
-            return (exc_info, exc_details)
-        else:
-            return super(DynamicLogListener, self)._format_failure(fail)
+            log=logger, fail_formatter=SpecialFormatter(engine))
