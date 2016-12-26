@@ -19,13 +19,13 @@ Handles all requests to Nova.
 import functools
 import sys
 
+from keystoneauth1.access import service_catalog
 from keystoneauth1 import exceptions as keystone_exception
 import keystoneauth1.loading
 import keystoneauth1.session
 from novaclient import api_versions
 from novaclient import client as nova_client
 from novaclient import exceptions as nova_exception
-from novaclient import service_catalog
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 from requests import exceptions as request_exceptions
@@ -82,73 +82,50 @@ def translate_nova_exception(method):
     return wrapper
 
 
-def novaclient(context, admin_endpoint=False, privileged_user=False,
-               timeout=None):
+def novaclient(context, timeout=None):
     """Returns a Nova client
 
-    @param admin_endpoint: If True, use the admin endpoint template from
-        configuration ('nova_endpoint_admin_template' and 'nova_catalog_info')
-    @param privileged_user: If True, use the account from configuration
-        (requires 'os_privileged_user_name', 'os_privileged_user_password' and
-        'os_privileged_user_tenant' to be set)
     @param timeout: Number of seconds to wait for an answer before raising a
         Timeout exception (None to disable)
     """
-    # FIXME: the novaclient ServiceCatalog object is mis-named.
-    #        It actually contains the entire access blob.
-    # Only needed parts of the service catalog are passed in, see
-    # nova/context.py.
-    compat_catalog = {
-        'access': {'serviceCatalog': context.service_catalog or []}
-    }
-    sc = service_catalog.ServiceCatalog(compat_catalog)
+    sc = context.service_catalog or []
 
-    nova_endpoint_template = CONF.nova_endpoint_template
-    nova_catalog_info = CONF.nova_catalog_info
-
-    if admin_endpoint:
-        nova_endpoint_template = CONF.nova_endpoint_admin_template
-        nova_catalog_info = CONF.nova_catalog_admin_info
+    nova_catalog_info = CONF.nova_catalog_admin_info
     service_type, service_name, endpoint_type = nova_catalog_info.split(':')
 
     # Extract the region if set in configuration
     if CONF.os_region_name:
-        region_filter = {'attr': 'region', 'filter_value': CONF.os_region_name}
+        region_filter = {'region_name': CONF.os_region_name}
     else:
         region_filter = {}
 
-    if privileged_user and CONF.os_privileged_user_name:
-        context = ctx.RequestContext(
-            CONF.os_privileged_user_name, None,
-            auth_token=CONF.os_privileged_user_password,
-            project_name=CONF.os_privileged_user_tenant,
-            service_catalog=context.service_catalog)
+    context = ctx.RequestContext(
+        CONF.os_privileged_user_name, None,
+        auth_token=CONF.os_privileged_user_password,
+        project_name=CONF.os_privileged_user_tenant,
+        service_catalog=context.service_catalog)
 
-        # When privileged_user is used, it needs to authenticate to Keystone
-        # before querying Nova, so we set auth_url to the identity service
-        # endpoint.
-        if CONF.os_privileged_user_auth_url:
-            url = CONF.os_privileged_user_auth_url
-        else:
-            # We then pass region_name, endpoint_type, etc. to the
-            # Client() constructor so that the final endpoint is
-            # chosen correctly.
-            url = sc.url_for(service_type='identity',
-                             endpoint_type=endpoint_type,
-                             **region_filter)
-
-        LOG.debug('Creating a Nova client using "%s" user',
-                  CONF.os_privileged_user_name)
+    # User needs to authenticate to Keystone before querying Nova, so we set
+    # auth_url to the identity service endpoint
+    if CONF.os_privileged_user_auth_url:
+        url = CONF.os_privileged_user_auth_url
     else:
-        if nova_endpoint_template:
-            url = nova_endpoint_template % context.to_dict()
-        else:
-            url = sc.url_for(service_type=service_type,
-                             service_name=service_name,
-                             endpoint_type=endpoint_type,
-                             **region_filter)
+        # We then pass region_name, endpoint_type, etc. to the
+        # Client() constructor so that the final endpoint is
+        # chosen correctly.
+        try:
+            url = service_catalog.ServiceCatalogV2(sc).url_for(
+                service_type='identity',
+                interface=endpoint_type,
+                **region_filter)
+        except keystone_exception.EndpointNotFound:
+            url = service_catalog.ServiceCatalogV3(sc).url_for(
+                service_type='identity',
+                interface=endpoint_type,
+                **region_filter)
 
-        LOG.debug('Nova client connection created using URL: %s', url)
+    LOG.debug('Creating a Nova client using "%s" user',
+              CONF.os_privileged_user_name)
 
     # Now that we have the correct auth_url, username, password and
     # project_name, let's build a Keystone session.
@@ -160,21 +137,16 @@ def novaclient(context, admin_endpoint=False, privileged_user=False,
                                     project_name=context.project_name)
     keystone_session = keystoneauth1.session.Session(auth=auth)
 
-    c = nova_client.Client(api_versions.APIVersion(NOVA_API_VERSION),
-                           session=keystone_session,
-                           insecure=CONF.nova_api_insecure,
-                           timeout=timeout,
-                           region_name=CONF.os_region_name,
-                           endpoint_type=endpoint_type,
-                           cacert=CONF.nova_ca_certificates_file,
-                           extensions=nova_extensions)
+    client_obj = nova_client.Client(api_versions.APIVersion(NOVA_API_VERSION),
+                                    session=keystone_session,
+                                    insecure=CONF.nova_api_insecure,
+                                    timeout=timeout,
+                                    region_name=CONF.os_region_name,
+                                    endpoint_type=endpoint_type,
+                                    cacert=CONF.nova_ca_certificates_file,
+                                    extensions=nova_extensions)
 
-    if not privileged_user:
-        # noauth extracts user_id:project_id from auth_token
-        c.client.auth_token = (context.auth_token or '%s:%s'
-                               % (context.user_id, context.project_id))
-        c.client.management_url = url
-    return c
+    return client_obj
 
 
 class API(object):
@@ -187,8 +159,7 @@ class API(object):
             'host': host,
             'all_tenants': True
         }
-        nova = novaclient(context, admin_endpoint=True,
-                          privileged_user=True)
+        nova = novaclient(context)
         LOG.info(_LI('Fetch Server list on %s'), host)
         return nova.servers.list(detailed=True, search_opts=opts)
 
@@ -196,8 +167,7 @@ class API(object):
     def enable_disable_service(self, context, host_name, enable=False,
                                reason=None):
         """Enable or disable the service specified by hostname and binary."""
-        nova = novaclient(context, admin_endpoint=True,
-                          privileged_user=True)
+        nova = novaclient(context)
 
         if not enable:
             LOG.info(_LI('Disable nova-compute on %s'), host_name)
@@ -213,8 +183,7 @@ class API(object):
     @translate_nova_exception
     def is_service_down(self, context, host_name, binary):
         """Check whether service is up or down on given host."""
-        nova = novaclient(context, admin_endpoint=True,
-                          privileged_user=True)
+        nova = novaclient(context)
         service = nova.services.list(host=host_name, binary=binary)[0]
         return service.status == 'disabled'
 
@@ -225,8 +194,7 @@ class API(object):
         msg = (_LI('Call evacuate command for instance %(uuid)s on host '
                    '%(target)s'))
         LOG.info(msg, {'uuid': uuid, 'target': target})
-        nova = novaclient(context, admin_endpoint=True,
-                          privileged_user=True)
+        nova = novaclient(context)
         nova.servers.evacuate(uuid, host=target,
                               on_shared_storage=on_shared_storage)
 
@@ -236,15 +204,13 @@ class API(object):
         msg = (_LI('Call reset state command on instance %(uuid)s to '
                    'status: %(status)s.'))
         LOG.info(msg, {'uuid': uuid, 'status': status})
-        nova = novaclient(context, admin_endpoint=True,
-                          privileged_user=True)
+        nova = novaclient(context)
         nova.servers.reset_state(uuid, status)
 
     @translate_nova_exception
     def get_server(self, context, uuid):
         """Get a server."""
-        nova = novaclient(context, admin_endpoint=True,
-                          privileged_user=True)
+        nova = novaclient(context)
         msg = (_LI('Call get server command for instance %(uuid)s'))
         LOG.info(msg, {'uuid': uuid})
         return nova.servers.get(uuid)
@@ -252,8 +218,7 @@ class API(object):
     @translate_nova_exception
     def stop_server(self, context, uuid):
         """Stop a server."""
-        nova = novaclient(context, admin_endpoint=True,
-                          privileged_user=True)
+        nova = novaclient(context)
         msg = (_LI('Call stop server command for instance %(uuid)s'))
         LOG.info(msg, {'uuid': uuid})
         return nova.servers.stop(uuid)
@@ -261,8 +226,7 @@ class API(object):
     @translate_nova_exception
     def start_server(self, context, uuid):
         """Start a server."""
-        nova = novaclient(context, admin_endpoint=True,
-                          privileged_user=True)
+        nova = novaclient(context)
         msg = (_LI('Call start server command for instance %(uuid)s'))
         LOG.info(msg, {'uuid': uuid})
         return nova.servers.start(uuid)

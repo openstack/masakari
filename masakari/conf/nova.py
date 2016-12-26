@@ -17,20 +17,12 @@ from keystoneauth1 import loading as ks_loading
 from oslo_config import cfg
 
 nova_opts = [
-    cfg.StrOpt('nova_catalog_info',
-               default='compute:Compute Service:publicURL',
+    cfg.StrOpt('nova_catalog_admin_info',
+               default='compute:Compute Service:adminURL',
                help='Match this value when searching for nova in the '
                     'service catalog. Format is: separated values of '
                     'the form: '
                     '<service_type>:<service_name>:<endpoint_type>'),
-    cfg.StrOpt('nova_catalog_admin_info',
-               default='compute:Compute Service:adminURL',
-               help='Same as nova_catalog_info, but for admin endpoint.'),
-    cfg.StrOpt('nova_endpoint_template',
-               help='Override service catalog lookup with template for nova '
-                    'endpoint e.g. http://localhost:8774/v2/%(project_id)s'),
-    cfg.StrOpt('nova_endpoint_admin_template',
-               help='Same as nova_endpoint_template, but for admin endpoint.'),
     cfg.StrOpt('os_region_name',
                help='Region name of this node'),
     cfg.StrOpt('nova_ca_certificates_file',
