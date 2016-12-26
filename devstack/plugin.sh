@@ -46,16 +46,13 @@ function create_masakari_accounts {
 
         create_service_user "masakari" "admin"
 
-        if [[ "$KEYSTONE_CATALOG_BACKEND" = 'sql' ]]; then
-
-            local masakari_service=$(get_or_create_service "masakari" \
-                "ha" "OpenStack High Availability")
-            get_or_create_endpoint $masakari_service \
-                "$REGION_NAME" \
-                "http://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
-                "http://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
-                "http://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s"
-        fi
+        local masakari_service=$(get_or_create_service "masakari" \
+            "ha" "OpenStack High Availability")
+        get_or_create_endpoint $masakari_service \
+            "$REGION_NAME" \
+            "http://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
+            "http://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
+            "http://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s"
     fi
 }
 
