@@ -13,6 +13,7 @@
 
 from oslo_middleware import request_id
 from oslo_serialization import jsonutils
+from six.moves import http_client as http
 import webob
 import webob.exc
 
@@ -42,32 +43,32 @@ class TestMasakariKeystoneContextMiddleware(test.NoDBTestCase):
 
     def test_no_user_or_user_id(self):
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status, '401 Unauthorized')
+        self.assertEqual(response.status_int, http.UNAUTHORIZED)
 
     def test_user_id_only(self):
         self.request.headers['X_USER_ID'] = 'testuserid'
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.status_int, http.OK)
         self.assertEqual(self.context.user_id, 'testuserid')
 
     def test_user_only(self):
         self.request.headers['X_USER'] = 'testuser'
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.status_int, http.OK)
         self.assertEqual(self.context.user_id, 'testuser')
 
     def test_user_id_trumps_user(self):
         self.request.headers['X_USER_ID'] = 'testuserid'
         self.request.headers['X_USER'] = 'testuser'
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status, '200 OK')
+        self.assertEqual(response.status_int, http.OK)
         self.assertEqual(self.context.user_id, 'testuserid')
 
     def test_invalid_service_catalog(self):
         self.request.headers['X_USER'] = 'testuser'
         self.request.headers['X_SERVICE_CATALOG'] = "bad json"
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status, '500 Internal Server Error')
+        self.assertEqual(response.status_int, http.INTERNAL_SERVER_ERROR)
 
     def test_request_id_extracted_from_env(self):
         req_id = 'dummy-request-id'

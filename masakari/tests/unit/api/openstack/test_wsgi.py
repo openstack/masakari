@@ -17,6 +17,7 @@ import inspect
 
 import mock
 import six
+from six.moves import http_client as http
 import testscenarios
 import webob
 
@@ -234,19 +235,19 @@ class ResourceTest(MicroversionedTest):
         req = webob.Request.blank('/tests')
         response = req.get_response(app)
         self.assertEqual(b'success', response.body)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
         req.body = b'{"body": {"key": "value"}}'
         response = req.get_response(app)
         self.assertEqual(b'success', response.body)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
         req.content_type = 'application/json'
         response = req.get_response(app)
         self.assertEqual(b'success', response.body)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
 
     def test_resource_call_with_method_post(self):
         class Controller(object):
-            @extensions.expected_errors(400)
+            @extensions.expected_errors(http.BAD_REQUEST)
             def create(self, req, body):
                 if expected_body != body:
                     msg = "The request body invalid"
@@ -262,20 +263,20 @@ class ResourceTest(MicroversionedTest):
             }
         }
         response = req.get_response(app)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
         self.assertEqual(b'success', response.body)
         # verify without body
         expected_body = None
         req.body = None
         response = req.get_response(app)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
         self.assertEqual(b'success', response.body)
         # the body is validated in the controller
         expected_body = {'body': None}
         response = req.get_response(app)
         expected_unsupported_type_body = {'badRequest':
-            {'message': 'The request body invalid', 'code': 400}}
-        self.assertEqual(response.status_int, 400)
+            {'message': 'The request body invalid', 'code': http.BAD_REQUEST}}
+        self.assertEqual(response.status_int, http.BAD_REQUEST)
         self.assertEqual(expected_unsupported_type_body,
                          jsonutils.loads(response.body))
 
@@ -297,11 +298,11 @@ class ResourceTest(MicroversionedTest):
         }
         response = req.get_response(app)
         self.assertEqual(b'success', response.body)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
         req.body = None
         expected_body = None
         response = req.get_response(app)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
         # verify no content_type is contained in the request
         req = webob.Request.blank('/tests/test_id', method="PUT",
                                   content_type='application/xml')
@@ -309,8 +310,9 @@ class ResourceTest(MicroversionedTest):
         req.body = b'{"body": {"key": "value"}}'
         response = req.get_response(app)
         expected_unsupported_type_body = {'badMediaType':
-            {'message': 'Unsupported Content-Type', 'code': 415}}
-        self.assertEqual(response.status_int, 415)
+            {'message': 'Unsupported Content-Type',
+             'code': http.UNSUPPORTED_MEDIA_TYPE}}
+        self.assertEqual(response.status_int, http.UNSUPPORTED_MEDIA_TYPE)
         self.assertEqual(expected_unsupported_type_body,
                          jsonutils.loads(response.body))
 
@@ -323,12 +325,12 @@ class ResourceTest(MicroversionedTest):
         app = fakes.TestRouter(Controller())
         req = webob.Request.blank('/tests/test_id', method="DELETE")
         response = req.get_response(app)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
         self.assertEqual(b'success', response.body)
         # ignore the body
         req.body = b'{"body": {"key": "value"}}'
         response = req.get_response(app)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
         self.assertEqual(b'success', response.body)
 
     def test_resource_not_authorized(self):
@@ -339,7 +341,7 @@ class ResourceTest(MicroversionedTest):
         req = webob.Request.blank('/tests')
         app = fakes.TestRouter(Controller())
         response = req.get_response(app)
-        self.assertEqual(response.status_int, 403)
+        self.assertEqual(response.status_int, http.FORBIDDEN)
 
     def test_dispatch(self):
         class Controller(object):
@@ -505,7 +507,7 @@ class ResourceTest(MicroversionedTest):
         response = req.get_response(app)
         self.assertIn('masakari.context', req.environ)
         self.assertEqual(b'{"foo": "bar"}', response.body)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
 
     def test_str_response_body(self):
 
@@ -519,7 +521,7 @@ class ResourceTest(MicroversionedTest):
         expected_header = self.get_req_id_header_name(req)
         self.assertFalse(hasattr(response.headers, expected_header))
         self.assertEqual(b'foo', response.body)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
 
     def test_get_no_response_body(self):
 
@@ -532,7 +534,7 @@ class ResourceTest(MicroversionedTest):
         response = req.get_response(app)
         self.assertIn('masakari.context', req.environ)
         self.assertEqual(b'', response.body)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
 
     def test_deserialize_default(self):
         class Controller(object):
@@ -864,10 +866,10 @@ class ResourceTest(MicroversionedTest):
                 foo()  # generate a TypeError
             self.fail("Should have raised a Fault (HTTP 400)")
         except wsgi.Fault as fault:
-            self.assertEqual(400, fault.status_int)
+            self.assertEqual(http.BAD_REQUEST, fault.status_int)
 
     def test_resource_headers_are_utf8(self):
-        resp = webob.Response(status_int=202)
+        resp = webob.Response(status_int=http.ACCEPTED)
         resp.headers['x-header1'] = 1
         resp.headers['x-header2'] = u'header2'
         resp.headers['x-header3'] = u'header3'
@@ -899,7 +901,7 @@ class ResourceTest(MicroversionedTest):
         app = fakes.TestRouter(Controller())
         response = req.get_response(app)
         self.assertEqual(response.body, expected_body)
-        self.assertEqual(response.status_int, 200)
+        self.assertEqual(response.status_int, http.OK)
 
     def test_resource_invalid_utf8(self):
         class Controller(object):
@@ -917,21 +919,21 @@ class ResourceTest(MicroversionedTest):
 class ResponseObjectTest(test.NoDBTestCase):
     def test_default_code(self):
         robj = wsgi.ResponseObject({})
-        self.assertEqual(robj.code, 200)
+        self.assertEqual(robj.code, http.OK)
 
     def test_modified_code(self):
         robj = wsgi.ResponseObject({})
-        robj._default_code = 202
-        self.assertEqual(robj.code, 202)
+        robj._default_code = http.ACCEPTED
+        self.assertEqual(robj.code, http.ACCEPTED)
 
     def test_override_default_code(self):
-        robj = wsgi.ResponseObject({}, code=404)
-        self.assertEqual(robj.code, 404)
+        robj = wsgi.ResponseObject({}, code=http.NOT_FOUND)
+        self.assertEqual(robj.code, http.NOT_FOUND)
 
     def test_override_modified_code(self):
-        robj = wsgi.ResponseObject({}, code=404)
-        robj._default_code = 202
-        self.assertEqual(robj.code, 404)
+        robj = wsgi.ResponseObject({}, code=http.NOT_FOUND)
+        robj._default_code = http.ACCEPTED
+        self.assertEqual(robj.code, http.NOT_FOUND)
 
     def test_set_header(self):
         robj = wsgi.ResponseObject({})

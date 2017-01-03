@@ -15,6 +15,7 @@
 
 """The Host API extension."""
 
+from six.moves import http_client as http
 from webob import exc
 
 from masakari.api.openstack import common
@@ -36,7 +37,8 @@ class HostsController(wsgi.Controller):
     def __init__(self):
         self.api = host_api.HostAPI()
 
-    @extensions.expected_errors((400, 403, 404))
+    @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN,
+                                 http.NOT_FOUND))
     def index(self, req, segment_id):
         """Returns a list a hosts."""
         context = req.environ['masakari.context']
@@ -79,8 +81,9 @@ class HostsController(wsgi.Controller):
 
         return {'hosts': hosts}
 
-    @wsgi.response(201)
-    @extensions.expected_errors((403, 404, 409))
+    @wsgi.response(http.CREATED)
+    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND,
+                                 http.CONFLICT))
     @validation.schema(schema.create)
     def create(self, req, segment_id, body):
         """Creates a host."""
@@ -96,7 +99,7 @@ class HostsController(wsgi.Controller):
 
         return {'host': host}
 
-    @extensions.expected_errors((403, 404))
+    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND))
     def show(self, req, segment_id, id):
         """Shows the details of a host."""
         context = req.environ['masakari.context']
@@ -109,7 +112,8 @@ class HostsController(wsgi.Controller):
             raise exc.HTTPNotFound(explanation=e.format_message())
         return {'host': host}
 
-    @extensions.expected_errors((403, 404, 409))
+    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND,
+                                 http.CONFLICT))
     @validation.schema(schema.update)
     def update(self, req, segment_id, id, body):
         """Updates the existing host."""
@@ -127,8 +131,8 @@ class HostsController(wsgi.Controller):
 
         return {'host': host}
 
-    @wsgi.response(204)
-    @extensions.expected_errors((403, 404))
+    @wsgi.response(http.NO_CONTENT)
+    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND))
     def delete(self, req, segment_id, id):
         """Removes a host by id."""
         context = req.environ['masakari.context']

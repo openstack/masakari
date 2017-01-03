@@ -13,6 +13,7 @@
 #    under the License.
 
 import mock
+from six.moves import http_client as http
 
 from keystoneauth1 import exceptions as keystone_exception
 from novaclient import exceptions as nova_exception
@@ -137,7 +138,7 @@ class NovaApiTestCase(test.TestCase):
     @mock.patch('masakari.compute.nova.novaclient')
     def test_get_failed_not_found(self, mock_novaclient):
         mock_novaclient.return_value.servers.get.side_effect = (
-            nova_exception.NotFound(404, '404'))
+            nova_exception.NotFound(http.NOT_FOUND, '404'))
 
         self.assertRaises(exception.NotFound,
                   self.api.get_server, self.ctx, uuidsentinel.fake_server)
@@ -145,7 +146,7 @@ class NovaApiTestCase(test.TestCase):
     @mock.patch('masakari.compute.nova.novaclient')
     def test_get_failed_bad_request(self, mock_novaclient):
         mock_novaclient.return_value.servers.get.side_effect = (
-            nova_exception.BadRequest(400, '400'))
+            nova_exception.BadRequest(http.BAD_REQUEST, '400'))
 
         self.assertRaises(exception.InvalidInput,
                   self.api.get_server, self.ctx, uuidsentinel.fake_server)

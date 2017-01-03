@@ -17,6 +17,7 @@
 
 import mock
 from oslo_serialization import jsonutils
+from six.moves import http_client as http
 from webob import exc
 
 from masakari.api.openstack.ha import hosts
@@ -176,7 +177,7 @@ class HostTestCase(test.TestCase):
         fake_req.method = 'POST'
         fake_req.body = jsonutils.dump_as_bytes(body)
         resp = fake_req.get_response(self.app)
-        self.assertEqual(201, resp.status_code)
+        self.assertEqual(http.CREATED, resp.status_code)
 
     @mock.patch.object(ha_api.HostAPI, 'create_host')
     def test_create_with_duplicate_host_name(self, mock_create):
@@ -380,7 +381,7 @@ class HostTestCase(test.TestCase):
         fake_req.headers['Content-Type'] = 'application/json'
         fake_req.method = 'DELETE'
         resp = fake_req.get_response(self.app)
-        self.assertEqual(204, resp.status_code)
+        self.assertEqual(http.NO_CONTENT, resp.status_code)
 
     @mock.patch.object(ha_api.HostAPI, 'delete_host')
     def test_delete_host_not_found(self, mock_delete):

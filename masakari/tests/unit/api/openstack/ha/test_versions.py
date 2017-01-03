@@ -17,6 +17,7 @@ import copy
 
 import mock
 from oslo_serialization import jsonutils
+from six.moves import http_client as http
 import webob
 
 from masakari.api import api_version_request as avr
@@ -217,7 +218,7 @@ class VersionsTest(test.NoDBTestCase):
         req = webob.Request.blank('/v1')
         req.accept = "application/json"
         res = req.get_response(self.wsgi_app)
-        self.assertEqual(302, res.status_int)
+        self.assertEqual(http.FOUND, res.status_int)
         redirect_req = webob.Request.blank('/v1/')
         self.assertEqual(redirect_req.url, res.location)
 
@@ -226,4 +227,4 @@ class VersionsTest(test.NoDBTestCase):
         req = webob.Request.blank('/v1/versions/1234/foo')
         req.accept = "application/json"
         res = req.get_response(self.wsgi_app)
-        self.assertEqual(404, res.status_int)
+        self.assertEqual(http.NOT_FOUND, res.status_int)

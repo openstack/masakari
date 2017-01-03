@@ -18,6 +18,7 @@
 import mock
 from oslo_serialization import jsonutils
 from oslo_utils import timeutils
+from six.moves import http_client as http
 from webob import exc
 
 from masakari.api.openstack.ha import notifications
@@ -168,7 +169,7 @@ class NotificationTestCase(test.TestCase):
         fake_req.method = 'POST'
         fake_req.body = jsonutils.dump_as_bytes(body)
         resp = fake_req.get_response(self.app)
-        self.assertEqual(202, resp.status_code)
+        self.assertEqual(http.ACCEPTED, resp.status_code)
 
     def test_create_invalid_type(self):
         body = {
@@ -289,7 +290,7 @@ class NotificationTestCase(test.TestCase):
         fake_req.headers['Content-Type'] = 'application/json'
         fake_req.method = 'DELETE'
         resp = fake_req.get_response(self.app)
-        self.assertEqual(405, resp.status_code)
+        self.assertEqual(http.METHOD_NOT_ALLOWED, resp.status_code)
 
     @mock.patch('masakari.rpc.get_client')
     def test_update_notification(self, mock_client):
@@ -298,7 +299,7 @@ class NotificationTestCase(test.TestCase):
         fake_req.headers['Content-Type'] = 'application/json'
         fake_req.method = 'PUT'
         resp = fake_req.get_response(self.app)
-        self.assertEqual(405, resp.status_code)
+        self.assertEqual(http.METHOD_NOT_ALLOWED, resp.status_code)
 
 
 class NotificationCasePolicyNotAuthorized(test.NoDBTestCase):

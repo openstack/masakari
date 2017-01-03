@@ -18,6 +18,7 @@ import re
 import fixtures
 from jsonschema import exceptions as jsonschema_exc
 import six
+from six.moves import http_client as http
 import sys
 
 from masakari.api import api_version_request as api_version
@@ -98,7 +99,7 @@ class APIValidationTestCase(test.NoDBTestCase):
         try:
             method(body=body, req=req,)
         except exception.ValidationError as ex:
-            self.assertEqual(400, ex.kwargs['code'])
+            self.assertEqual(http.BAD_REQUEST, ex.kwargs['code'])
             if not re.match(expected_detail, ex.kwargs['detail']):
                 self.assertEqual(expected_detail, ex.kwargs['detail'],
                                  'Exception details did not match expected')

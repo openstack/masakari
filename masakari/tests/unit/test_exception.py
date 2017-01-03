@@ -17,6 +17,7 @@
 import inspect
 
 import six
+from six.moves import http_client as http
 from webob.util import status_reasons
 
 from masakari import exception
@@ -39,7 +40,7 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
         class FakeMasakariException(exception.MasakariException):
             msg_fmt = "default message: %(code)s"
 
-        exc = FakeMasakariException(code=500)
+        exc = FakeMasakariException(code=http.INTERNAL_SERVER_ERROR)
         self.assertEqual('default message: 500', six.text_type(exc))
         self.assertEqual('default message: 500', exc.message)
 
@@ -47,23 +48,24 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
         class FakeMasakariException(exception.MasakariException):
             msg_fmt = "default message: %(misspelled_code)s"
 
-        exc = FakeMasakariException(code=500, misspelled_code='blah')
+        exc = FakeMasakariException(code=http.INTERNAL_SERVER_ERROR,
+                                    misspelled_code='blah')
         self.assertEqual('default message: blah', six.text_type(exc))
         self.assertEqual('default message: blah', exc.message)
 
     def test_default_error_code(self):
         class FakeMasakariException(exception.MasakariException):
-            code = 404
+            code = http.NOT_FOUND
 
         exc = FakeMasakariException()
-        self.assertEqual(404, exc.kwargs['code'])
+        self.assertEqual(http.NOT_FOUND, exc.kwargs['code'])
 
     def test_error_code_from_kwarg(self):
         class FakeMasakariException(exception.MasakariException):
-            code = 500
+            code = http.INTERNAL_SERVER_ERROR
 
-        exc = FakeMasakariException(code=404)
-        self.assertEqual(exc.kwargs['code'], 404)
+        exc = FakeMasakariException(code=http.NOT_FOUND)
+        self.assertEqual(exc.kwargs['code'], http.NOT_FOUND)
 
     def test_format_message_local(self):
         class FakeMasakariException(exception.MasakariException):
@@ -101,14 +103,15 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
 
 class ConvertedExceptionTestCase(test.NoDBTestCase):
     def test_instantiate(self):
-        exc = exception.ConvertedException(400, 'Bad Request', 'reason')
-        self.assertEqual(exc.code, 400)
+        exc = exception.ConvertedException(http.BAD_REQUEST,
+                                           'Bad Request', 'reason')
+        self.assertEqual(exc.code, http.BAD_REQUEST)
         self.assertEqual(exc.title, 'Bad Request')
         self.assertEqual(exc.explanation, 'reason')
 
     def test_instantiate_without_title_known_code(self):
-        exc = exception.ConvertedException(500)
-        self.assertEqual(exc.title, status_reasons[500])
+        exc = exception.ConvertedException(http.INTERNAL_SERVER_ERROR)
+        self.assertEqual(exc.title, status_reasons[http.INTERNAL_SERVER_ERROR])
 
     def test_instantiate_without_title_unknown_code(self):
         exc = exception.ConvertedException(499)
@@ -121,7 +124,7 @@ class ConvertedExceptionTestCase(test.NoDBTestCase):
 class ExceptionTestCase(test.NoDBTestCase):
     @staticmethod
     def _raise_exc(exc):
-        raise exc(500)
+        raise exc(http.INTERNAL_SERVER_ERROR)
 
     def test_exceptions_raise(self):
         # NOTE(Dinesh_Bhor): disable format errors since we are not passing

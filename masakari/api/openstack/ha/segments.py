@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from six.moves import http_client as http
 from webob import exc
 
 from masakari.api.openstack import common
@@ -34,7 +35,7 @@ class SegmentsController(wsgi.Controller):
     def __init__(self):
         self.api = segment_api.FailoverSegmentAPI()
 
-    @extensions.expected_errors((400, 403))
+    @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN))
     def index(self, req):
         """Returns a summary list of failover segments."""
         context = req.environ['masakari.context']
@@ -61,7 +62,7 @@ class SegmentsController(wsgi.Controller):
 
         return {'segments': segments}
 
-    @extensions.expected_errors((403, 404))
+    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND))
     def show(self, req, id):
         """Return data about the given segment id."""
         context = req.environ['masakari.context']
@@ -73,8 +74,8 @@ class SegmentsController(wsgi.Controller):
             raise exc.HTTPNotFound(explanation=e.format_message())
         return {'segment': segment}
 
-    @wsgi.response(201)
-    @extensions.expected_errors((403, 409))
+    @wsgi.response(http.CREATED)
+    @extensions.expected_errors((http.FORBIDDEN, http.CONFLICT))
     @validation.schema(schema.create)
     def create(self, req, body):
         """Creates a new failover segment."""
@@ -88,7 +89,8 @@ class SegmentsController(wsgi.Controller):
             raise exc.HTTPConflict(explanation=e.format_message())
         return {'segment': segment}
 
-    @extensions.expected_errors((403, 404, 409))
+    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND,
+                                 http.CONFLICT))
     @validation.schema(schema.update)
     def update(self, req, id, body):
         """Updates the existing segment."""
@@ -105,8 +107,8 @@ class SegmentsController(wsgi.Controller):
 
         return {'segment': segment}
 
-    @wsgi.response(204)
-    @extensions.expected_errors((403, 404))
+    @wsgi.response(http.NO_CONTENT)
+    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND))
     def delete(self, req, id):
         """Removes a segment by uuid."""
         context = req.environ['masakari.context']

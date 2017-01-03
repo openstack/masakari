@@ -15,6 +15,7 @@
 
 import mock
 from oslo_config import cfg
+from six.moves import http_client as http
 import webob.exc
 
 from masakari.api.openstack import extensions
@@ -54,35 +55,36 @@ class ExtensionLoadingTestCase(test.NoDBTestCase):
         self.assertIn('extensions', name_list)
 
     def test_extensions_expected_error(self):
-        @extensions.expected_errors(404)
+        @extensions.expected_errors(http.NOT_FOUND)
         def fake_func():
             raise webob.exc.HTTPNotFound()
 
         self.assertRaises(webob.exc.HTTPNotFound, fake_func)
 
     def test_extensions_expected_error_from_list(self):
-        @extensions.expected_errors((404, 403))
+        @extensions.expected_errors((http.NOT_FOUND, http.FORBIDDEN))
         def fake_func():
             raise webob.exc.HTTPNotFound()
 
         self.assertRaises(webob.exc.HTTPNotFound, fake_func)
 
     def test_extensions_unexpected_error(self):
-        @extensions.expected_errors(404)
+        @extensions.expected_errors(http.NOT_FOUND)
         def fake_func():
             raise webob.exc.HTTPConflict()
 
         self.assertRaises(webob.exc.HTTPInternalServerError, fake_func)
 
     def test_extensions_unexpected_error_from_list(self):
-        @extensions.expected_errors((404, 413))
+        @extensions.expected_errors((http.NOT_FOUND,
+                                     http.REQUEST_ENTITY_TOO_LARGE))
         def fake_func():
             raise webob.exc.HTTPConflict()
 
         self.assertRaises(webob.exc.HTTPInternalServerError, fake_func)
 
     def test_extensions_unexpected_policy_not_authorized_error(self):
-        @extensions.expected_errors(404)
+        @extensions.expected_errors(http.NOT_FOUND)
         def fake_func():
             raise exception.PolicyNotAuthorized(action="foo")
 

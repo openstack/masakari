@@ -14,6 +14,7 @@
 #    under the License.
 
 from oslo_utils import timeutils
+from six.moves import http_client as http
 from webob import exc
 
 from masakari.api.openstack import common
@@ -35,8 +36,9 @@ class NotificationsController(wsgi.Controller):
     def __init__(self):
         self.api = notification_api.NotificationAPI()
 
-    @wsgi.response(202)
-    @extensions.expected_errors((400, 403, 409))
+    @wsgi.response(http.ACCEPTED)
+    @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN,
+                                 http.CONFLICT))
     @validation.schema(schema.create)
     def create(self, req, body):
         """Creates a new notification."""
@@ -55,7 +57,7 @@ class NotificationsController(wsgi.Controller):
 
         return {'notification': notification}
 
-    @extensions.expected_errors((400, 403))
+    @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN))
     def index(self, req):
         """Returns a summary list of notifications."""
         context = req.environ['masakari.context']
@@ -89,7 +91,7 @@ class NotificationsController(wsgi.Controller):
 
         return {'notifications': notifications}
 
-    @extensions.expected_errors((403, 404))
+    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND))
     def show(self, req, id):
         """Return data about the given notification id."""
         context = req.environ['masakari.context']
