@@ -367,7 +367,7 @@ def host_get_all_by_filters(
     marker_row = None
     if marker is not None:
         marker_row = model_query(context,
-                                 models.FailoverSegment
+                                 models.Host
                                  ).filter_by(id=marker).first()
         if not marker_row:
             raise exception.MarkerNotFound(marker=marker)
