@@ -57,7 +57,7 @@ FAILOVER_SEGMENT = {"name": "segment1", "id": "1",
 FAILOVER_SEGMENT = _make_segment_obj(FAILOVER_SEGMENT)
 
 
-class FailoverSegmentTestCase(test.NoDBTestCase):
+class FailoverSegmentTestCase(test.TestCase):
     """Test Case for failover segment api."""
 
     bad_request = exception.ValidationError

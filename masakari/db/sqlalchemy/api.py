@@ -82,6 +82,16 @@ def get_engine(use_slave=False, context=None):
     return ctxt_mgr.get_legacy_facade().get_engine(use_slave=use_slave)
 
 
+def create_context_manager(connection=None):
+    """Create a database context manager object.
+
+    : param connection: The database connection string
+    """
+    ctxt_mgr = enginefacade.transaction_context()
+    ctxt_mgr.configure(**_get_db_conf(CONF.database, connection=connection))
+    return ctxt_mgr
+
+
 def model_query(context, model,
                 args=None,
                 read_deleted=None,

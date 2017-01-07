@@ -324,3 +324,8 @@ class SkipProcessRecoveryException(MasakariException):
 
 class ProcessRecoveryFailureException(MasakariException):
     msg_fmt = _('Failed to execute process recovery workflow.')
+
+
+class DBNotAllowed(MasakariException):
+    msg_fmt = _('%(binary)s attempted direct database access which is '
+                'not allowed by policy')

@@ -76,7 +76,7 @@ NOTIFICATION_LIST = [
 NOTIFICATION_LIST = _make_notifications_list(NOTIFICATION_LIST)
 
 
-class NotificationTestCase(test.NoDBTestCase):
+class NotificationTestCase(test.TestCase):
     """Test Case for notifications api."""
 
     bad_request = exception.ValidationError
