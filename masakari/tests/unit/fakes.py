@@ -66,6 +66,14 @@ class FakeNovaClient(object):
             setattr(server, 'OS-EXT-SRV-ATTR:hypervisor_hostname', host)
             setattr(server, 'OS-EXT-STS:vm_state', 'active')
 
+        def stop(self, id):
+            server = self.get(id)
+            setattr(server, 'OS-EXT-STS:vm_state', 'stopped')
+
+        def start(self, id):
+            server = self.get(id)
+            setattr(server, 'OS-EXT-STS:vm_state', 'active')
+
     class Services(object):
         def disable(self, host_name, binary):
             pass
