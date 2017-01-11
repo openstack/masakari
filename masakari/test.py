@@ -119,7 +119,7 @@ class TestCase(testtools.TestCase):
     def flags(self, **kw):
         """Override flag variables for a test."""
         group = kw.pop('group', None)
-        for k, v in six.iteritems(kw):
+        for k, v in kw.items():
             CONF.set_override(k, v, group)
 
 

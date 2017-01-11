@@ -13,7 +13,6 @@
 #    under the License.
 
 from oslo_log import log as logging
-import six
 from six.moves import http_client
 import webob.exc
 
@@ -56,7 +55,7 @@ class ExtensionInfoController(wsgi.Controller):
 
         discoverable_extensions = dict()
 
-        for alias, ext in six.iteritems(self.extension_info.get_extensions()):
+        for alias, ext in self.extension_info.get_extensions().items():
             authorize = extensions.os_masakari_soft_authorizer(alias)
             if authorize(context, action='discoverable'):
                 discoverable_extensions[alias] = ext
@@ -71,8 +70,7 @@ class ExtensionInfoController(wsgi.Controller):
         context = req.environ['masakari.context']
         authorize(context)
         discoverable_extensions = self._get_extensions(context)
-        sorted_ext_list = sorted(
-            six.iteritems(discoverable_extensions))
+        sorted_ext_list = sorted(discoverable_extensions.items())
 
         extensions = []
         for _alias, ext in sorted_ext_list:

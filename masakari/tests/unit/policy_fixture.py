@@ -17,7 +17,6 @@ import os
 import fixtures
 from oslo_policy import policy as oslo_policy
 from oslo_serialization import jsonutils
-import six
 
 import masakari.conf
 from masakari.conf import paths
@@ -97,7 +96,7 @@ class RoleBasedPolicyFixture(RealPolicyFixture):
         policy = jsonutils.loads(policy)
 
         # Convert all actions to require specified role
-        for action, rule in six.iteritems(policy):
+        for action, rule in policy.items():
             policy[action] = 'role:%s' % self.role
 
         self.policy_dir = self.useFixture(fixtures.TempDir())

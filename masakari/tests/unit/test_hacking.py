@@ -448,21 +448,21 @@ class HackingTestCase(test.NoDBTestCase):
             "obj.iteritems()"))))
 
         self.assertEqual(0, len(list(checks.check_python3_no_iteritems(
-            "six.iteritems(ob))"))))
+            "ob.items()"))))
 
     def test_dict_iterkeys(self):
         self.assertEqual(1, len(list(checks.check_python3_no_iterkeys(
-            "obj.iterkeys()"))))
+            "for key in obj.iterkeys()"))))
 
         self.assertEqual(0, len(list(checks.check_python3_no_iterkeys(
-            "six.iterkeys(ob))"))))
+            "for key in ob"))))
 
     def test_dict_itervalues(self):
         self.assertEqual(1, len(list(checks.check_python3_no_itervalues(
             "obj.itervalues()"))))
 
         self.assertEqual(0, len(list(checks.check_python3_no_itervalues(
-            "six.itervalues(ob))"))))
+            "ob.values()"))))
 
     def test_no_os_popen(self):
         code = """
