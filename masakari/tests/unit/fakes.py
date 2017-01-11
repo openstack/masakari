@@ -74,9 +74,33 @@ class FakeNovaClient(object):
             server = self.get(id)
             setattr(server, 'OS-EXT-STS:vm_state', 'active')
 
+    class Service(object):
+        def __init__(self, id=None, host=None, binary=None, status='enabled'):
+            self.id = id
+            self.host = host
+            self.binary = binary
+            self.status = status
+
     class Services(object):
+        def __init__(self):
+            self._services = []
+
+        def create(self, id, host=None, binary=None,
+                   status=None):
+            self._services.append(FakeNovaClient.Service(id=id, host=host,
+                                                         binary=binary,
+                                                         status=status))
+
         def disable(self, host_name, binary):
-            pass
+            service = self.list(host=host_name, binary=binary)[0]
+            service.status = 'disabled'
+
+        def list(self, host=None, binary=None):
+            services = []
+            for service in self._services:
+                if host == service.host and binary == service.binary:
+                    services.append(service)
+            return services
 
     def __init__(self):
         self.servers = FakeNovaClient.ServerManager()
