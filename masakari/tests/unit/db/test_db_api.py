@@ -135,9 +135,11 @@ class FailoverSegmentsTestCase(test.TestCase, ModelsObjectComparatorMixin):
         real_failover_segment = db.failover_segment_get_all_by_filters(
             context=self.ctxt,
             filters={'recovery_method': 'auto'},
+            marker=1,
+            limit=1,
             sort_keys=['id'],
             sort_dirs=['asc'])
-        self._assertEqualListsOfObjects(failover_segments[0:2],
+        self._assertEqualListsOfObjects([failover_segments[1]],
                                         real_failover_segment, ignored_keys)
 
     def test_failover_segment_not_found(self):
@@ -288,9 +290,11 @@ class HostsTestCase(test.TestCase, ModelsObjectComparatorMixin):
         real_host = db.host_get_all_by_filters(
             context=self.ctxt,
             filters={'type': 'type_1'},
+            marker=1,
+            limit=1,
             sort_keys=['id'],
             sort_dirs=['asc'])
-        self._assertEqualListsOfObjects(hosts[0:2], real_host, ignored_keys)
+        self._assertEqualListsOfObjects([hosts[1]], real_host, ignored_keys)
 
     def test_host_not_found(self):
         self._create_host(self._get_fake_values())
@@ -416,9 +420,11 @@ class NotificationsTestCase(test.TestCase, ModelsObjectComparatorMixin):
         real_notification = db.notifications_get_all_by_filters(
             context=self.ctxt,
             filters={'status': 'new'},
+            marker=1,
+            limit=1,
             sort_keys=['id'],
             sort_dirs=['asc'])
-        self._assertEqualListsOfObjects(notifications[0:2],
+        self._assertEqualListsOfObjects([notifications[1]],
                                         real_notification, ignored_keys)
 
     def test_notification_not_found(self):
