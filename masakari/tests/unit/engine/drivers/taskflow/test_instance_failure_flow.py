@@ -27,10 +27,10 @@ from masakari import test
 from masakari.tests.unit import fakes
 
 
-class HostFailureTestCase(test.TestCase):
+class InstanceFailureTestCase(test.TestCase):
 
     def setUp(self):
-        super(HostFailureTestCase, self).setUp()
+        super(InstanceFailureTestCase, self).setUp()
         self.ctxt = context.get_admin_context()
         self.novaclient = nova.API()
         self.fake_client = fakes.FakeNovaClient()
