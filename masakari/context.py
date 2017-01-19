@@ -28,7 +28,7 @@ from oslo_utils import timeutils
 import six
 
 from masakari import exception
-from masakari.i18n import _, _LW
+from masakari.i18n import _
 from masakari import policy
 from masakari import utils
 
@@ -102,13 +102,14 @@ class RequestContext(context.RequestContext):
             request_id=request_id,
             resource_uuid=kwargs.pop('resource_uuid', None),
             overwrite=overwrite,
-            roles=roles)
+            roles=roles,
+            is_admin_project=kwargs.pop('is_admin_project', True))
         # oslo_context's RequestContext.to_dict() generates this field, we can
         # safely ignore this as we don't use it.
         kwargs.pop('user_identity', None)
         if kwargs:
-            LOG.warning(_LW('Arguments dropped when creating context: %s'),
-                        str(kwargs))
+            LOG.debug('Arguments dropped when creating context: %s',
+                      str(kwargs))
 
         # FIXME: user_id and project_id duplicate information that is
         # already present in the oslo_context's RequestContext. We need to
