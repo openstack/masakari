@@ -45,8 +45,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
     def _get_vm_type_notification(self):
         return fakes.create_fake_notification(
             type="VM", id=1, payload={
-                'event': 'stopped', 'instance_uuid': uuidsentinel.fake_ins,
-                'vir_domain_event': 'fake_event'
+                'event': 'LIFECYCLE', 'instance_uuid': uuidsentinel.fake_ins,
+                'vir_domain_event': 'STOPPED_FAILED'
             },
             source_host_uuid=uuidsentinel.fake_host,
             generated_time=NOW, status="new",
@@ -99,6 +99,22 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_instance_failure.assert_called_once_with(
             self.context, notification.payload.get('instance_uuid'),
             notification.notification_uuid)
+
+    @mock.patch.object(notification_obj.Notification, "save")
+    def test_process_notification_type_vm_error_event_unmatched(
+            self, mock_save):
+        notification = fakes.create_fake_notification(
+            type="VM", id=1, payload={
+                'event': 'fake_event', 'instance_uuid': uuidsentinel.fake_ins,
+                'vir_domain_event': 'fake_vir_domain_event'
+            },
+            source_host_uuid=uuidsentinel.fake_host,
+            generated_time=NOW, status="new",
+            notification_uuid=uuidsentinel.fake_notification)
+
+        self.engine.process_notification(self.context,
+                                         notification=notification)
+        self.assertEqual("ignored", notification.status)
 
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_instance_failure")
