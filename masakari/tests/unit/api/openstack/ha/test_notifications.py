@@ -15,6 +15,7 @@
 
 """Tests for the notifications api."""
 
+import ddt
 import mock
 from oslo_serialization import jsonutils
 from oslo_utils import timeutils
@@ -77,6 +78,7 @@ NOTIFICATION_LIST = [
 NOTIFICATION_LIST = _make_notifications_list(NOTIFICATION_LIST)
 
 
+@ddt.ddt
 class NotificationTestCase(test.TestCase):
     """Test Case for notifications api."""
 
@@ -108,22 +110,19 @@ class NotificationTestCase(test.TestCase):
         self._assert_notification_data(NOTIFICATION_LIST,
                                        _make_notifications_list(result))
 
-    def test_index_marker_negative(self):
+    @ddt.data(
+        # limit negative
+        "limit=-1",
 
-        req = fakes.HTTPRequest.blank('/v1/notifications?limit=-1',
+        # invalid sort key
+        "sort_key=abcd",
+
+        # invalid sort dir
+        "sort_dir=abcd")
+    def test_index_invalid(self, param):
+        req = fakes.HTTPRequest.blank("/v1/notifications?%s" % param,
                                       use_admin_context=True)
-        self.assertRaises(exc.HTTPBadRequest, self.controller.index, req)
 
-    def test_index_invalid_sort_key(self):
-
-        req = fakes.HTTPRequest.blank('/v1/notifications?sort_key=abcd',
-                                      use_admin_context=True)
-        self.assertRaises(exc.HTTPBadRequest, self.controller.index, req)
-
-    def test_index_invalid_sort_dir(self):
-
-        req = fakes.HTTPRequest.blank('/v1/notifications?sort_dir=abcd',
-                                      use_admin_context=True)
         self.assertRaises(exc.HTTPBadRequest, self.controller.index, req)
 
     @mock.patch.object(ha_api.NotificationAPI, 'get_all')
@@ -187,17 +186,6 @@ class NotificationTestCase(test.TestCase):
         resp = fake_req.get_response(self.app)
         self.assertEqual(http.ACCEPTED, resp.status_code)
 
-    def test_create_invalid_type(self):
-        body = {
-            "notification": {"hostname": "fake_host",
-                             "payload": {"event": "STOPPED",
-                                         "host_status": "NORMAL",
-                                         "cluster_status": "ONLINE"},
-                             "type": "Fake",
-                             "generated_time": "2016-09-13T09:11:21.656788"}}
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, body=body)
-
     @mock.patch.object(ha_api.NotificationAPI, 'create_notification')
     def test_create_host_not_found(self, mock_create):
         body = {
@@ -211,74 +199,75 @@ class NotificationTestCase(test.TestCase):
         self.assertRaises(exc.HTTPBadRequest, self.controller.create,
                           self.req, body=body)
 
-    def test_create_with_no_notification_in_body(self):
-        body = {"hostname": "fake_host",
-                "payload": {"event": "STOPPED",
-                            "host_status": "NORMAL",
-                            "cluster_status": "ONLINE"},
-                "type": "VM",
-                "generated_time": "2016-09-13T09:11:21.656788"}
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, body=body)
+    @ddt.data(
+        # invalid type
+        {"body": {
+            "notification": {"hostname": "fake_host",
+                             "payload": {"event": "STOPPED",
+                                         "host_status": "NORMAL",
+                                         "cluster_status": "ONLINE"},
+                             "type": "Fake",
+                             "generated_time": "2016-09-13T09:11:21.656788"}}},
 
-    def test_create_with_no_payload(self):
-        body = {"notification": {"hostname": "fake_host",
-                                 "type": "VM",
-                                 "generated_time":
-                                     "2016-09-13T09:11:21.656788"}}
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, body=body)
+        # no notification in body
+        {"body": {"hostname": "fake_host",
+                  "payload": {"event": "STOPPED",
+                              "host_status": "NORMAL",
+                              "cluster_status": "ONLINE"},
+                  "type": "VM",
+                  "generated_time": "2016-09-13T09:11:21.656788"}},
 
-    def test_create_with_no_hostname(self):
-        body = {"notification": {"payload": {"event": "STOPPED",
-                                             "host_status": "NORMAL",
-                                             "cluster_status": "ONLINE"},
-                                 "type": "VM",
-                                 "generated_time":
-                                     "2016-09-13T09:11:21.656788"}}
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, body=body)
+        # no payload
+        {"body": {"notification": {"hostname": "fake_host",
+                                   "type": "VM",
+                                   "generated_time":
+                                       "2016-09-13T09:11:21.656788"}}},
 
-    def test_create_with_no_type(self):
-        body = {"notification": {"hostname": "fake_host",
-                                 "payload": {"event": "STOPPED",
-                                             "host_status": "NORMAL",
-                                             "cluster_status": "ONLINE"},
-                                 "generated_time":
-                                     "2016-09-13T09:11:21.656788"}}
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, body=body)
+        # no hostname
+        {"body": {"notification": {"payload": {"event": "STOPPED",
+                                               "host_status": "NORMAL",
+                                               "cluster_status": "ONLINE"},
+                                   "type": "VM",
+                                   "generated_time":
+                                       "2016-09-13T09:11:21.656788"}}},
 
-    def test_create_with_no_generated_time(self):
-        body = {"notification": {"hostname": "fake_host",
-                                 "payload": {"event": "STOPPED",
-                                             "host_status": "NORMAL",
-                                             "cluster_status": "ONLINE"},
-                                 "type": "VM",
-                                 }}
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, body=body)
+        # no type
+        {"body": {"notification": {"hostname": "fake_host",
+                                   "payload": {"event": "STOPPED",
+                                               "host_status": "NORMAL",
+                                               "cluster_status": "ONLINE"},
+                                   "generated_time":
+                                       "2016-09-13T09:11:21.656788"}}},
 
-    def test_create_with_hostname_too_long(self):
-        body = {
+        # no generated time
+        {"body": {"notification": {"hostname": "fake_host",
+                                   "payload": {"event": "STOPPED",
+                                               "host_status": "NORMAL",
+                                               "cluster_status": "ONLINE"},
+                                   "type": "VM",
+                                   }}},
+
+        # hostname too long
+        {"body": {
             "notification": {"hostname": "fake_host" * 255,
                              "payload": {"event": "STOPPED",
                                          "host_status": "NORMAL",
                                          "cluster_status": "ONLINE"},
                              "type": "VM",
-                             "generated_time": "2016-09-13T09:11:21.656788"}}
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, body=body)
+                             "generated_time": "2016-09-13T09:11:21.656788"}}},
 
-    def test_create_with_extra_invalid_arg(self):
-        body = {
+        # extra invalid args
+        {"body": {
             "notification": {"hostname": "fake_host",
                              "payload": {"event": "STOPPED",
                                          "host_status": "NORMAL",
                                          "cluster_status": "ONLINE"},
                              "type": "VM",
                              "generated_time": "2016-09-13T09:11:21.656788",
-                             "invalid_extra": "non_expected_parameter"}}
+                             "invalid_extra": "non_expected_parameter"}}}
+    )
+    @ddt.unpack
+    def test_create_failure(self, body):
         self.assertRaises(self.bad_request, self.controller.create,
                           self.req, body=body)
 
@@ -325,21 +314,13 @@ class NotificationTestCase(test.TestCase):
         self.assertRaises(exc.HTTPNotFound,
                           self.controller.show, self.req, "2")
 
+    @ddt.data('DELETE', 'PUT')
     @mock.patch('masakari.rpc.get_client')
-    def test_delete_notification(self, mock_client):
+    def test_delete_and_update_notification(self, method, mock_client):
         url = '/v1/notifications/%s' % uuidsentinel.fake_notification
         fake_req = fakes.HTTPRequest.blank(url, use_admin_context=True)
         fake_req.headers['Content-Type'] = 'application/json'
-        fake_req.method = 'DELETE'
-        resp = fake_req.get_response(self.app)
-        self.assertEqual(http.METHOD_NOT_ALLOWED, resp.status_code)
-
-    @mock.patch('masakari.rpc.get_client')
-    def test_update_notification(self, mock_client):
-        url = '/v1/notifications/%s' % uuidsentinel.fake_notification
-        fake_req = fakes.HTTPRequest.blank(url, use_admin_context=True)
-        fake_req.headers['Content-Type'] = 'application/json'
-        fake_req.method = 'PUT'
+        fake_req.method = method
         resp = fake_req.get_response(self.app)
         self.assertEqual(http.METHOD_NOT_ALLOWED, resp.status_code)
 
