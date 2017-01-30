@@ -134,6 +134,22 @@ class NotificationTestCase(test.TestCase):
         self.assertRaises(exc.HTTPBadRequest, self.controller.index,
                           fake_request)
 
+    def test_index_invalid_generated_since(self):
+
+        req = fakes.HTTPRequest.blank('/v1/notifications?generated-since=abcd',
+                                      use_admin_context=True)
+        self.assertRaises(exc.HTTPBadRequest, self.controller.index, req)
+
+    @mock.patch.object(ha_api.NotificationAPI, 'get_all')
+    def test_index_valid_generated_since(self, mock_get_all):
+        url = '/v1/notifications?generated-since=%s' % str(NOW)
+        req = fakes.HTTPRequest.blank(url, use_admin_context=True)
+        mock_get_all.return_value = NOTIFICATION_LIST
+        result = self.controller.index(req)
+        result = result['notifications']
+        self._assert_notification_data(NOTIFICATION_LIST,
+                                       _make_notifications_list(result))
+
     @mock.patch.object(ha_api.NotificationAPI, 'create_notification')
     def test_create(self, mock_create):
 
@@ -264,6 +280,32 @@ class NotificationTestCase(test.TestCase):
                              "generated_time": "2016-09-13T09:11:21.656788",
                              "invalid_extra": "non_expected_parameter"}}
         self.assertRaises(self.bad_request, self.controller.create,
+                          self.req, body=body)
+
+    @mock.patch.object(ha_api.NotificationAPI, 'create_notification')
+    def test_create_duplicate_notification(self, mock_create_notification):
+        mock_create_notification.side_effect = exception.DuplicateNotification
+        body = {
+            "notification": {"hostname": "fake_host",
+                             "payload": {"event": "STOPPED",
+                                         "host_status": "NORMAL",
+                                         "cluster_status": "ONLINE"},
+                             "type": "COMPUTE_HOST",
+                             "generated_time": str(NOW)}}
+        self.assertRaises(exc.HTTPConflict, self.controller.create,
+                          self.req, body=body)
+
+    @mock.patch.object(ha_api.NotificationAPI, 'create_notification')
+    def test_create_host_on_maintenance(self, mock_create_notification):
+        mock_create_notification.side_effect = exception.HostOnMaintenanceError
+        body = {
+            "notification": {"hostname": "fake_host",
+                             "payload": {"event": "STOPPED",
+                                         "host_status": "NORMAL",
+                                         "cluster_status": "ONLINE"},
+                             "type": "COMPUTE_HOST",
+                             "generated_time": str(NOW)}}
+        self.assertRaises(exc.HTTPConflict, self.controller.create,
                           self.req, body=body)
 
     @mock.patch.object(ha_api.NotificationAPI, 'get_notification')
