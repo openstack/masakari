@@ -102,6 +102,88 @@ class HostTestCase(test.TestCase):
 
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     @mock.patch.object(ha_api.HostAPI, 'get_all')
+    def test_index_valid_on_maintenance(self, mock_get_all, mock_segment):
+        host_list = [{"name": "host_1", "id": "1", "on_maintenance": True},
+                     {"name": "host_2", "id": "2", "on_maintenance": True}]
+        mock_get_all.return_value = host_list
+        for parameter in ['1', 't', 'true', 'on', 'y', 'yes']:
+            req = fakes.HTTPRequest.blank(
+                '/v1/segments/%s/hosts?on_maintenance=''%s' % (
+                    uuidsentinel.fake_segment1, parameter),
+                use_admin_context=True)
+            result = self.controller.index(req, uuidsentinel.fake_segment1)
+            self.assertIn('hosts', result)
+            self.assertEqual(len(host_list), len(result['hosts']))
+            for host in result['hosts']:
+                self.assertTrue(host['on_maintenance'])
+
+        host_list = [{"name": "host_1", "id": "1", "on_maintenance": False},
+                     {"name": "host_2", "id": "2", "on_maintenance": False}]
+        mock_get_all.return_value = host_list
+        for parameter in ['0', 'f', 'false', 'off', 'n', 'no']:
+            req = fakes.HTTPRequest.blank(
+                '/v1/segments/%s/hosts?on_maintenance=''%s' % (
+                    uuidsentinel.fake_segment1, parameter),
+                use_admin_context=True)
+            result = self.controller.index(req, uuidsentinel.fake_segment1)
+            self.assertIn('hosts', result)
+            self.assertEqual(len(host_list), len(result['hosts']))
+            for host in result['hosts']:
+                self.assertFalse(host['on_maintenance'])
+
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid',
+                       return_value=mock.Mock())
+    def test_index_invalid_on_maintenance(self, mock_segment):
+
+        req = fakes.HTTPRequest.blank('/v1/segments/%s/hosts?on_maintenance='
+                                      'abcd' % uuidsentinel.fake_segment1,
+                                      use_admin_context=True)
+        self.assertRaises(exc.HTTPBadRequest, self.controller.index, req,
+                          uuidsentinel.fake_segment1)
+
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    @mock.patch.object(ha_api.HostAPI, 'get_all')
+    def test_index_valid_reserved(self, mock_get_all, mock_segment):
+        host_list = [{"name": "host_1", "id": "1", "reserved": True},
+                     {"name": "host_2", "id": "2", "reserved": True}]
+        mock_get_all.return_value = host_list
+        for parameter in ['1', 't', 'true', 'on', 'y', 'yes']:
+            req = fakes.HTTPRequest.blank(
+                '/v1/segments/%s/hosts?reserved=''%s' % (
+                    uuidsentinel.fake_segment1, parameter
+                ), use_admin_context=True)
+            result = self.controller.index(req, uuidsentinel.fake_segment1)
+            self.assertIn('hosts', result)
+            self.assertEqual(len(host_list), len(result['hosts']))
+            for host in result['hosts']:
+                self.assertTrue(host['reserved'])
+
+        host_list = [{"name": "host_1", "id": "1", "reserved": False},
+                     {"name": "host_2", "id": "2", "reserved": False}]
+        mock_get_all.return_value = host_list
+        for parameter in ['0', 'f', 'false', 'off', 'n', 'no']:
+            req = fakes.HTTPRequest.blank(
+                '/v1/segments/%s/hosts?reserved=''%s' % (
+                    uuidsentinel.fake_segment1, parameter),
+                use_admin_context=True)
+            result = self.controller.index(req, uuidsentinel.fake_segment1)
+            self.assertIn('hosts', result)
+            self.assertEqual(len(host_list), len(result['hosts']))
+            for host in result['hosts']:
+                self.assertFalse(host['reserved'])
+
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid',
+                       return_value=mock.Mock())
+    def test_index_invalid_reserved(self, mock_segment):
+
+        req = fakes.HTTPRequest.blank('/v1/segments/%s/hosts?reserved='
+                                      'abcd' % uuidsentinel.fake_segment1,
+                                      use_admin_context=True)
+        self.assertRaises(exc.HTTPBadRequest, self.controller.index, req,
+                          uuidsentinel.fake_segment1)
+
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    @mock.patch.object(ha_api.HostAPI, 'get_all')
     def test_index_marker_not_found(self, mock_get_all, mock_segment):
         req = fakes.HTTPRequest.blank('/v1/segments/%s/hosts?marker=123456' % (
             uuidsentinel.fake_segment1), use_admin_context=True)

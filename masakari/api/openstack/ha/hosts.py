@@ -15,6 +15,8 @@
 
 """The Host API extension."""
 
+from oslo_utils import encodeutils
+from oslo_utils import strutils
 from six.moves import http_client as http
 from webob import exc
 
@@ -25,6 +27,7 @@ from masakari.api.openstack import wsgi
 from masakari.api import validation
 from masakari import exception
 from masakari.ha import api as host_api
+from masakari.i18n import _
 from masakari import objects
 
 ALIAS = "os-hosts"
@@ -64,10 +67,22 @@ class HostsController(wsgi.Controller):
                     'control_attributes']
 
             if 'on_maintenance' in req.params:
-                filters['on_maintenance'] = req.params['on_maintenance']
+                try:
+                    filters['on_maintenance'] = strutils.bool_from_string(
+                        req.params['on_maintenance'], strict=True)
+                except ValueError as ex:
+                    msg = _("Invalid value for on_maintenance: "
+                            "%s") % encodeutils.exception_to_unicode(ex)
+                    raise exc.HTTPBadRequest(explanation=msg)
 
             if 'reserved' in req.params:
-                filters['reserved'] = req.params['reserved']
+                try:
+                    filters['reserved'] = strutils.bool_from_string(
+                        req.params['reserved'], strict=True)
+                except ValueError as ex:
+                    msg = _("Invalid value for reserved: "
+                            "%s") % encodeutils.exception_to_unicode(ex)
+                    raise exc.HTTPBadRequest(explanation=msg)
 
             hosts = self.api.get_all(context, filters=filters,
                                      sort_keys=sort_keys, sort_dirs=sort_dirs,
