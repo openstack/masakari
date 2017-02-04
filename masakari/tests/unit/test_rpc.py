@@ -14,6 +14,7 @@
 
 import mock
 import oslo_messaging as messaging
+from oslo_messaging.rpc import dispatcher
 
 from masakari import context
 from masakari import rpc
@@ -106,12 +107,14 @@ class RPCAPITestCase(test.TestCase):
         ends = mock.Mock()
         mock_ser.return_value = ser
         mock_get.return_value = 'server'
+        access_policy = dispatcher.DefaultRPCAccessPolicy
 
         server = rpc.get_server(tgt, ends, serializer='foo')
 
         mock_ser.assert_called_once_with('foo')
         mock_get.assert_called_once_with(rpc.TRANSPORT, tgt, ends,
-                                         executor='eventlet', serializer=ser)
+                                         executor='eventlet', serializer=ser,
+                                         access_policy=access_policy)
         self.assertEqual('server', server)
 
 
