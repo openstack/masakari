@@ -1,0 +1,24 @@
+---
+features:
+  - |
+    Added _process_unfinished_notifications to process notifications
+    which are in error or new state. This periodic task will execute at
+    regular interval defined by new config option
+    'process_unfinished_notifications_interval' defaults to 120 seconds. The
+    notifications which are in ‘new’ status will be picked up based on a new
+    config option ‘retry_notification_new_status_interval’ defaults
+    to 60 seconds.
+
+    To change the default execution time of periodic task, following config
+    option needs to be set with desirable time under 'DEFAULT' section in
+    'masakari.conf' file::
+
+        [DEFAULT]
+        process_unfinished_notifications_interval = 120
+
+    To change the default identification time of notifications which are stuck
+    in 'NEW' state, following config option needs to be set with desirable
+    time under 'DEFAULT' section in 'masakari.conf' file::
+
+        [DEFAULT]
+        retry_notification_new_status_interval = 60
