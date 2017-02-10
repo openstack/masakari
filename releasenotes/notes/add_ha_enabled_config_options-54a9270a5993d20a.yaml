@@ -1,23 +1,32 @@
 ---
 features:
-  - Added two new config options:
+  - |
+    Operators can decide whether all instances or only those instances which
+    contain metadata key 'HA_Enabled=True' should be allowed for evacuation
+    from a failed source compute node. When set to True, it will evacuate all
+    instances from a failed source compute node. First preference will be
+    given to those instances which contain 'HA_Enabled=True' metadata key,
+    and then it will evacuate the remaining ones. When set to False, it will
+    evacuate only those instances which contain 'HA_Enabled=True' metadata
+    key.
 
-      evacuate_all_instances:
-      Operators can decide whether all instances or only those instances
-      which contain metadata key 'HA_Enabled=True' should be allowed for
-      evacuation from a failed source compute node. When set to True, it will
-      evacuate all instances from a failed source compute node. First
-      preference will be given to those instances which contain
-      'HA_Enabled=True' metadata key, and then it will evacuate the remaining
-      ones. When set to False, it will evacuate only those instances which
-      contain 'HA_Enabled=True' metadata key.
+    To use this feature, following config option need to be set under
+    ``host_failure`` section in 'masakari.conf' file::
 
-      process_all_instances:
-      Operators can decide whether all instances or only those instances
-      which contain metadata key 'HA_Enabled=True' should be taken into
-      account to recover from instance failure events. When set to True,
-      it will execute instance failure recovery actions for an instance
-      irrespective of whether that particular instance contains metadata key
-      'HA_Enabled=True' or not. When set to False, it will only execute
-      instance failure recovery actions for an instance which contain
-      metadata key 'HA_Enabled=True'.
+        [host_failure]
+        evacuate_all_instances = True
+
+  - |
+    Operators can decide whether all instances or only those instances which
+    contain metadata key 'HA_Enabled=True' should be taken into account to
+    recover from instance failure events. When set to True, it will execute
+    instance failure recovery actions for an instance irrespective of whether
+    that particular instance contains metadata key 'HA_Enabled=True' or not.
+    When set to False, it will only execute instance failure recovery action
+    for an instance which contain metadata key 'HA_Enabled=True'.
+
+    To use this feature, following config option need to be set under
+    ``instance_failure`` section in 'masakari.conf' file::
+
+        [instance_failure]
+        process_all_instances = True

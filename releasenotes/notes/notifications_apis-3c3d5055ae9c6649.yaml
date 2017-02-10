@@ -1,12 +1,9 @@
 ---
 features:
-  - Added following new REST API's related to notifications -
+  - |
+    Added following new REST API's related to notifications:
 
-      1. GET /v1/notifications
-             Returns list of all notifications.
-
-      2. GET /v1/notifications/<notification_uuid>
-             Returns specific notification with uuid.
-
-      3. POST /v1/notifications
-             Creates a new notification.
+    - GET /v1/notifications - Returns list of all notifications.
+    - GET /v1/notifications/<notification_uuid> - Returns specific notification
+      with uuid.
+    - POST /v1/notifications - Creates a new notification.
