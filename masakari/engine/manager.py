@@ -29,6 +29,7 @@ from oslo_utils import timeutils
 
 import masakari.conf
 from masakari.engine import driver
+from masakari.engine import instance_events as virt_events
 from masakari import exception
 from masakari.i18n import _LE, _LI, _LW
 from masakari import manager
@@ -100,6 +101,13 @@ class MasakariManager(manager.Manager):
         return notification_status
 
     def _handle_notification_type_instance(self, context, notification):
+        if not virt_events.is_valid_event(notification.payload):
+            LOG.info(_LI("Notification '%(uuid)s' received with payload "
+                         "%(payload)s is ignored."), {
+                "uuid": notification.notification_uuid,
+                "payload": notification.payload})
+            return fields.NotificationStatus.IGNORED
+
         notification_status = fields.NotificationStatus.FINISHED
         try:
             self.driver.execute_instance_failure(
