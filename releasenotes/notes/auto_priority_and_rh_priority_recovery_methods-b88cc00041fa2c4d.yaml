@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    Implemented workflow for 'auto_priority' and 'rh_priority' recovery methods
+    in case of host failure recovery. Operators can set failover_segment's
+    recovery_method as 'auto_priority' and 'rh_priority' now. In case of
+    'auto_priority' the 'auto' workflow will be executed first to recover the
+    instances from failed compute host. If 'auto' workflow fails to recover
+    the instances then 'reserved_host' workflow will be tried. In case of
+    'rh_priority' the 'reserved_host' workflow will be executed first to
+    recover the instances from failed compute host. If 'reserved_host' workflow
+    fails to recover the instances then 'auto' workflow will be tried.
