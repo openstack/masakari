@@ -89,7 +89,7 @@ class HostFailureTestCase(test.TestCase):
             with mock.patch.object(
                 self.novaclient,
                     "enable_disable_service") as mock_enable_disable_service:
-                instance_list = task.execute(self.ctxt,
+                instance_list = task.execute(self.ctxt, self.instance_host,
                                              instance_list['instance_list'],
                                              reserved_host=reserved_host)
 
@@ -97,7 +97,7 @@ class HostFailureTestCase(test.TestCase):
                 self.ctxt, reserved_host.name, enable=True)
         else:
             instance_list = task.execute(
-                self.ctxt, instance_list['instance_list'])
+                self.ctxt, self.instance_host, instance_list['instance_list'])
 
         return instance_list
 
@@ -137,6 +137,8 @@ class HostFailureTestCase(test.TestCase):
         _mock_novaclient.return_value = self.fake_client
         self.override_config("evacuate_all_instances",
                              True, "host_failure")
+        self.override_config("add_reserved_host_to_aggregate",
+                             True, "host_failure")
 
         # create test data
         self.fake_client.servers.create(id="1", host=self.instance_host,
@@ -144,6 +146,8 @@ class HostFailureTestCase(test.TestCase):
         self.fake_client.servers.create(id="2", host=self.instance_host)
         reserved_host = fakes.create_fake_host(name="fake-reserved-host",
                                                reserved=True)
+        self.fake_client.aggregates.create(id="1", name='fake_agg',
+                                           hosts=[self.instance_host])
 
         # execute DisableComputeServiceTask
         self._test_disable_compute_service()
@@ -156,6 +160,8 @@ class HostFailureTestCase(test.TestCase):
             instance_list = self._evacuate_instances(
                 instance_list, reserved_host=reserved_host)
             self.assertEqual(1, mock_save.call_count)
+            self.assertIn(reserved_host.name,
+                          self.fake_client.aggregates.get('fake_agg').hosts)
 
         # execute ConfirmEvacuationTask
         self._test_confirm_evacuate_task(instance_list)
@@ -182,7 +188,7 @@ class HostFailureTestCase(test.TestCase):
         # method is called.
         with mock.patch.object(fakes.FakeNovaClient.ServerManager,
                                "evacuate") as mock_evacuate:
-            task.execute(self.ctxt,
+            task.execute(self.ctxt, self.instance_host,
                          instance_list['instance_list'])
             self.assertEqual(2, mock_evacuate.call_count)
 

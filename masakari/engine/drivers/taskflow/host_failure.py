@@ -90,14 +90,30 @@ class EvacuateInstancesTask(base.MasakariTask):
     default_provides = set(["instance_list"])
 
     def __init__(self, novaclient):
-        requires = ["instance_list"]
+        requires = ["host_name", "instance_list"]
         super(EvacuateInstancesTask, self).__init__(addons=[ACTION],
                                                     requires=requires)
         self.novaclient = novaclient
 
-    def execute(self, context, instance_list, reserved_host=None):
-        def _do_evacuate(context, instance_list, reserved_host=None):
+    def execute(self, context, host_name, instance_list, reserved_host=None):
+        def _do_evacuate(context, host_name, instance_list,
+                         reserved_host=None):
             if reserved_host:
+                if CONF.host_failure.add_reserved_host_to_aggregate:
+                    # Assign reserved_host to an aggregate to which the failed
+                    # compute host belongs to.
+                    aggregates = self.novaclient.get_aggregate_list(context)
+                    for aggregate in aggregates:
+                        if host_name in aggregate.hosts:
+                            self.novaclient.add_host_to_aggregate(
+                                context, reserved_host.name, aggregate.name)
+                            # A failed compute host can be associated with
+                            # multiple aggregates but operators will not
+                            # associate it with multiple aggregates in real
+                            # deployment so adding reserved_host to the very
+                            # first aggregate from the list.
+                            break
+
                 self.novaclient.enable_disable_service(
                     context, reserved_host.name, enable=True)
 
@@ -131,17 +147,18 @@ class EvacuateInstancesTask(base.MasakariTask):
         lock_name = reserved_host.name if reserved_host else None
 
         @utils.synchronized(lock_name)
-        def do_evacuate_with_reserved_host(context, instance_list,
+        def do_evacuate_with_reserved_host(context, host_name, instance_list,
                                            reserved_host):
-            _do_evacuate(context, instance_list, reserved_host=reserved_host)
+            _do_evacuate(context, host_name, instance_list,
+                         reserved_host=reserved_host)
 
         if lock_name:
-            do_evacuate_with_reserved_host(context, instance_list,
+            do_evacuate_with_reserved_host(context, host_name, instance_list,
                                            reserved_host)
         else:
             # No need to acquire lock on reserved_host when recovery_method is
             # 'auto' as the selection of compute host will be decided by nova.
-            _do_evacuate(context, instance_list)
+            _do_evacuate(context, host_name, instance_list)
 
         return {
             "instance_list": instance_list,

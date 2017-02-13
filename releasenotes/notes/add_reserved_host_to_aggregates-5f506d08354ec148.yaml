@@ -1,0 +1,12 @@
+---
+features:
+  - |
+    Operators can now decide based on the new config option
+    'add_reserved_host_to_aggregate' whether to add or not a reserved_host
+    to all host aggregates which failed compute host belongs to.
+
+    To use this feature, following config option need to be set under
+    ``host_failure`` section in 'masakari.conf' file::
+
+        [host_failure]
+        add_reserved_host_to_aggregate = True

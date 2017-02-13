@@ -38,6 +38,14 @@ from a failed source compute node. First preference will be given to those
 instances which contain 'HA_Enabled=True' metadata key, and then it will
 evacuate the remaining ones. When set to False, it will evacuate only those
 instances which contain 'HA_Enabled=True' metadata key."""),
+
+    cfg.BoolOpt("add_reserved_host_to_aggregate",
+                default=False,
+                help="""
+Operators can decide whether reserved_host should be added to aggregate group
+of failed compute host. When set to True, reserved host will be added to the
+aggregate group of failed compute host. When set to False, the reserved_host
+will not be added to the aggregate group of failed compute host."""),
 ]
 
 instance_failure_options = [

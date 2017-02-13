@@ -80,6 +80,36 @@ class FakeNovaClient(object):
             server = self.get(id)
             setattr(server, 'OS-EXT-STS:vm_state', 'active')
 
+    class Aggregate(object):
+        def __init__(self, id=None, uuid=None, name=None, hosts=None):
+            self.id = id
+            self.uuid = uuid or uuidutils.generate_uuid()
+            self.name = name
+            self.hosts = hosts
+
+    class AggregatesManager(object):
+        def __init__(self):
+            self.aggregates = []
+
+        def create(self, id, uuid=None, name=None, hosts=None):
+            aggregate = FakeNovaClient.Aggregate(id=id, uuid=uuid, name=name,
+                                                 hosts=hosts)
+            self.aggregates.append(aggregate)
+            return aggregate
+
+        def list(self):
+            return self.aggregates
+
+        def add_host(self, aggregate_name, host_name):
+            aggregate = self.get(aggregate_name)
+            if host_name not in aggregate.hosts:
+                aggregate.hosts.append(host_name)
+
+        def get(self, name):
+            for aggregate in self.aggregates:
+                if aggregate.name == name:
+                    return aggregate
+
     class Service(object):
         def __init__(self, id=None, host=None, binary=None, status='enabled'):
             self.id = id
@@ -111,6 +141,7 @@ class FakeNovaClient(object):
     def __init__(self):
         self.servers = FakeNovaClient.ServerManager()
         self.services = FakeNovaClient.Services()
+        self.aggregates = FakeNovaClient.AggregatesManager()
 
 
 def create_fake_notification(type="VM", id=1, payload=None,

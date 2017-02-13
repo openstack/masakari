@@ -206,3 +206,20 @@ class API(object):
         msg = (_LI('Call start server command for instance %(uuid)s'))
         LOG.info(msg, {'uuid': uuid})
         return nova.servers.start(uuid)
+
+    @translate_nova_exception
+    def get_aggregate_list(self, context):
+        """Get all aggregate list."""
+        nova = novaclient(context)
+        LOG.info(_LI('Call aggregate-list command to get list of all '
+                     'aggregates.'))
+        return nova.aggregates.list()
+
+    @translate_nova_exception
+    def add_host_to_aggregate(self, context, host, aggregate):
+        """Add host to given aggregate."""
+        nova = novaclient(context)
+        msg = _LI("Call add_host command to add host '%(host_name)s' to "
+                  "aggregate '%(aggregate_name)s'.")
+        LOG.info(msg, {'host_name': host, 'aggregate_name': aggregate})
+        return nova.aggregates.add_host(aggregate, host)
