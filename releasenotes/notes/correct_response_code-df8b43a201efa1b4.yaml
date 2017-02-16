@@ -1,23 +1,16 @@
 ---
 fixes:
-  - Following apis will return correct response codes now:
-    POST: notification create:
-          old_response: 200, new_response: 202
+  - |
+    Fixes `bug 1645699`_ which will return correct response codes for below
+    apis:
 
-    DELETE: notification delete:
-          old_response: 404, new_response: 405
+    - POST /v1/notification - old_response: 200,  new_response: 202
+    - DELETE /v1/notification - old_response: 404,  new_response: 405
+    - PUT /v1/notification/<notification_uuid> - old_response: 404,
+      new_response: 405
+    - POST /v1/host - old_response: 200,  new_response: 201
+    - DELETE /v1/host/<host_uuid> - old_response: 200, new_response: 204
+    - POST /v1/segment - old_response: 200,  new_response: 201
+    - DELETE /v1/segment/<segment_uuid> - old_response: 200,  new_response: 204
 
-    PUT: notification update:
-          old_response: 404, new_response: 405
-
-    POST: Host create:
-          old_response: 200, new_response: 201
-
-    DELETE: Host delete:
-          old_response: 200, new_response: 204
-
-    POST: Failover-segment create:
-          old_response: 200, new_response: 201
-
-    DELETE: Failover-segment delete:
-          old_response: 200, new_response: 204
+    .. _bug 1645699: https://bugs.launchpad.net/masakari/+bug/1645699
