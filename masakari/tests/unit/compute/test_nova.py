@@ -254,7 +254,7 @@ class NovaApiTestCase(test.TestCase):
         mock_aggregates = mock.MagicMock()
         mock_novaclient.return_value = mock.MagicMock(
             aggregates=mock_aggregates)
-        self.api.add_host_to_aggregate(self.ctx, 'fake_host', 'fake_aggregate')
+        self.api.add_host_to_aggregate(self.ctx, 'fake_host', mock_aggregates)
         mock_novaclient.assert_called_once_with(self.ctx)
         mock_aggregates.add_host.assert_called_once_with(
-            'fake_aggregate', 'fake_host')
+            mock_aggregates.id, 'fake_host')

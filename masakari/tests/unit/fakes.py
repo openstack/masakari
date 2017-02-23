@@ -100,14 +100,14 @@ class FakeNovaClient(object):
         def list(self):
             return self.aggregates
 
-        def add_host(self, aggregate_name, host_name):
-            aggregate = self.get(aggregate_name)
+        def add_host(self, aggregate_id, host_name):
+            aggregate = self.get(aggregate_id)
             if host_name not in aggregate.hosts:
                 aggregate.hosts.append(host_name)
 
-        def get(self, name):
+        def get(self, aggregate_id):
             for aggregate in self.aggregates:
-                if aggregate.name == name:
+                if aggregate.id == aggregate_id:
                     return aggregate
 
     class Service(object):

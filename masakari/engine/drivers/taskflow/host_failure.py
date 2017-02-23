@@ -106,7 +106,7 @@ class EvacuateInstancesTask(base.MasakariTask):
                     for aggregate in aggregates:
                         if host_name in aggregate.hosts:
                             self.novaclient.add_host_to_aggregate(
-                                context, reserved_host.name, aggregate.name)
+                                context, reserved_host.name, aggregate)
                             # A failed compute host can be associated with
                             # multiple aggregates but operators will not
                             # associate it with multiple aggregates in real

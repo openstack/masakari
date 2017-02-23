@@ -161,7 +161,7 @@ class HostFailureTestCase(test.TestCase):
                 instance_list, reserved_host=reserved_host)
             self.assertEqual(1, mock_save.call_count)
             self.assertIn(reserved_host.name,
-                          self.fake_client.aggregates.get('fake_agg').hosts)
+                          self.fake_client.aggregates.get('1').hosts)
 
         # execute ConfirmEvacuationTask
         self._test_confirm_evacuate_task(instance_list)
