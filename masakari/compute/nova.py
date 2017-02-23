@@ -221,5 +221,5 @@ class API(object):
         nova = novaclient(context)
         msg = _LI("Call add_host command to add host '%(host_name)s' to "
                   "aggregate '%(aggregate_name)s'.")
-        LOG.info(msg, {'host_name': host, 'aggregate_name': aggregate})
-        return nova.aggregates.add_host(aggregate, host)
+        LOG.info(msg, {'host_name': host, 'aggregate_name': aggregate.name})
+        return nova.aggregates.add_host(aggregate.id, host)
