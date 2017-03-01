@@ -33,9 +33,9 @@ class NovaClientTestCase(test.TestCase):
                                           auth_token='token', is_admin=True)
         self.ctx.service_catalog = [
             {'type': 'compute', 'name': 'nova', 'endpoints':
-                [{'adminURL': 'http://novahost:8774/v2/e3f0833dc08b4cea'}]},
+                [{'publicURL': 'http://novahost:8774/v2/e3f0833dc08b4cea'}]},
             {'type': 'identity', 'name': 'keystone', 'endpoints':
-                [{'adminURL': 'http://keystonehost:5000/v2.0'}]}]
+                [{'publicURL': 'http://keystonehost:5000/v2.0'}]}]
 
         self.override_config('os_privileged_user_name', 'adminuser')
         self.override_config('os_privileged_user_password', 'strongpassword')
@@ -56,7 +56,7 @@ class NovaClientTestCase(test.TestCase):
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name=None,
-            insecure=False, endpoint_type='adminURL', cacert=None,
+            insecure=False, endpoint_type='publicURL', cacert=None,
             timeout=None, extensions=nova.nova_extensions)
 
     @mock.patch('novaclient.api_versions.APIVersion')
@@ -73,7 +73,7 @@ class NovaClientTestCase(test.TestCase):
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name=None,
-            insecure=False, endpoint_type='adminURL', cacert=None,
+            insecure=False, endpoint_type='publicURL', cacert=None,
             timeout=None, extensions=nova.nova_extensions)
 
     @mock.patch('novaclient.api_versions.APIVersion')
@@ -92,7 +92,7 @@ class NovaClientTestCase(test.TestCase):
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name=None,
-            insecure=False, endpoint_type='adminURL', cacert=None,
+            insecure=False, endpoint_type='publicURL', cacert=None,
             timeout=None, extensions=nova.nova_extensions)
 
     @mock.patch('novaclient.api_versions.APIVersion')
@@ -110,7 +110,7 @@ class NovaClientTestCase(test.TestCase):
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name='farfaraway',
-            insecure=False, endpoint_type='adminURL', cacert=None,
+            insecure=False, endpoint_type='publicURL', cacert=None,
             timeout=None, extensions=nova.nova_extensions)
 
 
