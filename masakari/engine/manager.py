@@ -142,6 +142,11 @@ class MasakariManager(manager.Manager):
             update_data = {
                 'on_maintenance': True,
             }
+
+            # Set reserved flag to False if this host is reserved
+            if host_obj.reserved:
+                update_data['reserved'] = False
+
             host_obj.update(update_data)
             host_obj.save()
 
