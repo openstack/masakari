@@ -18,7 +18,7 @@ import socket
 from oslo_config import cfg
 
 service_opts = [
-    cfg.StrOpt('host',
+    cfg.HostAddressOpt('host',
                default=socket.gethostname(),
                help='''
 Hostname, FQDN or IP address of this host. Must be valid within AMQP key.
@@ -48,7 +48,7 @@ Possible values:
     cfg.BoolOpt('use_ssl',
                 default=False,
                 help='Use APIs with SSL enabled'),
-    cfg.StrOpt('masakari_api_listen',
+    cfg.HostAddressOpt('masakari_api_listen',
                default="0.0.0.0",
                help='The IP address on which the Masakari API will listen.'),
     cfg.IntOpt('masakari_api_listen_port',
