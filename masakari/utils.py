@@ -33,7 +33,7 @@ import six
 
 import masakari.conf
 from masakari import exception
-from masakari.i18n import _, _LE
+from masakari.i18n import _
 from masakari import safe_utils
 
 
@@ -238,7 +238,7 @@ def tempdir(**kwargs):
         try:
             shutil.rmtree(tmpdir)
         except OSError as e:
-            LOG.error(_LE('Could not remove tmpdir: %s'), e)
+            LOG.error('Could not remove tmpdir: %s', e)
 
 
 def validate_integer(value, name, min_value=None, max_value=None):

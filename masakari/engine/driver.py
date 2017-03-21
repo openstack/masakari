@@ -28,7 +28,6 @@ import six
 from stevedore import driver
 
 import masakari.conf
-from masakari.i18n import _LE, _LI
 from masakari import utils
 
 
@@ -68,17 +67,16 @@ def load_masakari_driver(masakari_driver=None):
         masakari_driver = CONF.notification_driver
 
     if not masakari_driver:
-        LOG.error(_LE("Notification driver option required, but not"
-                      "specified"))
+        LOG.error("Notification driver option required, but not specified")
         sys.exit(1)
 
-    LOG.info(_LI("Loading masakari notification driver '%s'"), masakari_driver)
+    LOG.info("Loading masakari notification driver '%s'", masakari_driver)
     try:
         notification_driver = driver.DriverManager('masakari.driver',
                                                    masakari_driver,
                                                    invoke_on_load=True).driver
         return utils.check_isinstance(notification_driver, NotificationDriver)
     except ImportError:
-        LOG.exception(_LE("Failed to load notification driver "
-                          "'%s'."), masakari_driver)
+        LOG.exception("Failed to load notification driver '%s'.",
+                      masakari_driver)
         sys.exit(1)

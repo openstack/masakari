@@ -24,7 +24,7 @@ from taskflow.patterns import linear_flow
 import masakari.conf
 from masakari.engine.drivers.taskflow import base
 from masakari import exception
-from masakari.i18n import _, _LI
+from masakari.i18n import _
 
 
 CONF = masakari.conf.CONF
@@ -51,8 +51,8 @@ class StopInstanceTask(base.MasakariTask):
         if not CONF.instance_failure.process_all_instances and not (
                 strutils.bool_from_string(
                     instance.metadata.get('HA_Enabled', False))):
-            LOG.info(_LI("Skipping recovery for instance: %s as it is "
-                         "not Ha_Enabled."), instance_uuid)
+            LOG.info("Skipping recovery for instance: %s as it is "
+                     "not Ha_Enabled.", instance_uuid)
             raise exception.SkipInstanceRecoveryException()
 
         vm_state = getattr(instance, 'OS-EXT-STS:vm_state')

@@ -26,9 +26,6 @@ Masakari Specific Commandments
 - [M309] Don't import translation in tests
 - [M310] Setting CONF.* attributes directly in tests is forbidden. Use
   self.flags(option=value) instead.
-- [M311] Validate that LOG.info messages use _LI.
-- [M312] Validate that LOG.exception messages use _LE.
-- [M313] Validate that LOG.warning and LOG.warn messages use _LW.
 - [M314] Log messages require translations!
 - [M315] Method's default argument shouldn't be mutable
 - [M316] Ensure that the _() function is explicitly imported to ensure proper translations.

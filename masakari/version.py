@@ -15,8 +15,6 @@
 
 from pbr import version as pbr_version
 
-from masakari.i18n import _LE
-
 MASAKARI_VENDOR = "OpenStack Foundation"
 MASAKARI_PRODUCT = "OpenStack Masakari"
 MASAKARI_PACKAGE = None  # OS distro package version suffix
@@ -60,7 +58,7 @@ def _load_config():
             MASAKARI_PACKAGE = cfg.get("Masakari", "package")
     except Exception as ex:
         LOG = logging.getLogger(__name__)
-        LOG.error(_LE("Failed to load %(cfgfile)s: %(ex)s"),
+        LOG.error("Failed to load %(cfgfile)s: %(ex)s",
                   {'cfgfile': cfgfile, 'ex': ex})
 
 

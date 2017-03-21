@@ -29,7 +29,7 @@ from masakari.engine.drivers.taskflow import host_failure
 from masakari.engine.drivers.taskflow import instance_failure
 from masakari.engine.drivers.taskflow import process_failure
 from masakari import exception
-from masakari.i18n import _, _LW
+from masakari.i18n import _
 from masakari.objects import fields
 
 
@@ -77,10 +77,10 @@ class TaskFlowDriver(driver.NotificationDriver):
 
                 # Caught generic Exception to make sure that any failure
                 # should lead to execute 'reserved_host' recovery workflow.
-                msg = _LW("Failed to evacuate all instances from "
-                          "failed_host: '%(failed_host)s' using "
-                          "'%(auto)s' workflow, retrying using "
-                          "'%(reserved_host)s' workflow.")
+                msg = ("Failed to evacuate all instances from "
+                       "failed_host: '%(failed_host)s' using "
+                       "'%(auto)s' workflow, retrying using "
+                       "'%(reserved_host)s' workflow.")
                 LOG.warning(msg, {
                     'failed_host': process_what['host_name'],
                     'auto': fields.FailoverSegmentRecoveryMethod.AUTO,
@@ -103,10 +103,10 @@ class TaskFlowDriver(driver.NotificationDriver):
 
                 # Caught generic Exception to make sure that any failure
                 # should lead to execute 'auto' recovery workflow.
-                msg = _LW("Failed to evacuate all instances from "
-                          "failed_host '%(failed_host)s' using "
-                          "'%(reserved_host)s' workflow, retrying using "
-                          "'%(auto)s' workflow")
+                msg = ("Failed to evacuate all instances from "
+                       "failed_host '%(failed_host)s' using "
+                       "'%(reserved_host)s' workflow, retrying using "
+                       "'%(auto)s' workflow")
                 LOG.warning(msg, {
                     'failed_host': process_what['host_name'],
                     'reserved_host':
@@ -189,7 +189,7 @@ class TaskFlowDriver(driver.NotificationDriver):
         if process_name == "nova-compute":
             recovery_flow = process_failure.get_compute_process_recovery_flow
         else:
-            LOG.warning(_LW("Skipping recovery for process: %s."),
+            LOG.warning("Skipping recovery for process: %s.",
                         process_name)
             raise exception.SkipProcessRecoveryException()
 

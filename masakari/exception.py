@@ -33,7 +33,7 @@ import webob.exc
 from webob import util as woutil
 
 import masakari.conf
-from masakari.i18n import _, _LE
+from masakari.i18n import _
 from masakari import safe_utils
 
 LOG = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ class ConvertedException(webob.exc.WSGIHTTPException):
             try:
                 self.title = woutil.status_reasons[self.code]
             except KeyError:
-                msg = _LE("Improper or unknown HTTP status code used: %d")
+                msg = "Improper or unknown HTTP status code used: %d"
                 LOG.error(msg, code)
                 self.title = woutil.status_generic_reasons[self.code // 100]
         self.explanation = explanation
@@ -137,7 +137,7 @@ class MasakariException(Exception):
                 exc_info = sys.exc_info()
                 # kwargs doesn't match a variable in the message
                 # log the issue and the kwargs
-                LOG.exception(_LE('Exception in string format operation'))
+                LOG.exception('Exception in string format operation')
                 for name, value in kwargs.items():
                     LOG.error("%s: %s" % (name, value))    # noqa
 

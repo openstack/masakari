@@ -23,7 +23,7 @@ from taskflow.patterns import linear_flow
 import masakari.conf
 from masakari.engine.drivers.taskflow import base
 from masakari import exception
-from masakari.i18n import _, _LI
+from masakari.i18n import _
 
 
 CONF = masakari.conf.CONF
@@ -46,8 +46,8 @@ class DisableComputeNodeTask(base.MasakariTask):
             # disable compute node on given host
             self.novaclient.enable_disable_service(context, host_name)
         else:
-            LOG.info(_LI("Skipping recovery for process: %s as it is "
-                         "already disabled."),
+            LOG.info("Skipping recovery for process: %s as it is "
+                     "already disabled.",
                      process_name)
 
 

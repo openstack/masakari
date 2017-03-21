@@ -218,32 +218,6 @@ class HackingTestCase(test.NoDBTestCase):
         self.assertEqual(len(list(checks.no_setting_conf_directly_in_tests(
             "CONF.option = 1", "masakari/compute/foo.py"))), 0)
 
-    def test_log_translations(self):
-        logs = ['audit', 'error', 'info', 'warning', 'critical', 'warn',
-                'exception']
-        levels = ['_LI', '_LW', '_LE', '_LC']
-        debug = "LOG.debug('OK')"
-        self.assertEqual(
-            0, len(list(checks.validate_log_translations(debug, debug, 'f'))))
-        for log in logs:
-            bad = 'LOG.%s("Bad")' % log
-            self.assertEqual(1,
-                len(list(
-                    checks.validate_log_translations(bad, bad, 'f'))))
-            ok = "LOG.%s('OK')    # noqa" % log
-            self.assertEqual(0,
-                len(list(
-                    checks.validate_log_translations(ok, ok, 'f'))))
-            ok = "LOG.%s(variable)" % log
-            self.assertEqual(0,
-                len(list(
-                    checks.validate_log_translations(ok, ok, 'f'))))
-            for level in levels:
-                ok = "LOG.%s(%s('OK'))" % (log, level)
-                self.assertEqual(0,
-                    len(list(
-                        checks.validate_log_translations(ok, ok, 'f'))))
-
     def test_no_mutable_default_args(self):
         self.assertEqual(1, len(list(checks.no_mutable_default_args(
             "def get_info_from_bdm(virt_type, bdm, mapping=[])"))))
@@ -271,7 +245,7 @@ class HackingTestCase(test.NoDBTestCase):
             "msg = _('My message')",
             "masakari/tests/other_files.py"))), 0)
         self.assertEqual(len(list(checks.check_explicit_underscore_import(
-            "from masakari.i18n import _, _LW",
+            "from masakari.i18n import _",
             "masakari/tests/other_files2.py"))), 0)
         self.assertEqual(len(list(checks.check_explicit_underscore_import(
             "msg = _('My message')",
@@ -485,18 +459,18 @@ class HackingTestCase(test.NoDBTestCase):
     def test_check_delayed_string_interpolation(self):
         checker = checks.check_delayed_string_interpolation
         code = """
-               msg_w = _LW('Test string (%s)')
-               msg_i = _LI('Test string (%s)')
+               msg_w = ('Test string (%s)')
+               msg_i = 'Test string (%s)'
                value = 'test'
 
-               LOG.error(_LE("Test string (%s)") % value)
+               LOG.error(("Test string (%s)") % value)
                LOG.warning(msg_w % 'test%string')
                LOG.info(msg_i %
                         "test%string%info")
                LOG.critical(
-                   _LC('Test string (%s)') % value,
+                   ('Test string (%s)') % value,
                    instance=instance)
-               LOG.exception(_LE(" 'Test quotation %s' \"Test\"") % 'test')
+               LOG.exception((" 'Test quotation %s' \"Test\"") % 'test')
                LOG.debug(' "Test quotation %s" \'Test\'' % "test")
                LOG.debug('Tesing %(test)s' %
                          {'test': ','.join(
@@ -504,28 +478,28 @@ class HackingTestCase(test.NoDBTestCase):
                               for name, value in test.items()])})
                """
 
-        expected_errors = [(5, 34, 'M330'), (6, 18, 'M330'), (7, 15, 'M330'),
-                           (10, 28, 'M330'), (12, 49, 'M330'),
+        expected_errors = [(5, 31, 'M330'), (6, 18, 'M330'), (7, 15, 'M330'),
+                           (10, 25, 'M330'), (12, 46, 'M330'),
                            (13, 40, 'M330'), (14, 28, 'M330')]
         self._assert_has_errors(code, checker, expected_errors=expected_errors)
         self._assert_has_no_errors(
             code, checker, filename='masakari/tests/unit/test_hacking.py')
 
         code = """
-               msg_w = _LW('Test string (%s)')
-               msg_i = _LI('Test string (%s)')
+               msg_w = ('Test string (%s)')
+               msg_i = 'Test string (%s)'
                value = 'test'
 
-               LOG.error(_LE("Test string (%s)"), value)
-               LOG.error(_LE("Test string (%s)") % value) # noqa
-               LOG.warn(_LW('Test string (%s)'),
+               LOG.error(("Test string (%s)"), value)
+               LOG.error(("Test string (%s)") % value) # noqa
+               LOG.warn(('Test string (%s)'),
                         value)
                LOG.info(msg_i,
                         "test%string%info")
                LOG.critical(
-                   _LC('Test string (%s)'), value,
+                   ('Test string (%s)'), value,
                    instance=instance)
-               LOG.exception(_LE(" 'Test quotation %s' \"Test\""), 'test')
+               LOG.exception((" 'Test quotation %s' \"Test\""), 'test')
                LOG.debug(' "Test quotation %s" \'Test\'', "test")
                LOG.debug('Tesing %(test)s',
                          {'test': ','.join(

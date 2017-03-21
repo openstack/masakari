@@ -28,7 +28,7 @@ from masakari.api import api_version_request as api_version
 from masakari.api import versioned_method
 from masakari import exception
 from masakari import i18n
-from masakari.i18n import _, _LE, _LI
+from masakari.i18n import _
 from masakari import utils
 from masakari import wsgi
 
@@ -378,14 +378,14 @@ class ResourceExceptionHandler(object):
                         explanation=ex_value.format_message()))
         elif isinstance(ex_value, TypeError):
             exc_info = (ex_type, ex_value, ex_traceback)
-            LOG.error(_LE('Exception handling resource: %s'), ex_value,
+            LOG.error('Exception handling resource: %s', ex_value,
                       exc_info=exc_info)
             raise Fault(webob.exc.HTTPBadRequest())
         elif isinstance(ex_value, Fault):
-            LOG.info(_LI("Fault thrown: %s"), ex_value)
+            LOG.info("Fault thrown: %s", ex_value)
             raise ex_value
         elif isinstance(ex_value, webob.exc.HTTPException):
-            LOG.info(_LI("HTTP exception thrown: %s"), ex_value)
+            LOG.info("HTTP exception thrown: %s", ex_value)
             raise Fault(ex_value)
 
         # We didn't handle the exception

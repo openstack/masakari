@@ -19,7 +19,6 @@ import webob.exc
 from masakari.api.openstack import extensions
 from masakari.api.openstack import wsgi
 from masakari import exception
-from masakari.i18n import _LE
 
 ALIAS = 'extensions'
 LOG = logging.getLogger(__name__)
@@ -131,7 +130,7 @@ class LoadedExtensionInfo(object):
         try:
             extension.is_valid()
         except AttributeError:
-            LOG.exception(_LE("Exception loading extension"))
+            LOG.exception("Exception loading extension")
             return False
 
         return True

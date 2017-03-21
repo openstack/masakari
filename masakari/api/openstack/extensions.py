@@ -25,7 +25,7 @@ import webob.exc
 import masakari.api.openstack
 from masakari.api.openstack import wsgi
 from masakari import exception
-from masakari.i18n import _, _LE, _LW
+from masakari.i18n import _
 import masakari.policy
 
 LOG = logging.getLogger(__name__)
@@ -176,7 +176,7 @@ class ExtensionManager(object):
         try:
             extension.is_valid()
         except AttributeError:
-            LOG.exception(_LE("Exception loading extension"))
+            LOG.exception("Exception loading extension")
             return False
 
         return True
@@ -211,8 +211,8 @@ class ExtensionManager(object):
             try:
                 self.load_extension(ext_factory)
             except Exception as exc:
-                LOG.warning(_LW('Failed to load extension %(ext_factory)s: '
-                                '%(exc)s'),
+                LOG.warning('Failed to load extension %(ext_factory)s: '
+                            '%(exc)s',
                             {'ext_factory': ext_factory, 'exc': exc})
 
 
@@ -282,8 +282,7 @@ def load_standard_extensions(ext_mgr, logger, path, package, ext_list=None):
             try:
                 ext_mgr.load_extension(classpath)
             except Exception as exc:
-                logger.warn(_LW('Failed to load extension %(classpath)s: '
-                                '%(exc)s'),
+                logger.warn('Failed to load extension %(classpath)s: %(exc)s',
                             {'classpath': classpath, 'exc': exc})
 
         # Now, let's consider any subdirectories we may have...
@@ -305,8 +304,8 @@ def load_standard_extensions(ext_mgr, logger, path, package, ext_list=None):
                 try:
                     ext(ext_mgr)
                 except Exception as exc:
-                    logger.warn(_LW('Failed to load extension %(ext_name)s:'
-                                    '%(exc)s'),
+                    logger.warn('Failed to load extension %(ext_name)s:'
+                                '%(exc)s',
                                 {'ext_name': ext_name, 'exc': exc})
 
         # Update the list of directories we'll explore...
@@ -441,7 +440,7 @@ def expected_errors(errors):
                     raise
                 elif isinstance(exc, exception.ValidationError):
                     raise
-                LOG.exception(_LE("Unexpected exception in API method"))
+                LOG.exception("Unexpected exception in API method")
                 msg = _('Unexpected API Error. Please report this at '
                         'http://bugs.launchpad.net/masakari/ and attach the '
                         'Masakari API log if possible.\n%s') % type(exc)

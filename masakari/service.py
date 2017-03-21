@@ -28,7 +28,7 @@ from oslo_utils import importutils
 import masakari.conf
 from masakari import context
 from masakari import exception
-from masakari.i18n import _, _LE, _LI
+from masakari.i18n import _
 from masakari.objects import base as objects_base
 from masakari import rpc
 from masakari import utils
@@ -79,7 +79,7 @@ class Service(service.Service):
 
     def start(self):
         verstr = version.version_string_with_package()
-        LOG.info(_LI('Starting %(topic)s (version %(version)s)'), {
+        LOG.info('Starting %(topic)s (version %(version)s)', {
             'topic': self.topic,
             'version': verstr
         })
@@ -178,7 +178,7 @@ class Service(service.Service):
             with utils.tempdir():
                 pass
         except Exception as e:
-            LOG.error(_LE('Temporary directory is invalid: %s'), e)
+            LOG.error('Temporary directory is invalid: %s', e)
             sys.exit(1)
 
     def reset(self):

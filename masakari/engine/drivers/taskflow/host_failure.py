@@ -26,7 +26,7 @@ from taskflow import retry
 import masakari.conf
 from masakari.engine.drivers.taskflow import base
 from masakari import exception
-from masakari.i18n import _, _LI
+from masakari.i18n import _
 from masakari import utils
 
 
@@ -48,8 +48,8 @@ class DisableComputeServiceTask(base.MasakariTask):
         self.novaclient.enable_disable_service(context, host_name)
 
         # Sleep until nova-compute service is marked as disabled.
-        msg = _LI("Sleeping %(wait)s sec before starting recovery "
-                  "thread until nova recognizes the node down.")
+        msg = ("Sleeping %(wait)s sec before starting recovery "
+               "thread until nova recognizes the node down.")
         LOG.info(msg, {'wait': CONF.wait_period_after_service_update})
         eventlet.sleep(CONF.wait_period_after_service_update)
 
@@ -118,8 +118,8 @@ class EvacuateInstancesTask(base.MasakariTask):
                     context, reserved_host.name, enable=True)
 
                 # Sleep until nova-compute service is marked as enabled.
-                msg = _LI("Sleeping %(wait)s sec before starting recovery "
-                          "thread until nova recognizes the node up.")
+                msg = ("Sleeping %(wait)s sec before starting recovery "
+                       "thread until nova recognizes the node up.")
                 LOG.info(msg, {
                     'wait': CONF.wait_period_after_service_update})
                 eventlet.sleep(CONF.wait_period_after_service_update)

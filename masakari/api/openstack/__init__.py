@@ -25,7 +25,6 @@ import webob.exc
 
 from masakari.api.openstack import wsgi
 import masakari.conf
-from masakari.i18n import _LE, _LI, _LW
 from masakari.i18n import translate
 from masakari import utils
 from masakari import wsgi as base_wsgi
@@ -49,7 +48,7 @@ class FaultWrapper(base_wsgi.Middleware):
             status, webob.exc.HTTPInternalServerError)()
 
     def _error(self, inner, req):
-        LOG.exception(_LE("Caught error: %s"), six.text_type(inner))
+        LOG.exception("Caught error: %s", six.text_type(inner))
 
         safe = getattr(inner, 'safe', False)
         headers = getattr(inner, 'headers', None)
@@ -58,7 +57,7 @@ class FaultWrapper(base_wsgi.Middleware):
             status = 500
 
         msg_dict = dict(url=req.url, status=status)
-        LOG.info(_LI("%(url)s returned with HTTP %(status)d"), msg_dict)
+        LOG.info("%(url)s returned with HTTP %(status)d", msg_dict)
         outer = self.status_to_type(status)
         if headers:
             outer.headers = headers
@@ -181,7 +180,7 @@ class APIRouterV1(base_wsgi.Router):
             self._register_resources_check_inherits(mapper)
             self.api_extension_manager.map(self._register_controllers)
 
-        LOG.info(_LI("Loaded extensions: %s"),
+        LOG.info("Loaded extensions: %s",
                  sorted(self.loaded_extension_info.get_extensions().keys()))
         super(APIRouterV1, self).__init__(mapper)
 
@@ -269,8 +268,8 @@ class APIRouterV1(base_wsgi.Router):
             controller = extension.controller
 
             if collection not in self.resources:
-                LOG.warning(_LW('Extension %(ext_name)s: Cannot extend '
-                                'resource %(collection)s: No such resource'),
+                LOG.warning('Extension %(ext_name)s: Cannot extend '
+                            'resource %(collection)s: No such resource',
                             {'ext_name': ext_name, 'collection': collection})
                 continue
 

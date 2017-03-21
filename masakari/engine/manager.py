@@ -31,7 +31,6 @@ import masakari.conf
 from masakari.engine import driver
 from masakari.engine import instance_events as virt_events
 from masakari import exception
-from masakari.i18n import _LE, _LI, _LW
 from masakari import manager
 from masakari import objects
 from masakari.objects import fields
@@ -61,14 +60,13 @@ class MasakariManager(manager.Manager):
         process_name = notification.payload.get('process_name')
 
         if notification_event.upper() == 'STARTED':
-            LOG.info(_LI("Notification type '%(type)s' received for host "
-                         "'%(host_uuid)s': '%(process_name)s' has been "
-                         "%(event)s."), {
-                'type': notification.type,
-                'host_uuid': notification.source_host_uuid,
-                'process_name': process_name,
-                'event': notification_event
-            })
+            LOG.info("Notification type '%(type)s' received for host "
+                     "'%(host_uuid)s': '%(process_name)s' has been "
+                     "%(event)s.",
+                     {'type': notification.type,
+                      'host_uuid': notification.source_host_uuid,
+                      'process_name': process_name,
+                      'event': notification_event})
         elif notification_event.upper() == 'STOPPED':
             host_obj = objects.Host.get_by_uuid(
                 context, notification.source_host_uuid)
@@ -91,21 +89,20 @@ class MasakariManager(manager.Manager):
                     exception.ProcessRecoveryFailureException):
                 notification_status = fields.NotificationStatus.ERROR
         else:
-            LOG.warning(_LW("Invalid event: %(event)s received for "
-                            "notification type: %(notification_type)s"), {
-                'event': notification_event,
-                'notification_type': notification.type
-            })
+            LOG.warning("Invalid event: %(event)s received for "
+                        "notification type: %(notification_type)s",
+                        {'event': notification_event,
+                         'notification_type': notification.type})
             notification_status = fields.NotificationStatus.IGNORED
 
         return notification_status
 
     def _handle_notification_type_instance(self, context, notification):
         if not virt_events.is_valid_event(notification.payload):
-            LOG.info(_LI("Notification '%(uuid)s' received with payload "
-                         "%(payload)s is ignored."), {
-                "uuid": notification.notification_uuid,
-                "payload": notification.payload})
+            LOG.info("Notification '%(uuid)s' received with payload "
+                     "%(payload)s is ignored.",
+                     {"uuid": notification.notification_uuid,
+                      "payload": notification.payload})
             return fields.NotificationStatus.IGNORED
 
         notification_status = fields.NotificationStatus.FINISHED
@@ -126,12 +123,11 @@ class MasakariManager(manager.Manager):
         notification_event = notification.payload.get('event')
 
         if notification_event.upper() == 'STARTED':
-            LOG.info(_LI("Notification type '%(type)s' received for host "
-                         "'%(host_uuid)s' has been %(event)s."), {
-                'type': notification.type,
-                'host_uuid': notification.source_host_uuid,
-                'event': notification_event
-            })
+            LOG.info("Notification type '%(type)s' received for host "
+                     "'%(host_uuid)s' has been %(event)s.",
+                     {'type': notification.type,
+                      'host_uuid': notification.source_host_uuid,
+                      'event': notification_event})
         elif notification_event.upper() == 'STOPPED':
             host_obj = objects.Host.get_by_uuid(
                 context, notification.source_host_uuid)
@@ -170,11 +166,10 @@ class MasakariManager(manager.Manager):
                     exception.MasakariException):
                 notification_status = fields.NotificationStatus.ERROR
         else:
-            LOG.warning(_LW("Invalid event: %(event)s received for "
-                            "notification type: %(type)s"), {
-                'event': notification_event,
-                'type': notification.type
-            })
+            LOG.warning("Invalid event: %(event)s received for "
+                        "notification type: %(type)s",
+                        {'event': notification_event,
+                         'type': notification.type})
             notification_status = fields.NotificationStatus.IGNORED
 
         return notification_status
@@ -182,11 +177,10 @@ class MasakariManager(manager.Manager):
     def _process_notification(self, context, notification):
         @utils.synchronized(notification.source_host_uuid, blocking=True)
         def do_process_notification(notification):
-            LOG.info(_LI('Processing notification %(notification_uuid)s of '
-                         'type: %(type)s'), {
-                'notification_uuid': notification.notification_uuid,
-                'type': notification.type
-            })
+            LOG.info('Processing notification %(notification_uuid)s of '
+                     'type: %(type)s',
+                     {'notification_uuid': notification.notification_uuid,
+                      'type': notification.type})
 
             update_data = {
                 'status': fields.NotificationStatus.RUNNING,
@@ -204,11 +198,10 @@ class MasakariManager(manager.Manager):
                 notification_status = self._handle_notification_type_host(
                     context, notification)
 
-            LOG.info(_LI("Notification %(notification_uuid)s exits with "
-                         "status: %(status)s."), {
-                'notification_uuid': notification.notification_uuid,
-                'status': notification_status
-            })
+            LOG.info("Notification %(notification_uuid)s exits with "
+                     "status: %(status)s.",
+                     {'notification_uuid': notification.notification_uuid,
+                      'status': notification_status})
 
             update_data = {
                 'status': notification_status
@@ -253,10 +246,9 @@ class MasakariManager(manager.Manager):
 
                 notification_db.update(update_data)
                 notification_db.save()
-                LOG.error(_LE(
+                LOG.error(
                     "Periodic task 'process_unfinished_notifications': "
                     "Notification %(notification_uuid)s exits with "
-                    "status: %(status)s."), {
-                    'notification_uuid': notification.notification_uuid,
-                    'status': notification_status
-                })
+                    "status: %(status)s.",
+                    {'notification_uuid': notification.notification_uuid,
+                     'status': notification_status})

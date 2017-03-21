@@ -15,7 +15,6 @@
 
 import re
 
-import pep8
 
 """
 Guidelines for writing new hacking checks
@@ -70,14 +69,6 @@ asse_true_false_with_in_or_not_in_spaces = re.compile(
     r"[][.'\", ])+[\[|'|\"](, .*)?\)")
 asse_raises_regexp = re.compile(r"assertRaisesRegexp\(")
 conf_attribute_set_re = re.compile(r"CONF\.[a-z0-9_.]+\s*=\s*\w")
-log_translation = re.compile(
-    r"(.)*LOG\.(audit|error|critical)\(\s*('|\")")
-log_translation_info = re.compile(
-    r"(.)*LOG\.(info)\(\s*(_\(|'|\")")
-log_translation_exception = re.compile(
-    r"(.)*LOG\.(exception)\(\s*(_\(|'|\")")
-log_translation_LW = re.compile(
-    r"(.)*LOG\.(warning|warn)\(\s*(_\(|'|\")")
 translated_log = re.compile(
     r"(.)*LOG\.(audit|error|info|critical|exception)"
     "\(\s*_\(\s*('|\")")
@@ -220,27 +211,6 @@ def no_setting_conf_directly_in_tests(logical_line, filename):
             yield (0, "M310: Setting CONF.* attributes directly in "
                       "tests is forbidden. Use self.flags(option=value) "
                       "instead")
-
-
-def validate_log_translations(logical_line, physical_line, filename):
-    # Translations are not required in the test directory
-    if "masakari/tests" in filename:
-        return
-    if pep8.noqa(physical_line):
-        return
-    msg = "M311: LOG.info messages require translations `_LI()`!"
-    if log_translation_info.match(logical_line):
-        yield (0, msg)
-    msg = "M312: LOG.exception messages require translations `_LE()`!"
-    if log_translation_exception.match(logical_line):
-        yield (0, msg)
-    msg = ("M313: LOG.warning, LOG.warn messages require "
-           "translations `_LW()`!")
-    if log_translation_LW.match(logical_line):
-        yield (0, msg)
-    msg = "M314: Log messages require translations!"
-    if log_translation.match(logical_line):
-        yield (0, msg)
 
 
 def no_mutable_default_args(logical_line):
@@ -469,7 +439,6 @@ def factory(register):
     register(assert_raises_regexp)
     register(no_translate_debug_logs)
     register(no_setting_conf_directly_in_tests)
-    register(validate_log_translations)
     register(no_mutable_default_args)
     register(check_explicit_underscore_import)
     register(use_jsonutils)

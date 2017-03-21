@@ -33,7 +33,6 @@ import six
 from masakari import conf
 from masakari import context as ctx
 from masakari import exception
-from masakari.i18n import _LI
 
 CONF = conf.CONF
 CONF.import_group('keystone_authtoken', 'keystonemiddleware.auth_token')
@@ -136,7 +135,7 @@ class API(object):
             'all_tenants': True
         }
         nova = novaclient(context)
-        LOG.info(_LI('Fetch Server list on %s'), host)
+        LOG.info('Fetch Server list on %s', host)
         return nova.servers.list(detailed=True, search_opts=opts)
 
     @translate_nova_exception
@@ -146,14 +145,14 @@ class API(object):
         nova = novaclient(context)
 
         if not enable:
-            LOG.info(_LI('Disable nova-compute on %s'), host_name)
+            LOG.info('Disable nova-compute on %s', host_name)
             if reason:
                 nova.services.disable_log_reason(host_name, 'nova-compute',
                                                  reason)
             else:
                 nova.services.disable(host_name, 'nova-compute')
         else:
-            LOG.info(_LI('Enable nova-compute on %s'), host_name)
+            LOG.info('Enable nova-compute on %s', host_name)
             nova.services.enable(host_name, 'nova-compute')
 
     @translate_nova_exception
@@ -167,8 +166,8 @@ class API(object):
     def evacuate_instance(self, context, uuid, target=None,
                           on_shared_storage=True):
         """Evacuate an instance from failed host to specified host."""
-        msg = (_LI('Call evacuate command for instance %(uuid)s on host '
-                   '%(target)s'))
+        msg = ('Call evacuate command for instance %(uuid)s on host '
+               '%(target)s')
         LOG.info(msg, {'uuid': uuid, 'target': target})
         nova = novaclient(context)
         nova.servers.evacuate(uuid, host=target,
@@ -177,8 +176,8 @@ class API(object):
     @translate_nova_exception
     def reset_instance_state(self, context, uuid, status='error'):
         """Reset the state of an instance to active or error."""
-        msg = (_LI('Call reset state command on instance %(uuid)s to '
-                   'status: %(status)s.'))
+        msg = ('Call reset state command on instance %(uuid)s to '
+               'status: %(status)s.')
         LOG.info(msg, {'uuid': uuid, 'status': status})
         nova = novaclient(context)
         nova.servers.reset_state(uuid, status)
@@ -187,7 +186,7 @@ class API(object):
     def get_server(self, context, uuid):
         """Get a server."""
         nova = novaclient(context)
-        msg = (_LI('Call get server command for instance %(uuid)s'))
+        msg = ('Call get server command for instance %(uuid)s')
         LOG.info(msg, {'uuid': uuid})
         return nova.servers.get(uuid)
 
@@ -195,7 +194,7 @@ class API(object):
     def stop_server(self, context, uuid):
         """Stop a server."""
         nova = novaclient(context)
-        msg = (_LI('Call stop server command for instance %(uuid)s'))
+        msg = ('Call stop server command for instance %(uuid)s')
         LOG.info(msg, {'uuid': uuid})
         return nova.servers.stop(uuid)
 
@@ -203,7 +202,7 @@ class API(object):
     def start_server(self, context, uuid):
         """Start a server."""
         nova = novaclient(context)
-        msg = (_LI('Call start server command for instance %(uuid)s'))
+        msg = ('Call start server command for instance %(uuid)s')
         LOG.info(msg, {'uuid': uuid})
         return nova.servers.start(uuid)
 
@@ -211,15 +210,14 @@ class API(object):
     def get_aggregate_list(self, context):
         """Get all aggregate list."""
         nova = novaclient(context)
-        LOG.info(_LI('Call aggregate-list command to get list of all '
-                     'aggregates.'))
+        LOG.info('Call aggregate-list command to get list of all aggregates.')
         return nova.aggregates.list()
 
     @translate_nova_exception
     def add_host_to_aggregate(self, context, host, aggregate):
         """Add host to given aggregate."""
         nova = novaclient(context)
-        msg = _LI("Call add_host command to add host '%(host_name)s' to "
-                  "aggregate '%(aggregate_name)s'.")
+        msg = ("Call add_host command to add host '%(host_name)s' to "
+               "aggregate '%(aggregate_name)s'.")
         LOG.info(msg, {'host_name': host, 'aggregate_name': aggregate.name})
         return nova.aggregates.add_host(aggregate.id, host)
