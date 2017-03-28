@@ -251,10 +251,13 @@ class NovaApiTestCase(test.TestCase):
 
     @mock.patch('masakari.compute.nova.novaclient')
     def test_add_host_to_aggregate(self, mock_novaclient):
+        mock_aggregate = mock.MagicMock()
         mock_aggregates = mock.MagicMock()
+        mock_aggregates.return_value = mock.MagicMock(
+            aggregate=mock_aggregate)
         mock_novaclient.return_value = mock.MagicMock(
             aggregates=mock_aggregates)
-        self.api.add_host_to_aggregate(self.ctx, 'fake_host', mock_aggregates)
+        self.api.add_host_to_aggregate(self.ctx, 'fake_host', mock_aggregate)
         mock_novaclient.assert_called_once_with(self.ctx)
         mock_aggregates.add_host.assert_called_once_with(
-            mock_aggregates.id, 'fake_host')
+            mock_aggregate.id, 'fake_host')
