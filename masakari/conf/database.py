@@ -22,8 +22,7 @@ _DEFAULT_SQL_CONNECTION = 'sqlite:///' + paths.state_path_def(
 
 
 def register_opts(conf):
-    oslo_db_options.set_defaults(conf, connection=_DEFAULT_SQL_CONNECTION,
-                                 sqlite_db='masakari.sqlite')
+    oslo_db_options.set_defaults(conf, connection=_DEFAULT_SQL_CONNECTION)
 
 
 def list_opts():
