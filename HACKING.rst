@@ -19,11 +19,10 @@ Masakari Specific Commandments
   assertIsInstance(A, B).
 - [M306] Change assertEqual(type(A), B) by optimal assert like
   assertIsInstance(A, B)
-- [M308] Validate that debug level logs are not translated.
+- [M308] Validate that log messages are not translated.
 - [M309] Don't import translation in tests
 - [M310] Setting CONF.* attributes directly in tests is forbidden. Use
   self.flags(option=value) instead.
-- [M314] Log messages require translations!
 - [M315] Method's default argument shouldn't be mutable
 - [M316] Ensure that the _() function is explicitly imported to ensure proper translations.
 - [M317] Ensure that jsonutils.%(fun)s must be used instead of json.%(fun)s

@@ -85,6 +85,15 @@ spawn_re = re.compile(
 contextlib_nested = re.compile(r"^with (contextlib\.)?nested\(")
 doubled_words_re = re.compile(
     r"\b(then?|[iao]n|i[fst]|but|f?or|at|and|[dt]o)\s+\1\b")
+_all_log_levels = {'critical', 'error', 'exception', 'info',
+                   'warning', 'debug'}
+_all_hints = {'_', '_LE', '_LI', '_LW', '_LC'}
+
+log_translation_re = re.compile(
+    r".*LOG\.(%(levels)s)\(\s*(%(hints)s)\(" % {
+        'levels': '|'.join(_all_log_levels),
+        'hints': '|'.join(_all_hints),
+    })
 
 
 def no_db_session_in_public_api(logical_line, filename):
@@ -139,21 +148,18 @@ def assert_equal_type(logical_line):
         yield (0, "M306: assertEqual(type(A), B) sentences not allowed")
 
 
-def no_translate_debug_logs(logical_line, filename):
-    """Check for 'LOG.debug(_('
+def no_translate_logs(logical_line):
+    """Check for 'LOG.*(_*("'
 
-    As per our translation policy,
-    https://wiki.openstack.org/wiki/LoggingStandards#Log_Translation
-    we shouldn't translate debug level logs.
+    OpenStack no longer supports log translation, so we shouldn't
+    translate logs.
 
     * This check assumes that 'LOG' is a logger.
-    * Use filename so we can start enforcing this in specific folders instead
-      of needing to do so all at once.
 
     M308
     """
-    if logical_line.startswith("LOG.debug(_("):
-        yield(0, "M308 Don't translate debug level logs")
+    if log_translation_re.match(logical_line):
+        yield(0, "M308: Log messages should not be translated")
 
 
 def no_import_translation_in_tests(logical_line, filename):
@@ -384,7 +390,7 @@ def factory(register):
     register(assert_true_instance)
     register(assert_equal_type)
     register(assert_raises_regexp)
-    register(no_translate_debug_logs)
+    register(no_translate_logs)
     register(no_setting_conf_directly_in_tests)
     register(no_mutable_default_args)
     register(check_explicit_underscore_import)

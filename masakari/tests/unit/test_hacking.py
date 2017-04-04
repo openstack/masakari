@@ -14,6 +14,7 @@
 
 import textwrap
 
+import ddt
 import mock
 import pep8
 
@@ -21,6 +22,7 @@ from masakari.hacking import checks
 from masakari import test
 
 
+@ddt.ddt
 class HackingTestCase(test.NoDBTestCase):
     """This class tests the hacking checks in masakari.hacking.checks by
     passing strings to the check methods like the pep8/flake8 parser would.
@@ -150,16 +152,6 @@ class HackingTestCase(test.NoDBTestCase):
 
         self.assertEqual(len(list(checks.assert_true_or_false_with_in(
             "self.assertFalse(some in list1 and some2 in list2)"))), 0)
-
-    def test_no_translate_debug_logs(self):
-        self.assertEqual(len(list(checks.no_translate_debug_logs(
-            "LOG.debug(_('foo'))", "masakari/foo.py"))), 1)
-
-        self.assertEqual(len(list(checks.no_translate_debug_logs(
-            "LOG.debug('foo')", "masakari/foo.py"))), 0)
-
-        self.assertEqual(len(list(checks.no_translate_debug_logs(
-            "LOG.info(_('foo'))", "masakari/foo.py"))), 0)
 
     def test_no_setting_conf_directly_in_tests(self):
         self.assertEqual(len(list(checks.no_setting_conf_directly_in_tests(
@@ -431,3 +423,15 @@ class HackingTestCase(test.NoDBTestCase):
                   LOG.warning("LOG.warn is deprecated")
                """
         self._assert_has_no_errors(code, checks.no_log_warn)
+
+    @ddt.data('LOG.info(_LI("Bad"))',
+              'LOG.warning(_LW("Bad"))',
+              'LOG.error(_LE("Bad"))',
+              'LOG.exception(_("Bad"))',
+              'LOG.debug(_("Bad"))',
+              'LOG.critical(_LC("Bad"))')
+    def test_no_translate_logs(self, log_statement):
+        self.assertEqual(1, len(list(checks.no_translate_logs(log_statement))))
+        errors = [(1, 0, 'M308')]
+        self._assert_has_errors(log_statement, checks.no_translate_logs,
+                                expected_errors=errors)
