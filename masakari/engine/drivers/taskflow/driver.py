@@ -20,6 +20,7 @@ Driver TaskFlowDriver:
 """
 
 from oslo_log import log as logging
+from oslo_utils import excutils
 
 from masakari.compute import nova
 from masakari.engine import driver
@@ -39,6 +40,81 @@ class TaskFlowDriver(driver.NotificationDriver):
     def __init__(self):
         super(TaskFlowDriver, self).__init__()
 
+    def _execute_auto_workflow(self, novaclient, process_what):
+        flow_engine = host_failure.get_auto_flow(novaclient, process_what)
+
+        # Attaching this listener will capture all of the notifications
+        # that taskflow sends out and redirect them to a more useful
+        # log for masakari's debugging (or error reporting) usage.
+        with base.DynamicLogListener(flow_engine, logger=LOG):
+            flow_engine.run()
+
+    def _execute_rh_workflow(self, novaclient, process_what,
+                             reserved_host_list):
+        if not reserved_host_list:
+            msg = _('No reserved_hosts available for evacuation.')
+            LOG.info(msg)
+            raise exception.ReservedHostsUnavailable(message=msg)
+
+        process_what['reserved_host_list'] = reserved_host_list
+        flow_engine = host_failure.get_rh_flow(novaclient, process_what)
+
+        with base.DynamicLogListener(flow_engine, logger=LOG):
+            try:
+                flow_engine.run()
+            except exception.LockAlreadyAcquired as ex:
+                raise exception.HostRecoveryFailureException(ex.message)
+
+    def _execute_auto_priority_workflow(self, novaclient, process_what,
+                                        reserved_host_list):
+        try:
+            self._execute_auto_workflow(novaclient, process_what)
+        except Exception as ex:
+            with excutils.save_and_reraise_exception(reraise=False) as ctxt:
+                if isinstance(ex, exception.SkipHostRecoveryException):
+                    ctxt.reraise = True
+                    return
+
+                # Caught generic Exception to make sure that any failure
+                # should lead to execute 'reserved_host' recovery workflow.
+                msg = _LW("Failed to evacuate all instances from "
+                          "failed_host: '%(failed_host)s' using "
+                          "'%(auto)s' workflow, retrying using "
+                          "'%(reserved_host)s' workflow.")
+                LOG.warning(msg, {
+                    'failed_host': process_what['host_name'],
+                    'auto': fields.FailoverSegmentRecoveryMethod.AUTO,
+                    'reserved_host':
+                        fields.FailoverSegmentRecoveryMethod.RESERVED_HOST
+                })
+                self._execute_rh_workflow(novaclient, process_what,
+                                          reserved_host_list)
+
+    def _execute_rh_priority_workflow(self, novaclient, process_what,
+                                      reserved_host_list):
+        try:
+            self._execute_rh_workflow(novaclient, process_what,
+                                      reserved_host_list)
+        except Exception as ex:
+            with excutils.save_and_reraise_exception(reraise=False) as ctxt:
+                if isinstance(ex, exception.SkipHostRecoveryException):
+                    ctxt.reraise = True
+                    return
+
+                # Caught generic Exception to make sure that any failure
+                # should lead to execute 'auto' recovery workflow.
+                msg = _LW("Failed to evacuate all instances from "
+                          "failed_host '%(failed_host)s' using "
+                          "'%(reserved_host)s' workflow, retrying using "
+                          "'%(auto)s' workflow")
+                LOG.warning(msg, {
+                    'failed_host': process_what['host_name'],
+                    'reserved_host':
+                        fields.FailoverSegmentRecoveryMethod.RESERVED_HOST,
+                    'auto': fields.FailoverSegmentRecoveryMethod.AUTO
+                })
+                self._execute_auto_workflow(novaclient, process_what)
+
     def execute_host_failure(self, context, host_name, recovery_method,
                              notification_uuid, reserved_host_list=None):
         novaclient = nova.API()
@@ -50,42 +126,28 @@ class TaskFlowDriver(driver.NotificationDriver):
 
         try:
             if recovery_method == fields.FailoverSegmentRecoveryMethod.AUTO:
-                flow_engine = host_failure.get_auto_flow(novaclient,
-                                                         process_what)
+                self._execute_auto_workflow(novaclient, process_what)
             elif recovery_method == (
                     fields.FailoverSegmentRecoveryMethod.RESERVED_HOST):
-                if not reserved_host_list:
-                    msg = _('No reserved_hosts available for evacuation.')
-                    LOG.info(msg)
-                    raise exception.ReservedHostsUnavailable(message=msg)
-
-                process_what['reserved_host_list'] = reserved_host_list
-                flow_engine = host_failure.get_rh_flow(
-                    novaclient, process_what)
+                self._execute_rh_workflow(novaclient, process_what,
+                                          reserved_host_list)
             elif recovery_method == (
                     fields.FailoverSegmentRecoveryMethod.AUTO_PRIORITY):
-                raise NotImplementedError(_("Flow not implemented for "
-                                            "recovery_method"),
-                                          recovery_method)
-            elif recovery_method == (
-                    fields.FailoverSegmentRecoveryMethod.RH_PRIORITY):
-                raise NotImplementedError(_("Flow not implemented for "
-                                            "recovery_method"),
-                                          recovery_method)
-        except Exception:
-            msg = (_('Failed to create host failure flow.'),
-                   notification_uuid)
-            LOG.exception(msg)
-            raise exception.MasakariException(msg)
-
-        # Attaching this listener will capture all of the notifications that
-        # taskflow sends out and redirect them to a more useful log for
-        # masakari's debugging (or error reporting) usage.
-        with base.DynamicLogListener(flow_engine, logger=LOG):
-            try:
-                flow_engine.run()
-            except exception.LockAlreadyAcquired as ex:
-                raise exception.HostRecoveryFailureException(ex.message)
+                self._execute_auto_priority_workflow(novaclient, process_what,
+                                                    reserved_host_list)
+            else:
+                self._execute_rh_priority_workflow(novaclient, process_what,
+                                                   reserved_host_list)
+        except Exception as exc:
+            with excutils.save_and_reraise_exception(reraise=False) as ctxt:
+                if isinstance(exc, (exception.SkipHostRecoveryException,
+                                    exception.HostRecoveryFailureException,
+                                    exception.ReservedHostsUnavailable)):
+                    ctxt.reraise = True
+                    return
+                msg = _("Failed to execute host failure flow for "
+                        "notification '%s'.") % notification_uuid
+                raise exception.MasakariException(msg)
 
     def execute_instance_failure(self, context, instance_uuid,
                                  notification_uuid):
