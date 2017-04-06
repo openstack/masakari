@@ -110,6 +110,8 @@ class MasakariManager(manager.Manager):
             self.driver.execute_instance_failure(
                 context, notification.payload.get('instance_uuid'),
                 notification.notification_uuid)
+        except exception.IgnoreInstanceRecoveryException:
+            notification_status = fields.NotificationStatus.IGNORED
         except exception.SkipInstanceRecoveryException:
             notification_status = fields.NotificationStatus.FINISHED
         except (exception.MasakariException,

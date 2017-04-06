@@ -56,6 +56,13 @@ class StopInstanceTask(base.MasakariTask):
             raise exception.SkipInstanceRecoveryException()
 
         vm_state = getattr(instance, 'OS-EXT-STS:vm_state')
+        if vm_state in ['paused', 'rescued']:
+            msg = _("Recovery of instance '%(instance_uuid)s' is ignored as"
+                    " it is in '%(vm_state)s' state.") % {
+                'instance_uuid': instance_uuid, 'vm_state': vm_state}
+            LOG.warning(msg)
+            raise exception.IgnoreInstanceRecoveryException(msg)
+
         if vm_state != 'stopped':
             if vm_state == 'resized':
                 self.novaclient.reset_instance_state(
