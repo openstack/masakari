@@ -15,6 +15,7 @@
 from oslo_config import cfg
 from six.moves import http_client
 
+from masakari.api import api_version_request
 from masakari.api.openstack.ha.views import versions as views_versions
 from masakari.api.openstack import wsgi
 
@@ -32,8 +33,8 @@ VERSIONS = {
     "v1.0": {
         "id": "v1.0",
         "status": "CURRENT",
-        "version": "1.0",
-        "min_version": "1.0",
+        "version": api_version_request._MAX_API_VERSION,
+        "min_version": api_version_request._MIN_API_VERSION,
         "updated": "2016-07-01T11:33:21Z",
         "links": [
             {
