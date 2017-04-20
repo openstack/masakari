@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes API microversion reporting to report the latest supported
+    microversion.
+    `LP#1882516 <https://launchpad.net/bugs/1882516>`__
