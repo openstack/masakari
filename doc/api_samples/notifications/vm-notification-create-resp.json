@@ -1,0 +1,19 @@
+{
+    "notification": {
+        "notification_uuid": "f4836386-7648-4395-89b6-75a2c5ca7ff2",
+        "status": "new",
+        "source_host_uuid": "083a8474-22c0-407f-b89b-c569134c3bfd",
+        "deleted": false,
+        "created_at": "2017-04-24T06:22:47.569979",
+        "updated_at": null,
+        "id": 3,
+        "generated_time": "2017-04-23T07:18:51.523726",
+        "deleted_at": null,
+        "type": "VM",
+        "payload": {
+            "instance_uuid": "96ab1c42-668c-4f2d-8689-afa3301d4ee9",
+            "vir_domain_event": "STOPPED_DESTROYED",
+            "event": "LIFECYCLE"
+        }
+    }
+}

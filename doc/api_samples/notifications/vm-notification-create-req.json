@@ -1,0 +1,12 @@
+{
+    "notification": {
+        "type": "VM",
+        "generated_time": "2017-04-23T07:18:51.523726",
+        "payload": {
+            "instance_uuid": "96ab1c42-668c-4f2d-8689-afa3301d4ee9",
+            "vir_domain_event": "STOPPED_DESTROYED",
+            "event": "LIFECYCLE"
+        },
+        "hostname": "openstack-VirtualBox"
+    }
+}

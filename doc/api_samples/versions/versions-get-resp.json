@@ -1,0 +1,17 @@
+{
+    "versions": [
+        {
+            "id": "v1.0",
+            "links": [
+                {
+                    "href": "http://openstack.example.com/v1/",
+                    "rel": "self"
+                }
+            ],
+            "status": "CURRENT",
+            "version": "1.0",
+            "min_version": "1.0",
+            "updated": "2016-07-01T11:33:21Z"
+        }
+    ]
+}

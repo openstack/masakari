@@ -1,0 +1,7 @@
+{
+    "host": {
+        "control_attributes": "SSH",
+        "type": "COMPUTE",
+        "name": "openstack-VirtualBox"
+    }
+}
