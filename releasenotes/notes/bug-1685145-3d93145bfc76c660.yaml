@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes ``/v1/`` API path which returned 404 ResourceNotFound preventing
+    microversion discovery.
+    `LP#1685145 <https://launchpad.net/bugs/1685145>`__

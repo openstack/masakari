@@ -28,7 +28,7 @@ ALIAS = "versions"
 
 class VersionsController(wsgi.Controller):
     @extensions.expected_errors(HTTPStatus.NOT_FOUND)
-    def show(self, req, id='v1'):
+    def show(self, req, id='v1.0'):
         builder = views_versions.get_view_builder(req)
         if id not in versions.VERSIONS:
             raise webob.exc.HTTPNotFound()
@@ -53,7 +53,11 @@ class Versions(extensions.V1APIExtensionBase):
         return []
 
     def version_map(self, mapper, wsgi_resource):
-        mapper.connect("versions", "/",
+        self.map_path(mapper, wsgi_resource, '/')
+        self.map_path(mapper, wsgi_resource, '')
+
+    @staticmethod
+    def map_path(mapper, wsgi_resource, path):
+        mapper.connect("versions", path,
                        controller=wsgi_resource,
                        action='show', conditions={"method": ['GET']})
-        mapper.redirect("", "/")

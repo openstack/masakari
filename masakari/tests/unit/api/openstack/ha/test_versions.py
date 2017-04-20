@@ -213,14 +213,49 @@ class VersionsTest(test.NoDBTestCase):
     def wsgi_app(self):
         return fakes.wsgi_app_v1(init_only=('versions',))
 
-    @mock.patch('masakari.rpc.get_client')
-    def test_get_version_list_302(self, mock_get_client):
-        req = webob.Request.blank('/v1')
+    def _test_v1(self, path):
+        req = webob.Request.blank(path)
         req.accept = "application/json"
         res = req.get_response(self.wsgi_app)
-        self.assertEqual(http.FOUND, res.status_int)
-        redirect_req = webob.Request.blank('/v1/')
-        self.assertEqual(redirect_req.url, res.location)
+        self.assertEqual(200, res.status_int)
+        self.assertEqual("application/json", res.content_type)
+        version = jsonutils.loads(res.body)
+        expected = {
+            "version": {
+                "id": "v1.0",
+                "status": "CURRENT",
+                "version": "1.2",
+                "min_version": "1.0",
+                "updated": "2016-07-01T11:33:21Z",
+                "links": [
+                    {
+                        "rel": "self",
+                        "href": "http://localhost/v1/",
+                    },
+                    {
+                        "rel": "describedby",
+                        "type": "text/html",
+                        "href": "https://docs.openstack.org/",
+                    },
+                ],
+                "media-types": [
+                    {
+                        "base": "application/json",
+                        "type": "application/"
+                                "vnd.openstack.masakari+json;version=1",
+                    },
+                ],
+            },
+        }
+        self.assertEqual(expected, version)
+
+    @mock.patch('masakari.rpc.get_client')
+    def test_get_version_1_detail(self, mock_get_client):
+        self._test_v1('/v1/')
+
+    @mock.patch('masakari.rpc.get_client')
+    def test_get_version_1_detail_no_slash(self, mock_get_client):
+        self._test_v1('/v1')
 
     @mock.patch('masakari.rpc.get_client')
     def test_get_version_1_versions_invalid(self, mock_get_client):
