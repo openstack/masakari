@@ -388,3 +388,33 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
                                          notification=notification)
         self.assertEqual("ignored", notification.status)
         self.assertFalse(mock_host_failure.called)
+
+    @mock.patch("masakari.compute.nova.API.stop_server")
+    @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch("masakari.compute.nova.API.get_server")
+    def test_process_notification_type_vm_ignore_instance_in_paused(
+            self, mock_get_server, mock_notification_save, mock_stop_server):
+        notification = self._get_vm_type_notification()
+        mock_get_server.return_value = fakes.FakeNovaClient.Server(
+            id=1, uuid=uuidsentinel.fake_ins, host='fake_host',
+            vm_state='paused', ha_enabled=True)
+
+        self.engine.process_notification(self.context,
+                                         notification=notification)
+        self.assertEqual("ignored", notification.status)
+        self.assertFalse(mock_stop_server.called)
+
+    @mock.patch("masakari.compute.nova.API.stop_server")
+    @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch("masakari.compute.nova.API.get_server")
+    def test_process_notification_type_vm_ignore_instance_in_rescued(
+            self, mock_get_server, mock_notification_save, mock_stop_server):
+        notification = self._get_vm_type_notification()
+        mock_get_server.return_value = fakes.FakeNovaClient.Server(
+            id=1, uuid=uuidsentinel.fake_ins, host='fake_host',
+            vm_state='rescued', ha_enabled=True)
+
+        self.engine.process_notification(self.context,
+                                         notification=notification)
+        self.assertEqual("ignored", notification.status)
+        self.assertFalse(mock_stop_server.called)

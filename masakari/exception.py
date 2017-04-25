@@ -352,3 +352,7 @@ class ReservedHostsUnavailable(MasakariException):
 
 class LockAlreadyAcquired(MasakariException):
     msg_fmt = _('Lock is already acquired on %(resource)s.')
+
+
+class IgnoreInstanceRecoveryException(MasakariException):
+    msg_fmt = _('Instance recovery is ignored.')
