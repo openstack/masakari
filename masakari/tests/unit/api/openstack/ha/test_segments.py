@@ -15,6 +15,7 @@
 
 """Tests for the failover segment api."""
 
+import ddt
 import mock
 from oslo_serialization import jsonutils
 from six.moves import http_client as http
@@ -58,6 +59,7 @@ FAILOVER_SEGMENT = {"name": "segment1", "id": "1",
 FAILOVER_SEGMENT = _make_segment_obj(FAILOVER_SEGMENT)
 
 
+@ddt.ddt
 class FailoverSegmentTestCase(test.TestCase):
     """Test Case for failover segment api."""
 
@@ -96,23 +98,19 @@ class FailoverSegmentTestCase(test.TestCase):
         self.assertRaises(exc.HTTPBadRequest, self.controller.index,
                           fake_request)
 
-    def test_get_all_marker_negative(self):
+    @ddt.data(
+        # limit negative
+        'limit=-1',
 
-        fake_request = fakes.HTTPRequest.blank('/v1/segments?limit=-1',
-                                               use_admin_context=True)
-        self.assertRaises(exc.HTTPBadRequest, self.controller.index,
-                          fake_request)
+        # invalid sort key
+        'sort_key=abcd',
 
-    def test_index_invalid_sort_key(self):
-
-        req = fakes.HTTPRequest.blank('/v1/segments?sort_key=abcd',
+        # invalid sort dir
+        'sort_dir=abcd')
+    def test_index_invalid(self, param):
+        req = fakes.HTTPRequest.blank("/v1/segments?%s" % param,
                                       use_admin_context=True)
-        self.assertRaises(exc.HTTPBadRequest, self.controller.index, req)
 
-    def test_index_invalid_sort_dir(self):
-
-        req = fakes.HTTPRequest.blank('/v1/segments?sort_dir=abcd',
-                                      use_admin_context=True)
         self.assertRaises(exc.HTTPBadRequest, self.controller.index, req)
 
     @mock.patch.object(ha_api.FailoverSegmentAPI, 'create_segment')
@@ -164,73 +162,56 @@ class FailoverSegmentTestCase(test.TestCase):
         resp = fake_req.get_response(self.app)
         self.assertEqual(http.CREATED, resp.status_code)
 
-    def test_create_with_no_segment(self):
-        body = {
+    @ddt.data(
+        # no segment
+        {"body": {
             "name": "segment1",
             "service_type": "COMPUTE",
             "recovery_method": "auto",
-            "description": "failover_segment for compute"
-        }
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, body=body)
+            "description": "failover_segment for compute"}},
 
-    def test_create_with_no_name(self):
-        body = {
+        # no name
+        {"body": {
             "segment": {
                 "service_type": "COMPUTE",
                 "recovery_method": "auto",
-                "description": "failover_segment for compute"
-            }
-        }
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, body=body)
+                "description": "failover_segment for compute"}}},
 
-    def test_create_name_with_leading_trailing_spaces(self):
-        body = {
+        # name with leading trailing spaces
+        {"body": {
             "segment": {
                 "name": "    segment1    ",
                 "service_type": "COMPUTE",
                 "recovery_method": "auto",
-                "description": "failover_segment for compute"
-            }
-        }
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, body=body)
+                "description": "failover_segment for compute"}}},
 
-    def test_create_with_null_name(self):
-        body = {
+        # null name
+        {"body": {
             "segment": {
                 "name": "",
                 "service_type": "COMPUTE",
                 "recovery_method": "auto",
-                "description": "failover_segment for compute"
-            }
-        }
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, body=body)
+                "description": "failover_segment for compute"}}},
 
-    def test_create_with_name_too_long(self):
-        body = {
+        # name too long
+        {"body": {
             "segment": {
                 "name": "segment1" * 255,
                 "service_type": "COMPUTE",
                 "recovery_method": "auto",
-                "description": "failover_segment for compute"
-            }
-        }
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, body=body)
+                "description": "failover_segment for compute"}}},
 
-    def test_create_with_extra_invalid_arg(self):
-        body = {
+        # extra invalid args
+        {"body": {
             "segment": {
                 "name": "segment1" * 255,
                 "service_type": "COMPUTE",
                 "recovery_method": "auto",
                 "description": "failover_segment for compute",
-                "foo": "fake_foo"
-            }
-        }
+                "foo": "fake_foo"}}}
+    )
+    @ddt.unpack
+    def test_create_failure(self, body):
         self.assertRaises(self.bad_request, self.controller.create,
                           self.req, body=body)
 
@@ -250,13 +231,18 @@ class FailoverSegmentTestCase(test.TestCase):
         self.assertRaises(exc.HTTPNotFound,
                           self.controller.show, self.req, "2")
 
+    @ddt.data(
+        {"body": {"segment": {"name": "segment1", "service_type": "COMPUTE",
+                              "recovery_method": "auto"}}},
+
+        # with name only
+        {"body": {"segment": {"name": "segment1"}}}
+
+    )
+    @ddt.unpack
     @mock.patch.object(ha_api.FailoverSegmentAPI, 'update_segment')
-    def test_update(self, mock_update_segment):
-
+    def test_update(self, mock_update_segment, body):
         mock_update_segment.return_value = FAILOVER_SEGMENT
-
-        body = {"segment": {"name": "segment1", "service_type": "COMPUTE",
-                            "recovery_method": "auto"}}
 
         result = self.controller.update(self.req, uuidsentinel.fake_segment,
                                         body=body)
@@ -264,44 +250,26 @@ class FailoverSegmentTestCase(test.TestCase):
         result = result['segment']
         self._assert_segment_data(FAILOVER_SEGMENT, _make_segment_obj(result))
 
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'update_segment')
-    def test_update_with_only_name(self, mock_update_segment):
-        mock_update_segment.return_value = FAILOVER_SEGMENT
+    @ddt.data(
+        # no updates
+        {"test_data": {"segment": {}}},
 
-        body = {"segment": {"name": "segment1"}}
+        # no update key
+        {"test_data": {"asdf": {}}},
 
-        result = self.controller.update(self.req, uuidsentinel.fake_segment,
-                                        body=body)
+        # wrong updates
+        {"test_data": {"segment": {"name": "disable", "foo": "bar"}}},
 
-        result = result['segment']
-        self._assert_segment_data(FAILOVER_SEGMENT, _make_segment_obj(result))
+        # null name
+        {"test_data": {"segment": {"name": ""}}},
 
-    def test_update_with_no_updates(self):
-        test_data = {"segment": {}}
+        # name too long
+        {"test_data": {"segment": {"name": "x" * 256}}}
+    )
+    @ddt.unpack
+    def test_update_failure(self, test_data):
         self.assertRaises(self.bad_request, self.controller.update,
                           self.req, uuidsentinel.fake_segment, body=test_data)
-
-    def test_update_with_no_update_key(self):
-        test_data = {"asdf": {}}
-        self.assertRaises(self.bad_request, self.controller.update,
-                          self.req, uuidsentinel.fake_segment, body=test_data)
-
-    def test_update_with_wrong_updates(self):
-        test_data = {"segment": {"name": "disable", "foo": "bar"}}
-        self.assertRaises(self.bad_request, self.controller.update,
-                          self.req, uuidsentinel.fake_segment, body=test_data)
-
-    def test_update_with_null_name(self):
-        test_metadata = {"segment": {"name": ""}}
-        self.assertRaises(self.bad_request, self.controller.update,
-                          self.req, uuidsentinel.fake_segment,
-                          body=test_metadata)
-
-    def test_update_with_name_too_long(self):
-        test_metadata = {"segment": {"name": "x" * 256}}
-        self.assertRaises(self.bad_request, self.controller.update,
-                          self.req, uuidsentinel.fake_segment,
-                          body=test_metadata)
 
     @mock.patch.object(ha_api.FailoverSegmentAPI, 'update_segment')
     def test_update_with_non_exising_segment(self, mock_update_segment):

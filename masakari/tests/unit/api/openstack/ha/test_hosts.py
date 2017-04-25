@@ -15,6 +15,7 @@
 
 """Tests for the hosts api."""
 
+import ddt
 import mock
 from oslo_serialization import jsonutils
 from six.moves import http_client as http
@@ -66,6 +67,7 @@ HOST = {
 HOST = _make_host_obj(HOST)
 
 
+@ddt.ddt
 class HostTestCase(test.TestCase):
     """Test Case for host api."""
 
@@ -199,32 +201,31 @@ class HostTestCase(test.TestCase):
         self.assertRaises(exc.HTTPBadRequest, self.controller.index,
                           req, uuidsentinel.fake_segment1)
 
+    @ddt.data('sort_key', 'sort_dir')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid',
                        return_value=mock.Mock())
-    def test_index_invalid_sort_key(self, mock_segment):
-
-        req = fakes.HTTPRequest.blank('/v1/segments/%s/hosts?sort_key=abcd' % (
-            uuidsentinel.fake_segment1), use_admin_context=True)
+    def test_index_invalid(self, sort_by, mock_segment):
+        req = fakes.HTTPRequest.blank('/v1/segments/%s/hosts?%s=abcd' % (
+            uuidsentinel.fake_segment1, sort_by), use_admin_context=True)
         self.assertRaises(exc.HTTPBadRequest, self.controller.index, req,
                           uuidsentinel.fake_segment1)
 
-    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid',
-                       return_value=mock.Mock())
-    def test_index_invalid_sort_dir(self, mock_segment):
-
-        req = fakes.HTTPRequest.blank('/v1/segments/%s/hosts?sort_dir=abcd' % (
-            uuidsentinel.fake_segment1), use_admin_context=True)
-        self.assertRaises(exc.HTTPBadRequest, self.controller.index, req,
-                          uuidsentinel.fake_segment1)
-
+    @ddt.data([exception.MarkerNotFound, "/v1/segments/%s/hosts?marker=123456",
+               exc.HTTPBadRequest],
+              [exception.FailoverSegmentNotFound, "/v1/segments/%s/hosts",
+               exc.HTTPNotFound])
+    @ddt.unpack
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     @mock.patch.object(ha_api.HostAPI, 'get_all')
-    def test_index_failover_segment_not_found(self, mock_get_all,
-                                              mock_segment):
+    def test_index_not_found(self, masakari_exc, url, exc, mock_get_all,
+                             mock_segment):
         mock_segment.return_value = mock.Mock()
-        mock_get_all.side_effect = exception.FailoverSegmentNotFound
-        self.assertRaises(exc.HTTPNotFound, self.controller.index,
-                          self.req, uuidsentinel.fake_segment1)
+        mock_get_all.side_effect = masakari_exc
+
+        req = fakes.HTTPRequest.blank(url % uuidsentinel.fake_segment1,
+                                      use_admin_context=True)
+        self.assertRaises(exc, self.controller.index, req,
+                          uuidsentinel.fake_segment1)
 
     @mock.patch.object(ha_api.HostAPI, 'create_host')
     def test_create(self, mock_create):
@@ -277,74 +278,73 @@ class HostTestCase(test.TestCase):
         self.assertRaises(exc.HTTPConflict, self.controller.create,
                           self.req, uuidsentinel.fake_segment1, body=body)
 
-    def test_create_with_no_host(self):
-        body = {
+    @ddt.data(
+        # no_host
+        {"body": {
             "name": "host-1", "type": "fake",
             "reserved": False,
             "on_maintenance": False,
-            "control_attributes": "fake-control_attributes"
-        }
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, uuidsentinel.fake_segment1, body=body)
+            "control_attributes": "fake-control_attributes"}},
 
-    def test_create_with_no_name(self):
-        body = {
+        # no_name
+        {"body": {
             "host": {
                 "type": "fake",
                 "reserved": False,
                 "on_maintenance": False,
-                "control_attributes": "fake-control_attributes"
-            }
-        }
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, uuidsentinel.fake_segment1, body=body)
+                "control_attributes": "fake-control_attributes"}}},
 
-    def test_create_name_with_leading_trailing_spaces(self):
-        body = {
+        # name_with_leading_trailing_spaces
+        {"body": {
             "host": {
                 "name": " host-1 ", "type": "fake",
                 "reserved": False,
                 "on_maintenance": False,
-                "control_attributes": "fake-control_attributes"
-            }
-        }
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, uuidsentinel.fake_segment1, body=body)
+                "control_attributes": "fake-control_attributes"}}},
 
-    def test_create_with_null_name(self):
-        body = {
+        # null_name
+        {"body": {
             "host": {
                 "name": "", "type": "fake",
                 "reserved": False,
                 "on_maintenance": False,
-                "control_attributes": "fake-control_attributes"
-            }
-        }
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, uuidsentinel.fake_segment1, body=body)
+                "control_attributes": "fake-control_attributes"}}},
 
-    def test_create_with_name_too_long(self):
-        body = {
+        # name_too_long
+        {"body": {
             "host": {
                 "name": "host-1" * 255, "type": "fake",
                 "reserved": False,
                 "on_maintenance": False,
-                "control_attributes": "fake-control_attributes"
-            }
-        }
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, uuidsentinel.fake_segment1, body=body)
+                "control_attributes": "fake-control_attributes"}}},
 
-    def test_create_with_extra_invalid_arg(self):
-        body = {
+        # extra_invalid_arg
+        {"body": {
             "host": {
                 "name": "host-1", "type": "fake",
                 "reserved": False,
                 "on_maintenance": False,
                 "control_attributes": "fake-control_attributes",
-                "foo": "bar"
-            }
-        }
+                "foo": "bar"}}},
+
+        # type too long
+        {"body": {
+            "host": {
+                "name": "host-1", "type": "x" * 256,
+                "reserved": False,
+                "on_maintenance": False,
+                "control_attributes": "fake-control_attributes"}}},
+
+        # type special characters
+        {"body": {
+            "host": {
+                "name": "host-1", "type": "x_y",
+                "reserved": False,
+                "on_maintenance": False,
+                "control_attributes": "fake-control_attributes"}}}
+    )
+    @ddt.unpack
+    def test_create_failure(self, body):
         self.assertRaises(self.bad_request, self.controller.create,
                           self.req, uuidsentinel.fake_segment1, body=body)
 
@@ -366,32 +366,21 @@ class HostTestCase(test.TestCase):
                           self.controller.show, self.req,
                           uuidsentinel.fake_segment1, "2")
 
-    @mock.patch.object(ha_api.HostAPI, 'update_host')
-    def test_update(self, mock_update_host):
-
-        mock_update_host.return_value = HOST
-
-        body = {
+    @ddt.data(
+        {"body": {
             "host": {
                 "name": "host-1", "type": "fake", "reserved": False,
                 "on_maintenance": False,
-                "control_attributes": "fake-control_attributes"
-            }
-        }
+                "control_attributes": "fake-control_attributes"}}},
 
-        result = self.controller.update(self.req, uuidsentinel.fake_segment1,
-                                        uuidsentinel.fake_host_1,
-                                        body=body)
-
-        result = result['host']
-        self._assert_host_data(HOST, _make_host_obj(result))
-
+        # only name
+        {"body": {"host": {"name": "host-1"}}}
+    )
+    @ddt.unpack
     @mock.patch.object(ha_api.HostAPI, 'update_host')
-    def test_update_with_only_name(self, mock_update_host):
+    def test_update(self, mock_update_host, body):
         mock_update_host.return_value = HOST
 
-        body = {"host": {"name": "host-1"}}
-
         result = self.controller.update(self.req, uuidsentinel.fake_segment1,
                                         uuidsentinel.fake_host_1,
                                         body=body)
@@ -399,35 +388,33 @@ class HostTestCase(test.TestCase):
         result = result['host']
         self._assert_host_data(HOST, _make_host_obj(result))
 
-    def test_update_with_no_updates(self):
-        test_data = {"host": {}}
+    @ddt.data(
+        # no updates
+        {"test_data": {"host": {}}},
+
+        # no update key
+        {"test_data": {"asdf": {}}},
+
+        # wrong updates
+        {"test_data": {"host": {"name": "disable", "foo": "bar"}}},
+
+        # null name
+        {"test_data": {"host": {"name": ""}}},
+
+        # name too long
+        {"test_data": {"host": {"name": "x" * 256}}},
+
+        # type too long
+        {"test_data": {"host": {"type": "x" * 256}}},
+
+        # type with special characters
+        {"test_data": {"host": {"type": "x_y"}}}
+    )
+    @ddt.unpack
+    def test_update_failure(self, test_data):
         self.assertRaises(self.bad_request, self.controller.update,
                           self.req, uuidsentinel.fake_segment1,
                           uuidsentinel.fake_host_1, body=test_data)
-
-    def test_update_with_no_update_key(self):
-        test_data = {"asdf": {}}
-        self.assertRaises(self.bad_request, self.controller.update,
-                          self.req, uuidsentinel.fake_segment1,
-                          uuidsentinel.fake_host_1, body=test_data)
-
-    def test_update_with_wrong_updates(self):
-        test_data = {"host": {"name": "disable", "foo": "bar"}}
-        self.assertRaises(self.bad_request, self.controller.update,
-                          self.req, uuidsentinel.fake_segment1,
-                          uuidsentinel.fake_host_1, body=test_data)
-
-    def test_update_with_null_name(self):
-        test_metadata = {"host": {"name": ""}}
-        self.assertRaises(self.bad_request, self.controller.update,
-                          self.req, uuidsentinel.fake_segment1,
-                          uuidsentinel.fake_host_1, body=test_metadata)
-
-    def test_update_with_name_too_long(self):
-        test_metadata = {"host": {"name": "x" * 256}}
-        self.assertRaises(self.bad_request, self.controller.update,
-                          self.req, uuidsentinel.fake_segment1,
-                          uuidsentinel.fake_host_1, body=test_metadata)
 
     @mock.patch.object(ha_api.HostAPI, 'update_host')
     def test_update_with_non_exising_host(self, mock_update_host):
@@ -472,42 +459,6 @@ class HostTestCase(test.TestCase):
         self.assertRaises(exc.HTTPNotFound, self.controller.delete,
                 self.req, uuidsentinel.fake_segment1,
                           uuidsentinel.fake_host_3)
-
-    def test_create_with_type_too_long(self):
-        body = {
-            "host": {
-                "name": "host-1", "type": "x" * 256,
-                "reserved": False,
-                "on_maintenance": False,
-                "control_attributes": "fake-control_attributes"
-            }
-        }
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, uuidsentinel.fake_segment1, body=body)
-
-    def test_create_with_type_special_characters(self):
-        body = {
-            "host": {
-                "name": "host-1", "type": "x_y",
-                "reserved": False,
-                "on_maintenance": False,
-                "control_attributes": "fake-control_attributes"
-            }
-        }
-        self.assertRaises(self.bad_request, self.controller.create,
-                          self.req, uuidsentinel.fake_segment1, body=body)
-
-    def test_update_with_type_too_long(self):
-        test_metadata = {"host": {"type": "x" * 256}}
-        self.assertRaises(self.bad_request, self.controller.update,
-                          self.req, uuidsentinel.fake_segment1,
-                          uuidsentinel.fake_host_1, body=test_metadata)
-
-    def test_update_with_type_special_characters(self):
-        test_metadata = {"host": {"type": "x_y"}}
-        self.assertRaises(self.bad_request, self.controller.update,
-                          self.req, uuidsentinel.fake_segment1,
-                          uuidsentinel.fake_host_1, body=test_metadata)
 
 
 class HostTestCasePolicyNotAuthorized(test.NoDBTestCase):
