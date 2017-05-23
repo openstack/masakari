@@ -39,7 +39,7 @@ CONF.import_group('keystone_authtoken', 'keystonemiddleware.auth_token')
 
 LOG = logging.getLogger(__name__)
 
-NOVA_API_VERSION = "2.1"
+NOVA_API_VERSION = "2.9"
 
 nova_extensions = [ext for ext in
                    nova_client.discover_extensions(NOVA_API_VERSION)
@@ -221,3 +221,19 @@ class API(object):
                "aggregate '%(aggregate_name)s'.")
         LOG.info(msg, {'host_name': host, 'aggregate_name': aggregate.name})
         return nova.aggregates.add_host(aggregate.id, host)
+
+    @translate_nova_exception
+    def lock_server(self, context, uuid):
+        """Lock a server."""
+        nova = novaclient(context)
+        msg = ('Call lock server command for instance %(uuid)s')
+        LOG.info(msg, {'uuid': uuid})
+        return nova.servers.lock(uuid)
+
+    @translate_nova_exception
+    def unlock_server(self, context, uuid):
+        """Unlock a server."""
+        nova = novaclient(context)
+        msg = ('Call unlock server command for instance %(uuid)s')
+        LOG.info(msg, {'uuid': uuid})
+        return nova.servers.unlock(uuid)

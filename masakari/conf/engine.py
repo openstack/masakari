@@ -90,6 +90,12 @@ notification_opts = [
                     "generated_time, then it is considered that notification "
                     "is ignored by the messaging queue and will be processed "
                     "by 'process_unfinished_notifications' periodic task."),
+    cfg.IntOpt('host_failure_recovery_threads',
+               default=3,
+               min=1,
+               help="Number of threads to be used for evacuating and "
+                    "confirming instances during execution of host_failure "
+                    "workflow."),
 ]
 
 

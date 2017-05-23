@@ -261,3 +261,23 @@ class NovaApiTestCase(test.TestCase):
         mock_novaclient.assert_called_once_with(self.ctx)
         mock_aggregates.add_host.assert_called_once_with(
             mock_aggregate.id, 'fake_host')
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    def test_lock_server(self, mock_novaclient):
+        uuid = uuidsentinel.fake_server
+        mock_servers = mock.MagicMock()
+        mock_novaclient.return_value = mock.MagicMock(servers=mock_servers)
+        self.api.lock_server(self.ctx, uuid)
+
+        mock_novaclient.assert_called_once_with(self.ctx)
+        mock_servers.lock.assert_called_once_with(uuidsentinel.fake_server)
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    def test_unlock_server(self, mock_novaclient):
+        uuid = uuidsentinel.fake_server
+        mock_servers = mock.MagicMock()
+        mock_novaclient.return_value = mock.MagicMock(servers=mock_servers)
+        self.api.unlock_server(self.ctx, uuid)
+
+        mock_novaclient.assert_called_once_with(self.ctx)
+        mock_servers.unlock.assert_called_once_with(uuidsentinel.fake_server)

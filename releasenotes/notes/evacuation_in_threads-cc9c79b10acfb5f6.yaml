@@ -1,0 +1,18 @@
+---
+fixes:
+  - |
+    Fixes `bug 1693728`_ which will fix the race condition where after
+    evacuation of an instance to other host user might perform some actions on
+    that instance which gives wrong instance vm_state to ConfirmEvacuationTask
+    that results into notification failure.
+
+    To fix this issue, following config option is added under ``DEFAULT``
+    section in 'masakari.conf' file::
+
+        [DEFAULT]
+        host_failure_recovery_threads = 3
+
+    This config option decides the number of threads going to be used for
+    evacuating the instances.
+
+    .. _`bug 1693728`: https://bugs.launchpad.net/masakari/+bug/1693728
