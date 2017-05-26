@@ -19,6 +19,7 @@ from eventlet import timeout as etimeout
 
 from oslo_log import log as logging
 from oslo_service import loopingcall
+from oslo_utils import excutils
 from oslo_utils import strutils
 import taskflow.engines
 from taskflow.patterns import linear_flow
@@ -36,6 +37,9 @@ CONF = masakari.conf.CONF
 LOG = logging.getLogger(__name__)
 
 ACTION = 'instance:evacuate'
+
+# Instance power_state
+SHUTDOWN = 4
 
 
 class DisableComputeServiceTask(base.MasakariTask):
@@ -95,72 +99,119 @@ class EvacuateInstancesTask(base.MasakariTask):
                                                     requires=requires)
         self.novaclient = novaclient
 
+    def _get_state_and_host_of_instance(self, context, instance):
+        new_instance = self.novaclient.get_server(context, instance.id)
+        instance_host = getattr(new_instance,
+                                "OS-EXT-SRV-ATTR:hypervisor_hostname")
+        old_vm_state = getattr(instance, "OS-EXT-STS:vm_state")
+        new_vm_state = getattr(new_instance, "OS-EXT-STS:vm_state")
+
+        return (old_vm_state, new_vm_state, instance_host)
+
+    def _stop_after_evacuation(self, context, instance):
+        def _wait_for_stop_confirmation():
+            old_vm_state, new_vm_state, _ = (
+                self._get_state_and_host_of_instance(context, instance))
+
+            if new_vm_state == 'stopped':
+                raise loopingcall.LoopingCallDone()
+
+        periodic_call_stopped = loopingcall.FixedIntervalLoopingCall(
+            _wait_for_stop_confirmation)
+
+        try:
+            self.novaclient.stop_server(context, instance.id)
+            # confirm instance is stopped after recovery
+            periodic_call_stopped.start(interval=CONF.verify_interval)
+            etimeout.with_timeout(
+                CONF.wait_period_after_power_off,
+                periodic_call_stopped.wait)
+        except etimeout.Timeout:
+            with excutils.save_and_reraise_exception():
+                msg = ("Instance '%s' is successfully evacuated but "
+                       "failed to stop.")
+                LOG.warning(msg, instance.id)
+        finally:
+            periodic_call_stopped.stop()
+
     def _evacuate_and_confirm(self, context, instance, host_name,
                               failed_evacuation_instances, reserved_host=None):
-        vm_state = getattr(instance, "OS-EXT-STS:vm_state")
-        if vm_state in ['active', 'error', 'resized', 'stopped']:
+        # Before locking the instance check whether it is already locked
+        # by user, if yes don't lock the instance
+        instance_already_locked = self.novaclient.get_server(
+            context, instance.id).locked
 
-            # Before locking the instance check whether it is already locked
-            # by user, if yes don't lock the instance
-            instance_already_locked = self.novaclient.get_server(
-                context, instance.id).locked
+        if not instance_already_locked:
+            # lock the instance so that until evacuation and confirmation
+            # is not complete, user won't be able to perform any actions
+            # on the instance.
+            self.novaclient.lock_server(context, instance.id)
 
-            if not instance_already_locked:
-                # lock the instance so that until evacuation and confirmation
-                # is not complete, user won't be able to perform any actions
-                # on the instance.
-                self.novaclient.lock_server(context, instance.id)
+        def _wait_for_evacuation_confirmation():
+            old_vm_state, new_vm_state, instance_host = (
+                self._get_state_and_host_of_instance(context, instance))
 
-            def _wait_for_evacuation():
-                new_instance = self.novaclient.get_server(context, instance.id)
-                instance_host = getattr(new_instance,
-                                        "OS-EXT-SRV-ATTR:hypervisor_hostname")
-                old_vm_state = getattr(instance, "OS-EXT-STS:vm_state")
-                new_vm_state = getattr(new_instance, "OS-EXT-STS:vm_state")
+            if instance_host != host_name:
+                if ((old_vm_state == 'error' and
+                    new_vm_state == 'active') or
+                        old_vm_state == new_vm_state):
+                    raise loopingcall.LoopingCallDone()
 
-                if instance_host != host_name:
-                    if ((old_vm_state == 'error' and
-                        new_vm_state == 'active') or
-                            old_vm_state == new_vm_state):
-                        raise loopingcall.LoopingCallDone()
+        try:
+            vm_state = getattr(instance, "OS-EXT-STS:vm_state")
+
+            # Nova evacuates an instance only when vm_state is in active,
+            # stopped or error state. If an instance is in other than active,
+            # error and stopped vm_state, masakari resets the instance state
+            # to *error* so that the instance can be evacuated.
+            stop_instance = True
+            if vm_state not in ['active', 'error', 'stopped']:
+                self.novaclient.reset_instance_state(context, instance.id)
+                instance = self.novaclient.get_server(context, instance.id)
+                power_state = getattr(instance, "OS-EXT-STS:power_state")
+                if vm_state == 'resized' and power_state != SHUTDOWN:
+                    stop_instance = False
+
+                vm_state = getattr(instance, "OS-EXT-STS:vm_state")
+
+            # evacuate the instance
+            self.novaclient.evacuate_instance(
+                context, instance.id,
+                target=reserved_host.name if reserved_host else None)
+
+            periodic_call = loopingcall.FixedIntervalLoopingCall(
+                _wait_for_evacuation_confirmation)
 
             try:
-                # Nova evacuates an instance only when vm_state is in active,
-                # stopped or error state. If an instance is in resized
-                # vm_state, masakari resets the instance state to *error* so
-                # that the instance can be evacuated.
-                if vm_state == 'resized':
-                    self.novaclient.reset_instance_state(context, instance.id)
+                # add a timeout to the periodic call.
+                periodic_call.start(interval=CONF.verify_interval)
+                etimeout.with_timeout(
+                    CONF.wait_period_after_evacuation,
+                    periodic_call.wait)
 
-                # evacuate the instance
-                self.novaclient.evacuate_instance(
-                    context, instance.id,
-                    target=reserved_host.name if reserved_host else None)
-
-                periodic_call = loopingcall.FixedIntervalLoopingCall(
-                    _wait_for_evacuation)
-
-                try:
-                    # add a timeout to the periodic call.
-                    periodic_call.start(interval=CONF.verify_interval)
-                    etimeout.with_timeout(
-                        CONF.wait_period_after_evacuation,
-                        periodic_call.wait)
-                except etimeout.Timeout:
-                    # Instance is not evacuated in the expected time_limit.
-                    failed_evacuation_instances.append(instance.id)
-                finally:
-                    # stop the periodic call, in case of exceptions or
-                    # Timeout.
-                    periodic_call.stop()
-            except Exception:
-                # Exception is raised while resetting instance state or
-                # evacuating the instance itself.
+                if vm_state not in ['active', 'stopped']:
+                    if stop_instance:
+                        self._stop_after_evacuation(context, instance)
+                        # If the instance was in 'error' state before failure
+                        # it should be set to 'error' after recovery.
+                        if vm_state == 'error':
+                            self.novaclient.reset_instance_state(
+                                context, instance.id)
+            except etimeout.Timeout:
+                # Instance is not evacuated in the expected time_limit.
                 failed_evacuation_instances.append(instance.id)
             finally:
-                if not instance_already_locked:
-                    # Unlock the server after evacuation and confirmation
-                    self.novaclient.unlock_server(context, instance.id)
+                # stop the periodic call, in case of exceptions or
+                # Timeout.
+                periodic_call.stop()
+        except Exception:
+            # Exception is raised while resetting instance state or
+            # evacuating the instance itself.
+            failed_evacuation_instances.append(instance.id)
+        finally:
+            if not instance_already_locked:
+                # Unlock the server after evacuation and confirmation
+                self.novaclient.unlock_server(context, instance.id)
 
     def execute(self, context, host_name, instance_list, reserved_host=None):
         def _do_evacuate(context, host_name, instance_list,
