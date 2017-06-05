@@ -40,7 +40,7 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
         class FakeMasakariException(exception.MasakariException):
             msg_fmt = "default message: %(code)s"
 
-        exc = FakeMasakariException(code=http.INTERNAL_SERVER_ERROR)
+        exc = FakeMasakariException(code=int(http.INTERNAL_SERVER_ERROR))
         self.assertEqual('default message: 500', six.text_type(exc))
         self.assertEqual('default message: 500', exc.message)
 
@@ -48,7 +48,7 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
         class FakeMasakariException(exception.MasakariException):
             msg_fmt = "default message: %(misspelled_code)s"
 
-        exc = FakeMasakariException(code=http.INTERNAL_SERVER_ERROR,
+        exc = FakeMasakariException(code=int(http.INTERNAL_SERVER_ERROR),
                                     misspelled_code='blah')
         self.assertEqual('default message: blah', six.text_type(exc))
         self.assertEqual('default message: blah', exc.message)
@@ -103,14 +103,14 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
 
 class ConvertedExceptionTestCase(test.NoDBTestCase):
     def test_instantiate(self):
-        exc = exception.ConvertedException(http.BAD_REQUEST,
+        exc = exception.ConvertedException(int(http.BAD_REQUEST),
                                            'Bad Request', 'reason')
         self.assertEqual(exc.code, http.BAD_REQUEST)
         self.assertEqual(exc.title, 'Bad Request')
         self.assertEqual(exc.explanation, 'reason')
 
     def test_instantiate_without_title_known_code(self):
-        exc = exception.ConvertedException(http.INTERNAL_SERVER_ERROR)
+        exc = exception.ConvertedException(int(http.INTERNAL_SERVER_ERROR))
         self.assertEqual(exc.title, status_reasons[http.INTERNAL_SERVER_ERROR])
 
     def test_instantiate_without_title_unknown_code(self):
@@ -124,7 +124,7 @@ class ConvertedExceptionTestCase(test.NoDBTestCase):
 class ExceptionTestCase(test.NoDBTestCase):
     @staticmethod
     def _raise_exc(exc):
-        raise exc(http.INTERNAL_SERVER_ERROR)
+        raise exc(int(http.INTERNAL_SERVER_ERROR))
 
     def test_exceptions_raise(self):
         # NOTE(Dinesh_Bhor): disable format errors since we are not passing
