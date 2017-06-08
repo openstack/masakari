@@ -20,9 +20,9 @@ Version 2.0. The full terms and conditions of this license are
 detailed in the LICENSE file.
 
 * Free software: Apache license 2.0
-* Documentation: http://docs.openstack.org/developer/masakari
-* Source: http://git.openstack.org/cgit/openstack/masakari
-* Bugs: http://bugs.launchpad.net/masakari
+* Documentation: https://docs.openstack.org/developer/masakari
+* Source: https://git.openstack.org/cgit/openstack/masakari
+* Bugs: https://bugs.launchpad.net/masakari
 
 
 Configure masakari-api

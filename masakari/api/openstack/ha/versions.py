@@ -23,7 +23,7 @@ CONF = cfg.CONF
 
 LINKS = {
     'v1.0': {
-        'html': 'http://docs.openstack.org/'
+        'html': 'https://docs.openstack.org/'
     },
 }
 

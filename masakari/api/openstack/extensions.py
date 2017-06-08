@@ -442,7 +442,7 @@ def expected_errors(errors):
                     raise
                 LOG.exception("Unexpected exception in API method")
                 msg = _('Unexpected API Error. Please report this at '
-                        'http://bugs.launchpad.net/masakari/ and attach the '
+                        'https://bugs.launchpad.net/masakari/ and attach the '
                         'Masakari API log if possible.\n%s') % type(exc)
                 raise webob.exc.HTTPInternalServerError(explanation=msg)
 
