@@ -154,7 +154,9 @@ class MasakariManager(manager.Manager):
                 reserved_host_list = objects.HostList.get_all(
                     context, filters={
                         'failover_segment_id': host_obj.failover_segment_id,
-                        'reserved': True})
+                        'reserved': True,
+                        'on_maintenance': False
+                        })
 
             try:
                 self.driver.execute_host_failure(

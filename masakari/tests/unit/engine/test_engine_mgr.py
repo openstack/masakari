@@ -303,6 +303,9 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             fake_host.name, fake_host.failover_segment.recovery_method,
             notification.notification_uuid,
             reserved_host_list=reserved_host_list)
+        mock_get_all.assert_called_once_with(self.context, filters={
+            'failover_segment_id': fake_host.failover_segment.uuid,
+            'reserved': True, 'on_maintenance': False})
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
     @mock.patch.object(host_obj.Host, "save")

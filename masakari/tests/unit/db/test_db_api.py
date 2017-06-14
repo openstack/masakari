@@ -296,6 +296,27 @@ class HostsTestCase(test.TestCase, ModelsObjectComparatorMixin):
             sort_dirs=['asc'])
         self._assertEqualListsOfObjects([hosts[1]], real_host, ignored_keys)
 
+    def test_host_get_all_by_filter_on_maintenance(self):
+        for p in self._get_fake_values_list():
+            # create temporary reserved_hosts, all are on maintenance
+            self._create_host(p)
+
+        # create one more reserved_host which is not on maintenance
+        temp_host = self._get_fake_values()
+        temp_host['on_maintenance'] = False
+        self._create_host(temp_host)
+
+        ignored_keys = ['deleted', 'created_at', 'updated_at', 'deleted_at',
+                        'id', 'failover_segment']
+        real_host = db.host_get_all_by_filters(
+            context=self.ctxt,
+            filters={'on_maintenance': False},
+            marker=1,
+            limit=1,
+            sort_keys=['id'],
+            sort_dirs=['asc'])
+        self._assertEqualListsOfObjects([temp_host], real_host, ignored_keys)
+
     def test_host_not_found(self):
         self._create_host(self._get_fake_values())
         self.assertRaises(exception.HostNotFound,
