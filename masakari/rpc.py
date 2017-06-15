@@ -14,6 +14,7 @@
 
 import oslo_messaging as messaging
 from oslo_messaging.rpc import dispatcher
+from oslo_serialization import jsonutils
 
 import masakari.context
 import masakari.exception
@@ -32,7 +33,10 @@ __all__ = [
     'get_server',
 ]
 
+CONF = masakari.conf.CONF
 TRANSPORT = None
+NOTIFICATION_TRANSPORT = None
+NOTIFIER = None
 
 ALLOWED_EXMODS = [
     masakari.exception.__name__,
@@ -41,20 +45,33 @@ EXTRA_EXMODS = []
 
 
 def init(conf):
-    global TRANSPORT
+    global TRANSPORT, NOTIFICATION_TRANSPORT, NOTIFIER
     exmods = get_allowed_exmods()
-    TRANSPORT = messaging.get_rpc_transport(conf,
-                                        allowed_remote_exmods=exmods)
+
+    TRANSPORT = create_transport(get_transport_url())
+    NOTIFICATION_TRANSPORT = messaging.get_notification_transport(
+        conf, allowed_remote_exmods=exmods)
+    serializer = RequestContextSerializer(JsonPayloadSerializer())
+    NOTIFIER = messaging.Notifier(NOTIFICATION_TRANSPORT,
+                                  serializer=serializer,
+                                  topics=['versioned_notifications'])
 
 
 def initialized():
-    return None not in [TRANSPORT]
+    return None not in [TRANSPORT,
+                        NOTIFICATION_TRANSPORT,
+                        NOTIFIER]
 
 
 def cleanup():
-    global TRANSPORT
+    global TRANSPORT, NOTIFICATION_TRANSPORT, NOTIFIER
+    assert TRANSPORT is not None
+    assert NOTIFICATION_TRANSPORT is not None
+    assert NOTIFIER is not None
+
     TRANSPORT.cleanup()
-    TRANSPORT = None
+    NOTIFICATION_TRANSPORT.cleanup()
+    TRANSPORT = NOTIFICATION_TRANSPORT = NOTIFIER = None
 
 
 def set_defaults(control_exchange):
@@ -71,6 +88,23 @@ def clear_extra_exmods():
 
 def get_allowed_exmods():
     return ALLOWED_EXMODS + EXTRA_EXMODS
+
+
+def get_transport_url(url_str=None):
+    return messaging.TransportURL.parse(CONF, url_str)
+
+
+def create_transport(url):
+    exmods = get_allowed_exmods()
+    return messaging.get_rpc_transport(CONF,
+                                       url=url,
+                                       allowed_remote_exmods=exmods)
+
+
+class JsonPayloadSerializer(messaging.NoOpSerializer):
+    @staticmethod
+    def serialize_entity(context, entity):
+        return jsonutils.to_primitive(entity, convert_instances=True)
 
 
 class RequestContextSerializer(messaging.Serializer):
@@ -114,6 +148,11 @@ def get_server(target, endpoints, serializer=None):
                                     executor='eventlet',
                                     serializer=serializer,
                                     access_policy=access_policy)
+
+
+def get_versioned_notifier(publisher_id):
+    assert NOTIFIER is not None
+    return NOTIFIER.prepare(publisher_id=publisher_id)
 
 
 class RPCAPI(object):
