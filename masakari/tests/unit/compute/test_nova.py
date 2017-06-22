@@ -40,7 +40,7 @@ class NovaClientTestCase(test.TestCase):
         self.override_config('os_privileged_user_name', 'adminuser')
         self.override_config('os_privileged_user_password', 'strongpassword')
         self.override_config('os_privileged_user_auth_url',
-                             'http://keystonehost/identity_admin')
+                             'http://keystonehost/identity')
 
     @mock.patch('novaclient.api_versions.APIVersion')
     @mock.patch('novaclient.client.Client')
@@ -50,7 +50,7 @@ class NovaClientTestCase(test.TestCase):
                                         p_client, p_api_version):
         nova.novaclient(self.ctx)
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
-            auth_url='http://keystonehost/identity_admin',
+            auth_url='http://keystonehost/identity',
             password='strongpassword', project_name=None, username='adminuser'
         )
         p_client.assert_called_once_with(
@@ -67,7 +67,7 @@ class NovaClientTestCase(test.TestCase):
                                          p_client, p_api_version):
         nova.novaclient(self.ctx)
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
-            auth_url='http://keystonehost/identity_admin',
+            auth_url='http://keystonehost/identity',
             password='strongpassword', project_name=None, username='adminuser'
         )
         p_client.assert_called_once_with(
@@ -86,7 +86,7 @@ class NovaClientTestCase(test.TestCase):
                                                          p_api_version):
         nova.novaclient(self.ctx)
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
-            auth_url='http://keystonehost/identity_admin',
+            auth_url='http://keystonehost/identity',
             password='strongpassword', project_name=None, username='adminuser'
         )
         p_client.assert_called_once_with(
@@ -104,7 +104,7 @@ class NovaClientTestCase(test.TestCase):
         self.override_config('os_region_name', 'farfaraway')
         nova.novaclient(self.ctx)
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
-            auth_url='http://keystonehost/identity_admin',
+            auth_url='http://keystonehost/identity',
             password='strongpassword', project_name=None, username='adminuser'
         )
         p_client.assert_called_once_with(
