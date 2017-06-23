@@ -24,13 +24,14 @@ NOW = timeutils.utcnow().replace(microsecond=0)
 class FakeNovaClient(object):
     class Server(object):
         def __init__(self, id=None, uuid=None, host=None, vm_state=None,
-                     ha_enabled=None):
+                     ha_enabled=None, locked=False):
             self.id = id
             self.uuid = uuid or uuidutils.generate_uuid()
             self.host = host
             setattr(self, 'OS-EXT-SRV-ATTR:hypervisor_hostname', host)
             setattr(self, 'OS-EXT-STS:vm_state', vm_state)
             self.metadata = {"HA_Enabled": ha_enabled}
+            self.locked = locked
 
     class ServerManager(object):
         def __init__(self):
