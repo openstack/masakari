@@ -154,7 +154,7 @@ class TestHostObject(test_objects._LocalTest):
 
     @mock.patch.object(db, 'host_delete')
     def test_destroy_host_not_found(self, mock_host_destroy):
-        mock_host_destroy.side_effect = exception.HostNotFound
+        mock_host_destroy.side_effect = exception.HostNotFound(id=123)
         host_obj = self._host_create_attributes()
         host_obj.id = 123
         self.assertRaises(exception.HostNotFound, host_obj.destroy)
