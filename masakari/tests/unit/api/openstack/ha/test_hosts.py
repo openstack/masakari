@@ -461,6 +461,16 @@ class HostTestCase(test.TestCase):
                 self.req, uuidsentinel.fake_segment1,
                           uuidsentinel.fake_host_3)
 
+    @mock.patch.object(ha_api.HostAPI, 'delete_host')
+    def test_delete_host_not_found_for_failover_segment(self, mock_delete):
+
+        mock_delete.side_effect = exception.HostNotFoundUnderFailoverSegment(
+            host_uuid=uuidsentinel.fake_host_3,
+            segment_uuid=uuidsentinel.fake_segment1)
+        self.assertRaises(exc.HTTPNotFound, self.controller.delete,
+                self.req, uuidsentinel.fake_segment1,
+                          uuidsentinel.fake_host_3)
+
 
 class HostTestCasePolicyNotAuthorized(test.NoDBTestCase):
     """Test Case for host non admin."""

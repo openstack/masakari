@@ -356,3 +356,8 @@ class LockAlreadyAcquired(MasakariException):
 
 class IgnoreInstanceRecoveryException(MasakariException):
     msg_fmt = _('Instance recovery is ignored.')
+
+
+class HostNotFoundUnderFailoverSegment(HostNotFound):
+    msg_fmt = _("Host '%(host_uuid)s' under failover_segment "
+                "'%(segment_uuid)s' could not be found.")

@@ -402,18 +402,25 @@ def host_get_all_by_filters(
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 @main_context_manager.reader
-def host_get_by_uuid(context, host_uuid):
-    return _host_get_by_uuid(context, host_uuid)
+def host_get_by_uuid(context, host_uuid, segment_uuid=None):
+    return _host_get_by_uuid(context, host_uuid, segment_uuid=segment_uuid)
 
 
-def _host_get_by_uuid(context, host_uuid):
+def _host_get_by_uuid(context, host_uuid, segment_uuid=None):
     query = model_query(context, models.Host
                         ).filter_by(uuid=host_uuid
                                     ).options(joinedload('failover_segment'))
+    if segment_uuid:
+        query = query.filter_by(failover_segment_id=segment_uuid)
 
     result = query.first()
+
     if not result:
-        raise exception.HostNotFound(id=host_uuid)
+        if segment_uuid:
+            raise exception.HostNotFoundUnderFailoverSegment(
+                host_uuid=host_uuid, segment_uuid=segment_uuid)
+        else:
+            raise exception.HostNotFound(id=host_uuid)
 
     return result
 

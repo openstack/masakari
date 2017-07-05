@@ -29,7 +29,9 @@ LOG = logging.getLogger(__name__)
 class Host(base.MasakariPersistentObject, base.MasakariObject,
            base.MasakariObjectDictCompat):
 
-    VERSION = '1.0'
+    # Version 1.0: Initial version
+    # Version 1.1: Added 'segment_uuid' parameter to 'get_by_uuid' method
+    VERSION = '1.1'
 
     fields = {
         'id': fields.IntegerField(),
@@ -64,8 +66,8 @@ class Host(base.MasakariPersistentObject, base.MasakariObject,
         return cls._from_db_object(context, cls(), db_inst)
 
     @base.remotable_classmethod
-    def get_by_uuid(cls, context, uuid):
-        db_inst = db.host_get_by_uuid(context, uuid)
+    def get_by_uuid(cls, context, uuid, segment_uuid=None):
+        db_inst = db.host_get_by_uuid(context, uuid, segment_uuid=segment_uuid)
         return cls._from_db_object(context, cls(), db_inst)
 
     @base.remotable_classmethod
