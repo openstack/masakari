@@ -315,6 +315,18 @@ def check_config_option_in_central_place(logical_line, filename):
     if "masakari/conf/" in filename:
         return
 
+    # (pooja_jadhav) All config options (with exceptions that are clarified
+    # in the list below) were moved to the central place. List below is for
+    # all options that were impossible to move without doing a major impact
+    # on code. Add full path to a module or folder.
+    conf_exceptions = [
+        # CLI opts are allowed to be outside of masakari/conf directory
+        'masakari/cmd/manage.py',
+    ]
+
+    if any(f in filename for f in conf_exceptions):
+        return
+
     if cfg_opt_re.match(logical_line):
         yield(0, msg)
 

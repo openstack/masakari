@@ -1,0 +1,11 @@
+---
+features:
+  - |
+    Operators can now purge the soft-deleted records from the database tables.
+    Added below command to purge the records:
+
+      ``masakari-manage db purge --age_in_days <days> --max_rows <rows>``
+
+    NOTE: ``notifications`` db records will be purged on the basis of ``update_at``
+    and ``status`` fields (finished, ignored, failed) as these records will not be
+    automatically soft-deleted by the system.

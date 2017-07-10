@@ -361,3 +361,13 @@ def notification_delete(context, notification_uuid):
              'notification_uuid' doesn't exist
     """
     return IMPL.notification_delete(context, notification_uuid)
+
+
+def purge_deleted_rows(context, age_in_days, max_rows):
+    """Purge the soft deleted rows.
+
+    :param context: context to query under
+    :param age_in_days: Purge deleted rows older than age in days
+    :param max_rows: Limit number of records to delete
+    """
+    return IMPL.purge_deleted_rows(context, age_in_days, max_rows)

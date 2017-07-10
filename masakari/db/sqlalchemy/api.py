@@ -14,14 +14,21 @@
 #    under the License.
 """Implementation of SQLAlchemy backend."""
 
+import datetime
 import sys
 
 from oslo_db import api as oslo_db_api
 from oslo_db import exception as db_exc
 from oslo_db.sqlalchemy import enginefacade
 from oslo_db.sqlalchemy import utils as sqlalchemyutils
+from oslo_log import log as logging
 from oslo_utils import timeutils
+from sqlalchemy import or_, and_
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy import MetaData
 from sqlalchemy.orm import joinedload
+from sqlalchemy import sql
+import sqlalchemy.sql as sa_sql
 from sqlalchemy.sql import func
 
 import masakari.conf
@@ -29,6 +36,7 @@ from masakari.db.sqlalchemy import models
 from masakari import exception
 from masakari.i18n import _
 
+LOG = logging.getLogger(__name__)
 
 CONF = masakari.conf.CONF
 
@@ -617,3 +625,76 @@ def notification_delete(context, notification_uuid):
 
     if count == 0:
         raise exception.NotificationNotFound(id=notification_uuid)
+
+
+class DeleteFromSelect(sa_sql.expression.UpdateBase):
+    def __init__(self, table, select, column):
+        self.table = table
+        self.select = select
+        self.column = column
+
+
+# NOTE(pooja_jadhav): MySQL doesn't yet support subquery with
+# 'LIMIT & IN/ALL/ANY/SOME' We need work around this with nesting select.
+@compiles(DeleteFromSelect)
+def visit_delete_from_select(element, compiler, **kw):
+    return "DELETE FROM %s WHERE %s in (SELECT T1.%s FROM (%s) as T1)" % (
+        compiler.process(element.table, asfrom=True),
+        compiler.process(element.column),
+        element.column.name,
+        compiler.process(element.select))
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.writer
+def purge_deleted_rows(context, age_in_days, max_rows):
+    """Purges soft deleted rows
+
+    Deleted rows get purged from hosts and segment tables based on
+    deleted_at column. As notifications table doesn't delete any of
+    the notification records so rows get purged from notifications
+    based on last updated_at and status column.
+    """
+    engine = get_engine()
+    conn = engine.connect()
+    metadata = MetaData()
+    metadata.reflect(engine)
+    deleted_age = timeutils.utcnow() - datetime.timedelta(days=age_in_days)
+    total_rows_purged = 0
+    for table in reversed(metadata.sorted_tables):
+        if 'deleted' not in table.columns.keys():
+            continue
+        LOG.info('Purging deleted rows older than %(age_in_days)d day(s) '
+                 'from table %(tbl)s',
+            {'age_in_days': age_in_days, 'tbl': table})
+        column = table.c.id
+        updated_at_column = table.c.updated_at
+        deleted_at_column = table.c.deleted_at
+
+        if table.name == 'notifications':
+            status_column = table.c.status
+            query_delete = sql.select([column]).where(
+                and_(updated_at_column < deleted_age, or_(
+                    status_column == 'finished', status_column == 'failed',
+                    status_column == 'ignored'))).order_by(status_column)
+        else:
+            query_delete = sql.select(
+                [column], deleted_at_column < deleted_age).order_by(
+                deleted_at_column)
+
+        if max_rows > 0:
+            query_delete = query_delete.limit(max_rows - total_rows_purged)
+
+        delete_statement = DeleteFromSelect(table, query_delete, column)
+
+        result = conn.execute(delete_statement)
+
+        rows = result.rowcount
+        LOG.info('Deleted %(rows)d row(s) from table %(tbl)s',
+                 {'rows': rows, 'tbl': table})
+
+        total_rows_purged += rows
+        if max_rows > 0 and total_rows_purged == max_rows:
+            break
+
+    LOG.info('Total deleted rows are %(rows)d', {'rows': total_rows_purged})

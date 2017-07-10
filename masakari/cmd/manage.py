@@ -21,16 +21,21 @@
 
 import logging as python_logging
 import sys
+import time
 
 from oslo_config import cfg
 from oslo_db.sqlalchemy import migration
 from oslo_log import log as logging
+import six
 
 import masakari.conf
+from masakari import context
+from masakari import db
 from masakari.db import api as db_api
 from masakari.db.sqlalchemy import migration as db_migration
 from masakari import exception
 from masakari.i18n import _
+from masakari import utils
 from masakari import version
 
 
@@ -76,6 +81,35 @@ class DbCommands(object):
                                    db_migration.MIGRATE_REPO_PATH,
                                    db_migration.INIT_VERSION))
 
+    @args('--age_in_days', type=int, default=30,
+          help='Purge deleted rows older than age in days (default: '
+               '%(default)d)')
+    @args('--max_rows', type=int, default=-1,
+          help='Limit number of records to delete (default: %(default)d)')
+    def purge(self, age_in_days, max_rows):
+        """Purge rows older than a given age from masakari tables."""
+        try:
+            max_rows = utils.validate_integer(
+                max_rows, 'max_rows', -1, db.MAX_INT)
+        except exception.Invalid as exc:
+            sys.exit(six.text_type(exc))
+
+        try:
+            age_in_days = int(age_in_days)
+        except ValueError:
+            msg = 'Invalid value for age, %(age)s' % {'age': age_in_days}
+            sys.exit(six.text_type(msg))
+
+        if max_rows == 0:
+            sys.exit(_("Must supply value greater than 0 for max_rows."))
+        if age_in_days < 0:
+            sys.exit(_("Must supply a non-negative value for age."))
+        if age_in_days >= (int(time.time()) / 86400):
+            sys.exit(_("Maximal age is count of days since epoch."))
+        ctx = context.get_admin_context()
+
+        db_api.purge_deleted_rows(ctx, age_in_days, max_rows)
+
 
 CATEGORIES = {
     'db': DbCommands,
@@ -115,10 +149,10 @@ def add_command_parsers(subparsers):
             parser.set_defaults(action_kwargs=action_kwargs)
 
 
-CONF.register_cli_opt(cfg.SubCommandOpt('category',
-                                        title='Command categories',
-                                        help='Available categories',
-                                        handler=add_command_parsers))
+command_opt = cfg.SubCommandOpt('category',
+                                title='Command categories',
+                                help='Available categories',
+                                handler=add_command_parsers)
 
 
 def get_arg_string(args):
@@ -149,6 +183,7 @@ def fetch_func_args(func):
 
 def main():
     """Parse options and call the appropriate class/method."""
+    CONF.register_cli_opt(command_opt)
     script_name = sys.argv[0]
     if len(sys.argv) < 2:
         print(_("\nOpenStack masakari version: %(version)s\n") %
