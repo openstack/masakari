@@ -124,7 +124,8 @@ class TestFailoverSegmentObject(test_objects._LocalTest):
 
     @mock.patch('masakari.db.failover_segment_delete')
     def test_destroy_failover_segment_found(self, mock_segment_destroy):
-        mock_segment_destroy.side_effect = exception.FailoverSegmentNotFound
+        mock_segment_destroy.side_effect = exception.FailoverSegmentNotFound(
+            id=123)
         segment_obj = self._segment_create_attribute()
         segment_obj.id = 123
         self.assertRaises(exception.FailoverSegmentNotFound,

@@ -190,7 +190,7 @@ class HostTestCase(test.TestCase):
         req = fakes.HTTPRequest.blank('/v1/segments/%s/hosts?marker=123456' % (
             uuidsentinel.fake_segment1), use_admin_context=True)
         mock_segment.return_value = mock.Mock()
-        mock_get_all.side_effect = exception.MarkerNotFound
+        mock_get_all.side_effect = exception.MarkerNotFound(marker="123456")
         self.assertRaises(exc.HTTPBadRequest, self.controller.index,
                           req, uuidsentinel.fake_segment1)
 
@@ -210,10 +210,11 @@ class HostTestCase(test.TestCase):
         self.assertRaises(exc.HTTPBadRequest, self.controller.index, req,
                           uuidsentinel.fake_segment1)
 
-    @ddt.data([exception.MarkerNotFound, "/v1/segments/%s/hosts?marker=123456",
-               exc.HTTPBadRequest],
-              [exception.FailoverSegmentNotFound, "/v1/segments/%s/hosts",
-               exc.HTTPNotFound])
+    @ddt.data([exception.MarkerNotFound(marker="123456"),
+               "/v1/segments/%s/hosts?marker=123456", exc.HTTPBadRequest],
+              [exception.FailoverSegmentNotFound(
+                  id=uuidsentinel.fake_segment1), "/v1/segments/%s/hosts",
+                  exc.HTTPNotFound])
     @ddt.unpack
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     @mock.patch.object(ha_api.HostAPI, 'get_all')
@@ -361,7 +362,7 @@ class HostTestCase(test.TestCase):
     @mock.patch.object(ha_api.HostAPI, 'get_host')
     def test_show_with_non_existing_id(self, mock_get_host):
 
-        mock_get_host.side_effect = exception.HostNotFound
+        mock_get_host.side_effect = exception.HostNotFound(id="2")
         self.assertRaises(exc.HTTPNotFound,
                           self.controller.show, self.req,
                           uuidsentinel.fake_segment1, "2")
@@ -420,14 +421,14 @@ class HostTestCase(test.TestCase):
     def test_update_with_non_exising_host(self, mock_update_host):
 
         test_data = {"host": {"name": "host11"}}
-        mock_update_host.side_effect = exception.HostNotFound
+        mock_update_host.side_effect = exception.HostNotFound(id="2")
         self.assertRaises(exc.HTTPNotFound, self.controller.update,
                 self.req, uuidsentinel.fake_segment1, "2", body=test_data)
 
     @mock.patch.object(ha_api.HostAPI, 'update_host')
     def test_update_with_duplicated_name(self, mock_update_host):
         test_data = {"host": {"name": "host-1"}}
-        mock_update_host.side_effect = exception.HostExists
+        mock_update_host.side_effect = exception.HostExists(name="host-1")
         self.assertRaises(exc.HTTPConflict, self.controller.update,
                 self.req, uuidsentinel.fake_segment1,
                           uuidsentinel.fake_host_1, body=test_data)
@@ -455,7 +456,7 @@ class HostTestCase(test.TestCase):
     @mock.patch.object(ha_api.HostAPI, 'delete_host')
     def test_delete_host_not_found(self, mock_delete):
 
-        mock_delete.side_effect = exception.HostNotFound
+        mock_delete.side_effect = exception.HostNotFound(id="2")
         self.assertRaises(exc.HTTPNotFound, self.controller.delete,
                 self.req, uuidsentinel.fake_segment1,
                           uuidsentinel.fake_host_3)

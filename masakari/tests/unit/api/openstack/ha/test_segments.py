@@ -94,7 +94,7 @@ class FailoverSegmentTestCase(test.TestCase):
     def test_index_marker_not_found(self, mock_get_all):
         fake_request = fakes.HTTPRequest.blank('/v1/segments?marker=12345',
                                                use_admin_context=True)
-        mock_get_all.side_effect = exception.MarkerNotFound
+        mock_get_all.side_effect = exception.MarkerNotFound(marker="12345")
         self.assertRaises(exc.HTTPBadRequest, self.controller.index,
                           fake_request)
 
@@ -227,7 +227,8 @@ class FailoverSegmentTestCase(test.TestCase):
     @mock.patch.object(ha_api.FailoverSegmentAPI, 'get_segment')
     def test_show_with_non_existing_id(self, mock_get_segment):
 
-        mock_get_segment.side_effect = exception.FailoverSegmentNotFound
+        mock_get_segment.side_effect = exception.FailoverSegmentNotFound(
+            id="2")
         self.assertRaises(exc.HTTPNotFound,
                           self.controller.show, self.req, "2")
 
@@ -275,14 +276,16 @@ class FailoverSegmentTestCase(test.TestCase):
     def test_update_with_non_exising_segment(self, mock_update_segment):
 
         test_data = {"segment": {"name": "segment11"}}
-        mock_update_segment.side_effect = exception.FailoverSegmentNotFound
+        mock_update_segment.side_effect = exception.FailoverSegmentNotFound(
+            id="2")
         self.assertRaises(exc.HTTPNotFound, self.controller.update,
                 self.req, "2", body=test_data)
 
     @mock.patch.object(ha_api.FailoverSegmentAPI, 'update_segment')
     def test_update_with_duplicated_name(self, mock_update_segment):
         test_data = {"segment": {"name": "segment1"}}
-        mock_update_segment.side_effect = exception.FailoverSegmentExists
+        mock_update_segment.side_effect = exception.FailoverSegmentExists(
+            name="segment1")
         self.assertRaises(exc.HTTPConflict, self.controller.update,
                 self.req, uuidsentinel.fake_segment, body=test_data)
 
@@ -295,7 +298,8 @@ class FailoverSegmentTestCase(test.TestCase):
     @mock.patch.object(ha_api.FailoverSegmentAPI, 'delete_segment')
     def test_delete_segment_not_found(self, mock_delete):
 
-        mock_delete.side_effect = exception.FailoverSegmentNotFound
+        mock_delete.side_effect = exception.FailoverSegmentNotFound(
+            id=uuidsentinel.fake_segment)
         self.assertRaises(exc.HTTPNotFound, self.controller.delete,
                 self.req, uuidsentinel.fake_segment)
 

@@ -86,11 +86,11 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
     @mock.patch.object(segment_obj.FailoverSegmentList, 'get_all')
     def test_get_all_marker_not_found(self, mock_get_all):
 
-        mock_get_all.side_effect = exception.MarkerNotFound
+        mock_get_all.side_effect = exception.MarkerNotFound(marker='123')
 
         self.assertRaises(exception.MarkerNotFound, self.segment_api.get_all,
                           self.context, filters=None, sort_keys=None,
-                          sort_dirs=None, limit=None, marker=None)
+                          sort_dirs=None, limit=None, marker='123')
 
     @mock.patch.object(segment_obj.FailoverSegmentList, 'get_all')
     def test_get_all_by_recovery_method(self, mock_get_all):
@@ -105,7 +105,8 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
     @mock.patch.object(segment_obj.FailoverSegmentList, 'get_all')
     def test_get_all_invalid_sort_dir(self, mock_get_all):
 
-        mock_get_all.side_effect = exception.InvalidInput
+        mock_get_all.side_effect = exception.InvalidInput(
+            reason="Unknown sort direction, must be 'asc' or 'desc'")
         self.assertRaises(exception.InvalidInput, self.segment_api.get_all,
                           self.context, filters=None, sort_keys=None,
                           sort_dirs=['abcd'], limit=None, marker=None)
@@ -222,12 +223,12 @@ class HostAPITestCase(test.NoDBTestCase):
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_get_all_marker_not_found(self, mock_get, mock_get_all):
         mock_get.return_value = self.failover_segment
-        mock_get_all.side_effect = exception.MarkerNotFound
+        mock_get_all.side_effect = exception.MarkerNotFound(marker="1234")
 
         self.assertRaises(exception.MarkerNotFound, self.host_api.get_all,
                           self.context, filters=None, sort_keys=['created_at'],
                           sort_dirs=['desc'], limit=None,
-                          marker=None)
+                          marker="1234")
 
     @mock.patch.object(host_obj.HostList, 'get_all')
     def test_get_all_by_type(self, mock_get):
@@ -243,7 +244,8 @@ class HostAPITestCase(test.NoDBTestCase):
     @mock.patch.object(host_obj.HostList, 'get_all')
     def test_get_all_invalid_sort_dir(self, mock_get):
 
-        mock_get.side_effect = exception.InvalidInput
+        mock_get.side_effect = exception.InvalidInput(
+            reason="Unknown sort direction, must be 'asc' or 'desc'")
 
         self.assertRaises(exception.InvalidInput, self.host_api.get_all,
                           self.context, filters=None, sort_keys=None,
@@ -554,8 +556,8 @@ class NotificationAPITestCase(test.NoDBTestCase):
     @mock.patch.object(notification_obj.NotificationList, 'get_all')
     def test_get_all_marker_not_found(self, mock_get_all):
 
-        mock_get_all.side_effect = exception.MarkerNotFound
-        self.req = fakes.HTTPRequest.blank('/v1/notifications?limit=100',
+        mock_get_all.side_effect = exception.MarkerNotFound(marker="100")
+        self.req = fakes.HTTPRequest.blank('/v1/notifications?marker=100',
                                            use_admin_context=True)
         self.assertRaises(exception.MarkerNotFound,
                           self.notification_api.get_all,
@@ -575,7 +577,8 @@ class NotificationAPITestCase(test.NoDBTestCase):
     @mock.patch.object(notification_obj.NotificationList, 'get_all')
     def test_get_all_invalid_sort_dir(self, mock_get_all):
 
-        mock_get_all.side_effect = exception.InvalidInput
+        mock_get_all.side_effect = exception.InvalidInput(
+            reason="Unknown sort direction, must be 'asc' or 'desc'")
         self.req = fakes.HTTPRequest.blank('/v1/notifications?sort_dir=abcd',
                                            use_admin_context=True)
         self.assertRaises(exception.InvalidInput,

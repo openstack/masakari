@@ -129,7 +129,7 @@ class NotificationTestCase(test.TestCase):
     def test_index_marker_not_found(self, mock_get_all):
         fake_request = fakes.HTTPRequest.blank('/v1/notifications?marker=1234',
                                                use_admin_context=True)
-        mock_get_all.side_effect = exception.MarkerNotFound
+        mock_get_all.side_effect = exception.MarkerNotFound(marker="1234")
         self.assertRaises(exc.HTTPBadRequest, self.controller.index,
                           fake_request)
 
@@ -195,7 +195,8 @@ class NotificationTestCase(test.TestCase):
                                          "cluster_status": "ONLINE"},
                              "type": "VM",
                              "generated_time": "2016-09-13T09:11:21.656788"}}
-        mock_create.side_effect = exception.HostNotFoundByName
+        mock_create.side_effect = exception.HostNotFoundByName(
+            host_name="fake_host")
         self.assertRaises(exc.HTTPBadRequest, self.controller.create,
                           self.req, body=body)
 
@@ -273,7 +274,8 @@ class NotificationTestCase(test.TestCase):
 
     @mock.patch.object(ha_api.NotificationAPI, 'create_notification')
     def test_create_duplicate_notification(self, mock_create_notification):
-        mock_create_notification.side_effect = exception.DuplicateNotification
+        mock_create_notification.side_effect = exception.DuplicateNotification(
+            type="COMPUTE_HOST")
         body = {
             "notification": {"hostname": "fake_host",
                              "payload": {"event": "STOPPED",
@@ -286,7 +288,8 @@ class NotificationTestCase(test.TestCase):
 
     @mock.patch.object(ha_api.NotificationAPI, 'create_notification')
     def test_create_host_on_maintenance(self, mock_create_notification):
-        mock_create_notification.side_effect = exception.HostOnMaintenanceError
+        mock_create_notification.side_effect = (
+            exception.HostOnMaintenanceError(host_name="fake_host"))
         body = {
             "notification": {"hostname": "fake_host",
                              "payload": {"event": "STOPPED",
@@ -310,7 +313,8 @@ class NotificationTestCase(test.TestCase):
     @mock.patch.object(ha_api.NotificationAPI, 'get_notification')
     def test_show_with_non_existing_uuid(self, mock_get_notification):
 
-        mock_get_notification.side_effect = exception.NotificationNotFound
+        mock_get_notification.side_effect = exception.NotificationNotFound(
+            id="2")
         self.assertRaises(exc.HTTPNotFound,
                           self.controller.show, self.req, "2")
 
