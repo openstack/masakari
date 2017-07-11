@@ -217,7 +217,7 @@ class NovaApiTestCase(test.TestCase):
 
         mock_novaclient.assert_called_once_with(self.ctx)
         mock_servers.evacuate.assert_called_once_with(
-            uuidsentinel.fake_server, host=None, on_shared_storage=True)
+            uuidsentinel.fake_server, host=None)
 
     @mock.patch('masakari.compute.nova.novaclient')
     def test_stop_server(self, mock_novaclient):

@@ -11,6 +11,14 @@ provisioning process down, and nova-compute host failure.
 It also provides API service for manage and control the automated
 rescue mechanism.
 
+NOTE:
+Use masakari only if instance path is configured on shared storage system
+i.e, 'instances_path' config option of nova has a path of shared directory
+otherwise instance data will be lost after the evacuation of instance from
+failed host if,
+* instance is booted from image
+* flavor using ephemeral disks is used
+
 Original version of Masakari: https://github.com/ntt-sic/masakari
 
 Tokyo Summit Session: https://www.youtube.com/watch?v=BmjNKceW_9A

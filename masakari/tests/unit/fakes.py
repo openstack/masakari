@@ -65,7 +65,7 @@ class FakeNovaClient(object):
             server = self.get(uuid)
             setattr(server, 'OS-EXT-STS:vm_state', status)
 
-        def evacuate(self, uuid, host=None, on_shared_storage=False):
+        def evacuate(self, uuid, host=None):
             if not host:
                 host = 'fake-host-1'
             server = self.get(uuid)

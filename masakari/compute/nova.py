@@ -39,7 +39,7 @@ CONF.import_group('keystone_authtoken', 'keystonemiddleware.auth_token')
 
 LOG = logging.getLogger(__name__)
 
-NOVA_API_VERSION = "2.9"
+NOVA_API_VERSION = "2.14"
 
 nova_extensions = [ext for ext in
                    nova_client.discover_extensions(NOVA_API_VERSION)
@@ -163,15 +163,13 @@ class API(object):
         return service.status == 'disabled'
 
     @translate_nova_exception
-    def evacuate_instance(self, context, uuid, target=None,
-                          on_shared_storage=True):
+    def evacuate_instance(self, context, uuid, target=None):
         """Evacuate an instance from failed host to specified host."""
         msg = ('Call evacuate command for instance %(uuid)s on host '
                '%(target)s')
         LOG.info(msg, {'uuid': uuid, 'target': target})
         nova = novaclient(context)
-        nova.servers.evacuate(uuid, host=target,
-                              on_shared_storage=on_shared_storage)
+        nova.servers.evacuate(uuid, host=target)
 
     @translate_nova_exception
     def reset_instance_state(self, context, uuid, status='error'):
