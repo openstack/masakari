@@ -21,10 +21,8 @@ from oslo_db import exception as db_exc
 from oslo_db.sqlalchemy import enginefacade
 from oslo_db.sqlalchemy import utils as sqlalchemyutils
 from oslo_utils import timeutils
-from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
-from sqlalchemy.sql import null
 
 import masakari.conf
 from masakari.db.sqlalchemy import models
@@ -93,10 +91,7 @@ def create_context_manager(connection=None):
     return ctxt_mgr
 
 
-def model_query(context, model,
-                args=None,
-                read_deleted=None,
-                project_only=False):
+def model_query(context, model, args=None, read_deleted=None):
     """Query helper that accounts for context's `read_deleted` field.
     :param context:     MasakariContext of the query.
     :param model:       Model to query. Must be a subclass of ModelBase.
@@ -106,9 +101,6 @@ def model_query(context, model,
                         deleted values; 'only', which only returns deleted
                         values; and 'yes', which does not filter deleted
                         values.
-    :param project_only: If set and context is user-type, then restrict
-                        query to match the context's project_id. If set to
-                        'allow_none', restriction includes project_id = None.
     """
 
     if read_deleted is None:
@@ -127,13 +119,6 @@ def model_query(context, model,
 
     query = sqlalchemyutils.model_query(
         model, context.session, args, **query_kwargs)
-
-    if masakari.context.is_user_context(context) and project_only:
-        if project_only == 'allow_none':
-            query = query.filter(or_(model.project_id == context.project_id,
-                                     model.project_id == null()))
-        else:
-            query = query.filter_by(project_id=context.project_id)
 
     return query
 
