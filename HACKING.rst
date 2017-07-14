@@ -15,13 +15,10 @@ Masakari Specific Commandments
   calls to datetime.datetime.utcnow() to make it easy to override its return value in tests
 - [M303] capitalize help string
   Config parameter help strings should have a capitalized first letter
-- [M304] vim configuration should not be kept in source files.
 - [M305] Change assertTrue(isinstance(A, B)) by optimal assert like
   assertIsInstance(A, B).
 - [M306] Change assertEqual(type(A), B) by optimal assert like
   assertIsInstance(A, B)
-- [M307] Change assertEqual(A, None) or assertEqual(None, A) by optimal assert like
-  assertIsNone(A)
 - [M308] Validate that debug level logs are not translated.
 - [M309] Don't import translation in tests
 - [M310] Setting CONF.* attributes directly in tests is forbidden. Use
@@ -45,5 +42,4 @@ Masakari Specific Commandments
 - [M327] Python 3: do not use dict.iterkeys.
 - [M328] Python 3: do not use dict.itervalues.
 - [M329] Deprecated library function os.popen()
-- [M330] String interpolation should be delayed at logging calls.
 - [M331] LOG.warn is deprecated. Enforce use of LOG.warning.

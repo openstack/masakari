@@ -53,30 +53,6 @@ class HackingTestCase(test.NoDBTestCase):
     just assertTrue if the check is expected to fail and assertFalse if it
     should pass.
     """
-    def test_no_vi_headers(self):
-
-        lines = ['Line 1\n', 'Line 2\n', 'Line 3\n', 'Line 4\n', 'Line 5\n',
-                 'Line 6\n', 'Line 7\n', 'Line 8\n', 'Line 9\n', 'Line 10\n',
-                 'Line 11\n', 'Line 12\n', 'Line 13\n', 'Line14\n', 'Line15\n']
-
-        self.assertIsNone(checks.no_vi_headers(
-            "Test string foo", 1, lines))
-        self.assertEqual(len(list(checks.no_vi_headers(
-            "# vim: et tabstop=4 shiftwidth=4 softtabstop=4",
-            2, lines))), 2)
-        self.assertIsNone(checks.no_vi_headers(
-            "# vim: et tabstop=4 shiftwidth=4 softtabstop=4",
-            6, lines))
-        self.assertIsNone(checks.no_vi_headers(
-            "# vim: et tabstop=4 shiftwidth=4 softtabstop=4",
-            9, lines))
-        self.assertEqual(len(list(checks.no_vi_headers(
-            "# vim: et tabstop=4 shiftwidth=4 softtabstop=4",
-            14, lines))), 2)
-        self.assertIsNone(checks.no_vi_headers(
-            "Test end string for vi",
-            15, lines))
-
     def test_assert_true_instance(self):
         self.assertEqual(len(list(checks.assert_true_instance(
             "self.assertTrue(isinstance(e, "
@@ -129,19 +105,7 @@ class HackingTestCase(test.NoDBTestCase):
         self.assertEqual(len(list(checks.assert_equal_in(
             "self.assertEqual(False, any(a==1 for a in b))"))), 0)
 
-    def test_assert_equal_none(self):
-        self.assertEqual(len(list(checks.assert_equal_none(
-            "self.assertEqual(A, None)"))), 1)
-
-        self.assertEqual(len(list(checks.assert_equal_none(
-            "self.assertEqual(None, A)"))), 1)
-
-        self.assertEqual(
-            len(list(checks.assert_equal_none("self.assertIsNone()"))), 0)
-
     def test_assert_true_or_false_with_in_or_not_in(self):
-        self.assertEqual(len(list(checks.assert_equal_none(
-            "self.assertEqual(A, None)"))), 1)
         self.assertEqual(len(list(checks.assert_true_or_false_with_in(
             "self.assertTrue(A in B)"))), 1)
 
@@ -455,58 +419,6 @@ class HackingTestCase(test.NoDBTestCase):
         errors = [(4, 0, 'M329'), (8, 8, 'M329')]
         self._assert_has_errors(code, checks.no_os_popen,
                                 expected_errors=errors)
-
-    def test_check_delayed_string_interpolation(self):
-        checker = checks.check_delayed_string_interpolation
-        code = """
-               msg_w = ('Test string (%s)')
-               msg_i = 'Test string (%s)'
-               value = 'test'
-
-               LOG.error(("Test string (%s)") % value)
-               LOG.warning(msg_w % 'test%string')
-               LOG.info(msg_i %
-                        "test%string%info")
-               LOG.critical(
-                   ('Test string (%s)') % value,
-                   instance=instance)
-               LOG.exception((" 'Test quotation %s' \"Test\"") % 'test')
-               LOG.debug(' "Test quotation %s" \'Test\'' % "test")
-               LOG.debug('Tesing %(test)s' %
-                         {'test': ','.join(
-                             ['%s=%s' % (name, value)
-                              for name, value in test.items()])})
-               """
-
-        expected_errors = [(5, 31, 'M330'), (6, 18, 'M330'), (7, 15, 'M330'),
-                           (10, 25, 'M330'), (12, 46, 'M330'),
-                           (13, 40, 'M330'), (14, 28, 'M330')]
-        self._assert_has_errors(code, checker, expected_errors=expected_errors)
-        self._assert_has_no_errors(
-            code, checker, filename='masakari/tests/unit/test_hacking.py')
-
-        code = """
-               msg_w = ('Test string (%s)')
-               msg_i = 'Test string (%s)'
-               value = 'test'
-
-               LOG.error(("Test string (%s)"), value)
-               LOG.error(("Test string (%s)") % value) # noqa
-               LOG.warn(('Test string (%s)'),
-                        value)
-               LOG.info(msg_i,
-                        "test%string%info")
-               LOG.critical(
-                   ('Test string (%s)'), value,
-                   instance=instance)
-               LOG.exception((" 'Test quotation %s' \"Test\""), 'test')
-               LOG.debug(' "Test quotation %s" \'Test\'', "test")
-               LOG.debug('Tesing %(test)s',
-                         {'test': ','.join(
-                             ['%s=%s' % (name, value)
-                              for name, value in test.items()])})
-               """
-        self._assert_has_no_errors(code, checker)
 
     def test_no_log_warn(self):
         code = """
