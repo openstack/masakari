@@ -93,7 +93,8 @@ def novaclient(context, timeout=None):
         CONF.os_privileged_user_name, None,
         auth_token=CONF.os_privileged_user_password,
         project_name=CONF.os_privileged_user_tenant,
-        service_catalog=context.service_catalog)
+        service_catalog=context.service_catalog,
+        global_request_id=context.global_id)
 
     # User needs to authenticate to Keystone before querying Nova, so we set
     # auth_url to the identity service endpoint
@@ -112,14 +113,16 @@ def novaclient(context, timeout=None):
                                     project_name=context.project_name)
     keystone_session = keystoneauth1.session.Session(auth=auth)
 
-    client_obj = nova_client.Client(api_versions.APIVersion(NOVA_API_VERSION),
-                                    session=keystone_session,
-                                    insecure=CONF.nova_api_insecure,
-                                    timeout=timeout,
-                                    region_name=CONF.os_region_name,
-                                    endpoint_type=endpoint_type,
-                                    cacert=CONF.nova_ca_certificates_file,
-                                    extensions=nova_extensions)
+    client_obj = nova_client.Client(
+        api_versions.APIVersion(NOVA_API_VERSION),
+        session=keystone_session,
+        insecure=CONF.nova_api_insecure,
+        timeout=timeout,
+        global_request_id=context.global_id,
+        region_name=CONF.os_region_name,
+        endpoint_type=endpoint_type,
+        cacert=CONF.nova_ca_certificates_file,
+        extensions=nova_extensions)
 
     return client_obj
 

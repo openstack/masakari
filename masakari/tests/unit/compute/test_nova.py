@@ -57,7 +57,8 @@ class NovaClientTestCase(test.TestCase):
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name=None,
             insecure=False, endpoint_type='publicURL', cacert=None,
-            timeout=None, extensions=nova.nova_extensions)
+            timeout=None, global_request_id=self.ctx.global_id,
+            extensions=nova.nova_extensions)
 
     @mock.patch('novaclient.api_versions.APIVersion')
     @mock.patch('novaclient.client.Client')
@@ -74,7 +75,8 @@ class NovaClientTestCase(test.TestCase):
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name=None,
             insecure=False, endpoint_type='publicURL', cacert=None,
-            timeout=None, extensions=nova.nova_extensions)
+            timeout=None, global_request_id=self.ctx.global_id,
+            extensions=nova.nova_extensions)
 
     @mock.patch('novaclient.api_versions.APIVersion')
     @mock.patch('novaclient.client.Client')
@@ -93,7 +95,8 @@ class NovaClientTestCase(test.TestCase):
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name=None,
             insecure=False, endpoint_type='publicURL', cacert=None,
-            timeout=None, extensions=nova.nova_extensions)
+            timeout=None, global_request_id=self.ctx.global_id,
+            extensions=nova.nova_extensions)
 
     @mock.patch('novaclient.api_versions.APIVersion')
     @mock.patch('novaclient.client.Client')
@@ -111,7 +114,8 @@ class NovaClientTestCase(test.TestCase):
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name='farfaraway',
             insecure=False, endpoint_type='publicURL', cacert=None,
-            timeout=None, extensions=nova.nova_extensions)
+            timeout=None, global_request_id=self.ctx.global_id,
+            extensions=nova.nova_extensions)
 
 
 class NovaApiTestCase(test.TestCase):

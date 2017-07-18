@@ -102,7 +102,8 @@ class RequestContext(context.RequestContext):
             resource_uuid=kwargs.pop('resource_uuid', None),
             overwrite=overwrite,
             roles=roles,
-            is_admin_project=kwargs.pop('is_admin_project', True))
+            is_admin_project=kwargs.pop('is_admin_project', True),
+            global_request_id=kwargs.pop('global_request_id', None))
         # oslo_context's RequestContext.to_dict() generates this field, we can
         # safely ignore this as we don't use it.
         kwargs.pop('user_identity', None)
