@@ -27,7 +27,6 @@ from oslo_log import log as logging
 from oslo_utils import timeutils
 import six
 
-from masakari import exception
 from masakari.i18n import _
 from masakari import policy
 from masakari import utils
@@ -212,46 +211,3 @@ def get_admin_context(read_deleted="no"):
                           is_admin=True,
                           read_deleted=read_deleted,
                           overwrite=False)
-
-
-def is_user_context(context):
-    """Indicates if the request context is a normal user."""
-    if not context:
-        return False
-    if context.is_admin:
-        return False
-    if not context.user_id or not context.project_id:
-        return False
-    return True
-
-
-def require_admin_context(ctxt):
-    """Raise exception.AdminRequired() if context is not an admin context."""
-    if not ctxt.is_admin:
-        raise exception.AdminRequired()
-
-
-def require_context(ctxt):
-    """Raise exception.Forbidden() if context is not a user or an
-    admin context.
-    """
-    if not ctxt.is_admin and not is_user_context(ctxt):
-        raise exception.Forbidden()
-
-
-def authorize_project_context(context, project_id):
-    """Ensures a request has permission to access the given project."""
-    if is_user_context(context):
-        if not context.project_id:
-            raise exception.Forbidden()
-        elif context.project_id != project_id:
-            raise exception.Forbidden()
-
-
-def authorize_user_context(context, user_id):
-    """Ensures a request has permission to access the given user."""
-    if is_user_context(context):
-        if not context.user_id:
-            raise exception.Forbidden()
-        elif context.user_id != user_id:
-            raise exception.Forbidden()
