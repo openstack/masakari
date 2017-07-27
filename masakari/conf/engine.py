@@ -19,6 +19,12 @@ from oslo_config import cfg
 rpcapi_opts = [
     cfg.StrOpt("masakari_topic",
             default="ha_engine",
+            deprecated_for_removal=True,
+            deprecated_since='3.0.0',
+            deprecated_reason="""
+Configurable RPC topic provides little value and it can easily break
+Masakari if operator configures it to the same topic used by other OpenStack
+services.""",
             help="""
 This is the message queue topic that the masakari engine 'listens' on. It is
 used when the masakari engine is started up to configure the queue, and

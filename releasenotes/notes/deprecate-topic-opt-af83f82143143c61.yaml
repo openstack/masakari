@@ -1,0 +1,5 @@
+---
+deprecations:
+  - |
+    The ``masakari_topic`` config option is now deprecated and will be removed
+    in the Queens release.
