@@ -57,6 +57,18 @@ masakari actually does, and why.
    architecture
    development.environment
 
+Operator Guide
+==============
+
+This section will help you in configuring masakari mannualy.
+
+.. toctree::
+    :maxdepth: 1
+
+    operators_guide
+    sample_config
+    sample_policy
+
 Indices and tables
 ==================
 
