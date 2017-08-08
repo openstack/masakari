@@ -28,6 +28,7 @@ from masakari.objects import base
 from masakari.objects import fields
 from masakari.objects import segment
 from masakari import test
+from masakari.tests.unit.objects import fake_args
 
 
 class MyOwnedObject(base.MasakariPersistentObject, base.MasakariObject):
@@ -658,8 +659,21 @@ object_data = {
     'HostList': '1.0-25ebe1b17fbd9f114fae8b6a10d198c0',
     'Notification': '1.0-eedfa3c203c100897021bd23f0ddf68c',
     'NotificationList': '1.0-25ebe1b17fbd9f114fae8b6a10d198c0',
+    'EventType': '1.0-d1d2010a7391fa109f0868d964152607',
+    'ExceptionNotification': '1.0-1187e93f564c5cca692db76a66cda2a6',
+    'ExceptionPayload': '1.0-4516ae282a55fe2fd5c754967ee6248b',
+    'HostApiNotification': '1.0-1187e93f564c5cca692db76a66cda2a6',
+    'HostApiPayload': '1.0-ca9035d81cec6697f12dd4cac4c8f027',
+    'HostApiPayloadBase': '1.0-211379087a876212df6194b011207339',
+    'NotificationApiPayload': '1.0-c050869a1f4aed23e7645bd4d1830ecd',
+    'NotificationApiPayloadBase': '1.0-cda8d53a77e64f83e3782fc9c4d499bb',
+    'NotificationApiNotification': '1.0-1187e93f564c5cca692db76a66cda2a6',
+    'NotificationPublisher': '1.0-bbbc1402fb0e443a3eb227cc52b61545',
     'MyObj': '1.6-ee7b607402fbfb3390a92ab7199e0d88',
-    'MyOwnedObject': '1.0-fec853730bd02d54cc32771dd67f08a0'
+    'MyOwnedObject': '1.0-fec853730bd02d54cc32771dd67f08a0',
+    'SegmentApiNotification': '1.0-1187e93f564c5cca692db76a66cda2a6',
+    'SegmentApiPayload': '1.0-4c85836a1c2e4069b9dc84fa029a4657',
+    'SegmentApiPayloadBase': '1.0-93a7c8b78d0e9ea3f6811d4ed75fa799'
 }
 
 
@@ -684,7 +698,11 @@ def get_masakari_objects():
     return masakari_classes
 
 
-class TestObjectVersions(test.NoDBTestCase):
+class TestObjectVersions(test.NoDBTestCase, _BaseTestCase):
+    def setUp(self):
+        super(test.NoDBTestCase, self).setUp()
+        base.MasakariObjectRegistry.register_notification_objects()
+
     def test_versions(self):
         checker = fixture.ObjectVersionChecker(
             get_masakari_objects())
@@ -714,8 +732,8 @@ class TestObjectVersions(test.NoDBTestCase):
         # Hold a dictionary of args/kwargs that need to get passed into
         # __init__() for specific classes. The key in the dictionary is
         # the obj_class that needs the init args/kwargs.
-        init_args = {}
-        init_kwargs = {}
+        init_args = fake_args.init_args
+        init_kwargs = fake_args.init_kwargs
 
         checker = fixture.ObjectVersionChecker(
             base.MasakariObjectRegistry.obj_classes())

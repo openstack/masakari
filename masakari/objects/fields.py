@@ -35,6 +35,12 @@ Enum = fields.Enum
 FieldType = fields.FieldType
 
 
+class BaseMasakariEnum(Enum):
+    def __init__(self, **kwargs):
+        super(BaseMasakariEnum, self).__init__(
+            valid_values=self.__class__.ALL)
+
+
 class FailoverSegmentRecoveryMethod(Enum):
     """Represents possible recovery_methods for failover segment."""
 
@@ -180,6 +186,74 @@ class NotificationStatus(Enum):
         return cls.ALL[index]
 
 
+class EventNotificationAction(Enum):
+    # Actions of segments
+    SEGMENT_CREATE = 'segment.create'
+    SEGMENT_UPDATE = 'segment.update'
+    SEGMENT_DELETE = 'segment.delete'
+
+    # Actions of hosts
+    HOST_CREATE = 'host.create'
+    HOST_UPDATE = 'host.update'
+    HOST_DELETE = 'host.delete'
+
+    # Actions of notifications
+    NOTIFICATION_CREATE = 'notification.create'
+    NOTIFICATION_PROCESS = 'notification.process'
+
+    ALL = (SEGMENT_CREATE, SEGMENT_UPDATE, SEGMENT_DELETE, HOST_CREATE,
+           HOST_UPDATE, HOST_DELETE, NOTIFICATION_CREATE,
+           NOTIFICATION_PROCESS)
+
+    def __init__(self):
+        super(EventNotificationAction,
+              self).__init__(valid_values=EventNotificationAction.ALL)
+
+    @classmethod
+    def index(cls, value):
+        """Return an index into the Enum given a value."""
+        return cls.ALL.index(value)
+
+    @classmethod
+    def from_index(cls, index):
+        """Return the Enum value at a given index."""
+        return cls.ALL[index]
+
+
+class EventNotificationPriority(BaseMasakariEnum):
+    AUDIT = 'audit'
+    CRITICAL = 'critical'
+    DEBUG = 'debug'
+    INFO = 'info'
+    ERROR = 'error'
+    SAMPLE = 'sample'
+    WARN = 'warn'
+
+    ALL = (AUDIT, CRITICAL, DEBUG, INFO, ERROR, SAMPLE, WARN)
+
+
+class EventNotificationPhase(Enum):
+    START = 'start'
+    END = 'end'
+    ERROR = 'error'
+
+    ALL = (START, END, ERROR)
+
+    def __init__(self):
+        super(EventNotificationPhase,
+              self).__init__(valid_values=EventNotificationPhase.ALL)
+
+    @classmethod
+    def index(cls, value):
+        """Return an index into the Enum given a value."""
+        return cls.ALL.index(value)
+
+    @classmethod
+    def from_index(cls, index):
+        """Return the Enum value at a given index."""
+        return cls.ALL[index]
+
+
 class FailoverSegmentRecoveryMethodField(BaseEnumField):
     AUTO_TYPE = FailoverSegmentRecoveryMethod()
 
@@ -190,3 +264,15 @@ class NotificationTypeField(BaseEnumField):
 
 class NotificationStatusField(BaseEnumField):
     AUTO_TYPE = NotificationStatus()
+
+
+class EventNotificationActionField(BaseEnumField):
+    AUTO_TYPE = EventNotificationAction()
+
+
+class EventNotificationPriorityField(BaseEnumField):
+    AUTO_TYPE = EventNotificationPriority()
+
+
+class EventNotificationPhaseField(BaseEnumField):
+    AUTO_TYPE = EventNotificationPhase()

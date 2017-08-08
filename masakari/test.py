@@ -20,6 +20,7 @@ inline callbacks.
 
 """
 import contextlib
+import datetime
 import eventlet
 eventlet.monkey_patch(os=False)  # noqa
 
@@ -31,6 +32,7 @@ import testtools
 
 from oslo_config import cfg
 from oslo_log import log as logging
+from oslo_serialization import jsonutils
 
 from masakari.tests import fixtures as masakari_fixtures
 from masakari.tests.unit import conf_fixture
@@ -116,6 +118,69 @@ class TestCase(testtools.TestCase):
         group = kw.pop('group', None)
         for k, v in kw.items():
             CONF.set_override(k, v, group)
+
+    def assertJsonEqual(self, expected, observed):
+        """Asserts that 2 complex data structures are json equivalent.
+
+        We use data structures which serialize down to json throughout
+        the code, and often times we just need to know that these are
+        json equivalent. This means that list order is not important,
+        and should be sorted.
+
+        Because this is a recursive set of assertions, when failure
+        happens we want to expose both the local failure and the
+        global view of the 2 data structures being compared. So a
+        MismatchError which includes the inner failure as the
+        mismatch, and the passed in expected / observed as matchee /
+        matcher.
+
+        """
+        if isinstance(expected, six.string_types):
+            expected = jsonutils.loads(expected)
+        if isinstance(observed, six.string_types):
+            observed = jsonutils.loads(observed)
+
+        def sort_key(x):
+            if isinstance(x, (set, list)) or isinstance(x, datetime.datetime):
+                return str(x)
+            if isinstance(x, dict):
+                items = ((sort_key(key), sort_key(value))
+                         for key, value in x.items())
+                return sorted(items)
+            return x
+
+        def inner(expected, observed):
+            if isinstance(expected, dict) and isinstance(observed, dict):
+                self.assertEqual(len(expected), len(observed))
+                expected_keys = sorted(expected)
+                observed_keys = sorted(observed)
+                self.assertEqual(expected_keys, observed_keys)
+
+                for key in list(six.iterkeys(expected)):
+                    inner(expected[key], observed[key])
+            elif (isinstance(expected, (list, tuple, set)) and isinstance(
+                    observed, (list, tuple, set))):
+                self.assertEqual(len(expected), len(observed))
+
+                expected_values_iter = iter(sorted(expected, key=sort_key))
+                observed_values_iter = iter(sorted(observed, key=sort_key))
+
+                for i in range(len(expected)):
+                    inner(next(expected_values_iter),
+                          next(observed_values_iter))
+            else:
+                self.assertEqual(expected, observed)
+
+        try:
+            inner(expected, observed)
+        except testtools.matchers.MismatchError as e:
+            inner_mismatch = e.mismatch
+            # inverting the observed / expected because testtools
+            # error messages assume expected is second. Possibly makes
+            # reading the error messages less confusing.
+            raise testtools.matchers.MismatchError(observed, expected,
+                                                   inner_mismatch,
+                                                   verbose=True)
 
 
 class NoDBTestCase(TestCase):
