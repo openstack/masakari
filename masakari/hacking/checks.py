@@ -35,7 +35,6 @@ UNDERSCORE_IMPORT_FILES = []
 session_check = re.compile(r"\w*def [a-zA-Z0-9].*[(].*session.*[)]")
 cfg_re = re.compile(r".*\scfg\.")
 cfg_opt_re = re.compile(r".*[\s\[]cfg\.[a-zA-Z]*Opt\(")
-vi_header_re = re.compile(r"^#\s+vim?:.+")
 asse_trueinst_re = re.compile(
     r"(.)*assertTrue\(isinstance\((\w|\.|\'|\"|\[|\])+, "
     "(\w|\.|\'|\"|\[|\])+\)\)")
@@ -86,9 +85,6 @@ spawn_re = re.compile(
 contextlib_nested = re.compile(r"^with (contextlib\.)?nested\(")
 doubled_words_re = re.compile(
     r"\b(then?|[iao]n|i[fst]|but|f?or|at|and|[dt]o)\s+\1\b")
-log_string_interpolation = re.compile(r".*LOG\.(error|warning|info"
-                                      r"|critical|exception|debug)"
-                                      r"\([^,]*%[^,]*[,)]")
 
 
 def no_db_session_in_public_api(logical_line, filename):
@@ -124,20 +120,6 @@ def capital_cfg_help(logical_line, tokens):
                     yield(0, msg)
 
 
-def no_vi_headers(physical_line, line_number, lines):
-    """Check for vi editor configuration in source files.
-
-    By default vi modelines can only appear in the first or
-    last 5 lines of a source file.
-
-    M304
-    """
-    # NOTE(abhishekk): line_number is 1-indexed
-    if line_number <= 5 or line_number > len(lines) - 5:
-        if vi_header_re.match(physical_line):
-            return 0, "M304: Don't put vi configuration in source files"
-
-
 def assert_true_instance(logical_line):
     """Check for assertTrue(isinstance(a, b)) sentences
 
@@ -155,18 +137,6 @@ def assert_equal_type(logical_line):
     """
     if asse_equal_type_re.match(logical_line):
         yield (0, "M306: assertEqual(type(A), B) sentences not allowed")
-
-
-def assert_equal_none(logical_line):
-    """Check for assertEqual(A, None) or assertEqual(None, A) sentences
-
-    M307
-    """
-    res = (asse_equal_start_with_none_re.search(logical_line) or
-           asse_equal_end_with_none_re.search(logical_line))
-    if res:
-        yield (0, "M307: assertEqual(A, None) or assertEqual(None, A) "
-               "sentences not allowed")
 
 
 def no_translate_debug_logs(logical_line, filename):
@@ -392,27 +362,6 @@ def no_os_popen(logical_line):
                  'Replace it using subprocess module. ')
 
 
-def check_delayed_string_interpolation(logical_line, filename, noqa):
-    """M330 String interpolation should be delayed at logging calls.
-
-    M330: LOG.debug('Example: %s' % 'bad')
-    Okay: LOG.debug('Example: %s', 'good')
-    """
-    msg = ("M330 String interpolation should be delayed to be "
-           "handled by the logging code, rather than being done "
-           "at the point of the logging call. "
-           "Use ',' instead of '%'.")
-
-    if noqa:
-        return
-
-    if '/tests/' in filename:
-        return
-
-    if log_string_interpolation.match(logical_line):
-        yield(logical_line.index('%'), msg)
-
-
 def no_log_warn(logical_line):
     """Disallow 'LOG.warn('
 
@@ -431,11 +380,9 @@ def factory(register):
     register(no_db_session_in_public_api)
     register(use_timeutils_utcnow)
     register(capital_cfg_help)
-    register(no_vi_headers)
     register(no_import_translation_in_tests)
     register(assert_true_instance)
     register(assert_equal_type)
-    register(assert_equal_none)
     register(assert_raises_regexp)
     register(no_translate_debug_logs)
     register(no_setting_conf_directly_in_tests)
@@ -453,5 +400,4 @@ def factory(register):
     register(check_python3_no_iterkeys)
     register(check_python3_no_itervalues)
     register(no_os_popen)
-    register(check_delayed_string_interpolation)
     register(no_log_warn)
