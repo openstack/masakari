@@ -13,11 +13,14 @@
 #    under the License.
 
 import datetime
+import traceback
 
 from oslo_log import log as logging
+from oslo_utils import excutils
 from oslo_utils import strutils
 from oslo_utils import uuidutils
 
+from masakari.api import utils as api_utils
 from masakari.compute import nova
 import masakari.conf
 from masakari.engine import rpcapi as engine_rpcapi
@@ -91,8 +94,15 @@ class FailoverSegmentAPI(object):
         segment.recovery_method = segment_data.get('recovery_method')
         segment.service_type = segment_data.get('service_type')
 
-        segment.create()
-
+        try:
+            segment.create()
+        except Exception as e:
+            with excutils.save_and_reraise_exception():
+                tb = traceback.format_exc()
+                api_utils.notify_about_segment_api(context, segment,
+                    action=fields.EventNotificationAction.SEGMENT_CREATE,
+                    phase=fields.EventNotificationPhase.ERROR, exception=e,
+                    tb=tb)
         return segment
 
     def update_segment(self, context, uuid, segment_data):
@@ -104,8 +114,16 @@ class FailoverSegmentAPI(object):
             LOG.error(msg)
             raise exception.FailoverSegmentInUse(msg)
 
-        segment.update(segment_data)
-        segment.save()
+        try:
+            segment.update(segment_data)
+            segment.save()
+        except Exception as e:
+            with excutils.save_and_reraise_exception():
+                tb = traceback.format_exc()
+                api_utils.notify_about_segment_api(context, segment,
+                    action=fields.EventNotificationAction.SEGMENT_UPDATE,
+                    phase=fields.EventNotificationPhase.ERROR, exception=e,
+                    tb=tb)
         return segment
 
     def delete_segment(self, context, uuid):
@@ -117,7 +135,15 @@ class FailoverSegmentAPI(object):
             LOG.error(msg)
             raise exception.FailoverSegmentInUse(msg)
 
-        segment.destroy()
+        try:
+            segment.destroy()
+        except Exception as e:
+            with excutils.save_and_reraise_exception():
+                tb = traceback.format_exc()
+                api_utils.notify_about_segment_api(context, segment,
+                    action=fields.EventNotificationAction.SEGMENT_DELETE,
+                    phase=fields.EventNotificationPhase.ERROR, exception=e,
+                    tb=tb)
 
 
 class HostAPI(object):
@@ -173,7 +199,16 @@ class HostAPI(object):
 
         self._is_valid_host_name(context, host.name)
 
-        host.create()
+        try:
+            host.create()
+        except Exception as e:
+            with excutils.save_and_reraise_exception():
+                tb = traceback.format_exc()
+                api_utils.notify_about_host_api(context, host,
+                    action=fields.EventNotificationAction.HOST_CREATE,
+                    phase=fields.EventNotificationPhase.ERROR, exception=e,
+                    tb=tb)
+
         return host
 
     def update_host(self, context, segment_uuid, id, host_data):
@@ -198,16 +233,22 @@ class HostAPI(object):
             host_data['reserved'] = strutils.bool_from_string(
                 host_data['reserved'], strict=True)
 
-        host.update(host_data)
-
-        host.save()
-
+        try:
+            host.update(host_data)
+            host.save()
+        except Exception as e:
+            with excutils.save_and_reraise_exception():
+                tb = traceback.format_exc()
+                api_utils.notify_about_host_api(context, host,
+                    action=fields.EventNotificationAction.HOST_UPDATE,
+                    phase=fields.EventNotificationPhase.ERROR, exception=e,
+                    tb=tb)
         return host
 
     def delete_host(self, context, segment_uuid, id):
         """Delete the host"""
-        segment = objects.FailoverSegment.get_by_uuid(context, segment_uuid)
 
+        segment = objects.FailoverSegment.get_by_uuid(context, segment_uuid)
         host = objects.Host.get_by_uuid(context, id, segment_uuid=segment_uuid)
         if is_failover_segment_under_recovery(segment):
             msg = _("Host %s can't be deleted as "
@@ -215,7 +256,15 @@ class HostAPI(object):
             LOG.error(msg)
             raise exception.HostInUse(msg)
 
-        host.destroy()
+        try:
+            host.destroy()
+        except Exception as e:
+            with excutils.save_and_reraise_exception():
+                tb = traceback.format_exc()
+                api_utils.notify_about_host_api(context, host,
+                    action=fields.EventNotificationAction.HOST_DELETE,
+                    phase=fields.EventNotificationPhase.ERROR, exception=e,
+                    tb=tb)
 
 
 class NotificationAPI(object):
@@ -279,9 +328,16 @@ class NotificationAPI(object):
                        {'host': host_name, 'type': notification.type})
             raise exception.DuplicateNotification(message=message)
 
-        notification.create()
-        self.engine_rpcapi.process_notification(context, notification)
-
+        try:
+            notification.create()
+            self.engine_rpcapi.process_notification(context, notification)
+        except Exception as e:
+            with excutils.save_and_reraise_exception():
+                tb = traceback.format_exc()
+                api_utils.notify_about_notification_api(context, notification,
+                    action=fields.EventNotificationAction.NOTIFICATION_CREATE,
+                    phase=fields.EventNotificationPhase.ERROR, exception=e,
+                    tb=tb)
         return notification
 
     def get_all(self, context, filters=None, sort_keys=None,

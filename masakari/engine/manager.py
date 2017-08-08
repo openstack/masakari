@@ -21,6 +21,7 @@ notifications. It is responsible for processing notifications and executing
 workflows.
 
 """
+import traceback
 
 from oslo_log import log as logging
 import oslo_messaging as messaging
@@ -30,6 +31,7 @@ from oslo_utils import timeutils
 import masakari.conf
 from masakari.engine import driver
 from masakari.engine import instance_events as virt_events
+from masakari.engine import utils as engine_utils
 from masakari import exception
 from masakari import manager
 from masakari import objects
@@ -58,6 +60,7 @@ class MasakariManager(manager.Manager):
         notification_status = fields.NotificationStatus.FINISHED
         notification_event = notification.payload.get('event')
         process_name = notification.payload.get('process_name')
+        exception_info = None
 
         if notification_event.upper() == 'STARTED':
             LOG.info("Notification type '%(type)s' received for host "
@@ -83,17 +86,32 @@ class MasakariManager(manager.Manager):
                 self.driver.execute_process_failure(
                     context, process_name, host_name,
                     notification.notification_uuid)
-            except exception.SkipProcessRecoveryException:
+            except exception.SkipProcessRecoveryException as e:
                 notification_status = fields.NotificationStatus.FINISHED
             except (exception.MasakariException,
-                    exception.ProcessRecoveryFailureException):
+                    exception.ProcessRecoveryFailureException) as e:
                 notification_status = fields.NotificationStatus.ERROR
+                exception_info = e
         else:
             LOG.warning("Invalid event: %(event)s received for "
                         "notification type: %(notification_type)s",
                         {'event': notification_event,
                          'notification_type': notification.type})
             notification_status = fields.NotificationStatus.IGNORED
+
+        if exception_info:
+            tb = traceback.format_exc()
+            engine_utils.notify_about_notification_update(context,
+                notification,
+                action=fields.EventNotificationAction.NOTIFICATION_PROCESS,
+                phase=fields.EventNotificationPhase.ERROR,
+                exception=str(exception_info),
+                tb=tb)
+        else:
+            engine_utils.notify_about_notification_update(context,
+                notification,
+                action=fields.EventNotificationAction.NOTIFICATION_PROCESS,
+                phase=fields.EventNotificationPhase.END)
 
         return notification_status
 
@@ -106,23 +124,41 @@ class MasakariManager(manager.Manager):
             return fields.NotificationStatus.IGNORED
 
         notification_status = fields.NotificationStatus.FINISHED
+        exception_info = None
         try:
             self.driver.execute_instance_failure(
                 context, notification.payload.get('instance_uuid'),
                 notification.notification_uuid)
-        except exception.IgnoreInstanceRecoveryException:
+        except exception.IgnoreInstanceRecoveryException as e:
             notification_status = fields.NotificationStatus.IGNORED
-        except exception.SkipInstanceRecoveryException:
+            exception_info = e
+        except exception.SkipInstanceRecoveryException as e:
             notification_status = fields.NotificationStatus.FINISHED
         except (exception.MasakariException,
-                exception.InstanceRecoveryFailureException):
+                exception.InstanceRecoveryFailureException) as e:
             notification_status = fields.NotificationStatus.ERROR
+            exception_info = e
+
+        if exception_info:
+            tb = traceback.format_exc()
+            engine_utils.notify_about_notification_update(context,
+                notification,
+                action=fields.EventNotificationAction.NOTIFICATION_PROCESS,
+                phase=fields.EventNotificationPhase.ERROR,
+                exception=str(exception_info),
+                tb=tb)
+        else:
+            engine_utils.notify_about_notification_update(context,
+                notification,
+                action=fields.EventNotificationAction.NOTIFICATION_PROCESS,
+                phase=fields.EventNotificationPhase.END)
 
         return notification_status
 
     def _handle_notification_type_host(self, context, notification):
         notification_status = fields.NotificationStatus.FINISHED
         notification_event = notification.payload.get('event')
+        exception_info = None
 
         if notification_event.upper() == 'STARTED':
             LOG.info("Notification type '%(type)s' received for host "
@@ -163,18 +199,33 @@ class MasakariManager(manager.Manager):
                     context, host_name, recovery_method,
                     notification.notification_uuid,
                     reserved_host_list=reserved_host_list)
-            except exception.SkipHostRecoveryException:
+            except exception.SkipHostRecoveryException as e:
                 notification_status = fields.NotificationStatus.FINISHED
             except (exception.HostRecoveryFailureException,
                     exception.ReservedHostsUnavailable,
-                    exception.MasakariException):
+                    exception.MasakariException) as e:
                 notification_status = fields.NotificationStatus.ERROR
+                exception_info = e
         else:
             LOG.warning("Invalid event: %(event)s received for "
                         "notification type: %(type)s",
                         {'event': notification_event,
                          'type': notification.type})
             notification_status = fields.NotificationStatus.IGNORED
+
+        if exception_info:
+            tb = traceback.format_exc()
+            engine_utils.notify_about_notification_update(context,
+                notification,
+                action=fields.EventNotificationAction.NOTIFICATION_PROCESS,
+                phase=fields.EventNotificationPhase.ERROR,
+                exception=str(exception_info),
+                tb=tb)
+        else:
+            engine_utils.notify_about_notification_update(context,
+                notification,
+                action=fields.EventNotificationAction.NOTIFICATION_PROCESS,
+                phase=fields.EventNotificationPhase.END)
 
         return notification_status
 
@@ -232,6 +283,11 @@ class MasakariManager(manager.Manager):
             }
             notification.update(update_data)
             notification.save()
+
+        engine_utils.notify_about_notification_update(context,
+            notification,
+            action=fields.EventNotificationAction.NOTIFICATION_PROCESS,
+            phase=fields.EventNotificationPhase.START)
 
         do_process_notification(notification)
 

@@ -1,0 +1,33 @@
+{
+    "event_type": "notification.process.error",
+    "timestamp": "2018-12-20 06:21:19.315761",
+    "payload": {
+        "masakari_object.name": "NotificationApiPayload",
+        "masakari_object.data": {
+            "notification_uuid": "0adb94e0-8283-4702-9793-186d4ed914e8",
+            "status": "running",
+            "source_host_uuid": "6bfaf80d-7592-4ea8-ad12-60d45476d056",
+            "fault": {
+                "masakari_object.name": "ExceptionPayload",
+                    "masakari_object.data": {
+                    "module_name": "masakari.engine.manager",
+                    "exception": "str",
+                    "traceback": "Traceback (most recent call last):\n  File \"/opt/stack/masakari/masakari/engine/manager.py\", line ...",
+                    "exception_message": "Failed to execute process recovery workflow.",
+                    "function_name": "_handle_notification_type_process"
+                },
+                "masakari_object.version": "1.0",
+                "masakari_object.namespace": "masakari"
+            },
+            "id": 51,
+            "generated_time": "2017-06-13T15:34:55Z",
+            "type": "PROCESS",
+            "payload": {"process_name": "nova-compute"}
+        },
+        "masakari_object.version": "1.0",
+        "masakari_object.namespace": "masakari"
+    },
+    "priority": "ERROR",
+    "publisher_id": "masakari-engine:fake-mini",
+    "message_id": "5f3c9705-b3fb-41f9-a4e0-4868db93178c"
+}

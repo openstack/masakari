@@ -1,0 +1,20 @@
+{
+    "event_type": "segment.delete.end",
+    "timestamp": "2018-11-27 14:36:07.457369",
+    "payload": {
+        "masakari_object.name": "SegmentApiPayload",
+        "masakari_object.data": {
+            "description": null,
+            "fault": null,
+            "recovery_method": "auto",
+            "uuid": "89597691-bebd-4860-a93e-1b6e9de34b9e",
+            "service_type": "compute",
+            "name": "test2"
+        },
+        "masakari_object.version": "1.0",
+        "masakari_object.namespace": "masakari"
+    },
+    "priority": "INFO",
+    "publisher_id": "masakari-api:fake-mini",
+    "message_id": "00184d05-7a96-4021-b44e-03912a6c0b0d"
+}

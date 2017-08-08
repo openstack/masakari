@@ -18,8 +18,10 @@ import copy
 import mock
 from oslo_utils import timeutils
 
+from masakari.api import utils as api_utils
 from masakari import db
 from masakari import exception
+from masakari.objects import fields
 from masakari.objects import host
 from masakari.objects import segment
 from masakari.tests.unit.objects import test_objects
@@ -115,8 +117,9 @@ class TestHostObject(test_objects._LocalTest):
 
         return host_obj
 
+    @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(db, 'host_create')
-    def test_create(self, mock_db_create):
+    def test_create(self, mock_db_create, mock_notify_about_host_api):
 
         mock_db_create.return_value = fake_host
         host_obj = self._host_create_attributes()
@@ -128,14 +131,34 @@ class TestHostObject(test_objects._LocalTest):
             'reserved': False, 'name': u'foo-host',
             'control_attributes': u'fake_attributes',
             'type': u'fake-type'})
+        action = fields.EventNotificationAction.HOST_CREATE
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, host_obj, action=action,
+                      phase=phase_start),
+            mock.call(self.context, host_obj, action=action,
+                      phase=phase_end)]
+        mock_notify_about_host_api.assert_has_calls(notify_calls)
 
+    @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(db, 'host_create')
-    def test_recreate_fails(self, mock_host_create):
+    def test_recreate_fails(self, mock_host_create,
+                            mock_notify_about_host_api):
         mock_host_create.return_value = fake_host
         host_obj = self._host_create_attributes()
         host_obj.create()
 
         self.assertRaises(exception.ObjectActionError, host_obj.create)
+        action = fields.EventNotificationAction.HOST_CREATE
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, host_obj, action=action,
+                      phase=phase_start),
+            mock.call(self.context, host_obj, action=action,
+                      phase=phase_end)]
+        mock_notify_about_host_api.assert_has_calls(notify_calls)
 
         mock_host_create.assert_called_once_with(self.context, {
             'uuid': uuidsentinel.fake_host, 'name': 'foo-host',
@@ -143,21 +166,39 @@ class TestHostObject(test_objects._LocalTest):
             'type': 'fake-type', 'reserved': False, 'on_maintenance': False,
             'control_attributes': 'fake_attributes'})
 
+    @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(db, 'host_delete')
-    def test_destroy(self, mock_host_destroy):
+    def test_destroy(self, mock_host_destroy, mock_notify_about_host_api):
         host_obj = self._host_create_attributes()
         host_obj.id = 123
         host_obj.destroy()
 
         mock_host_destroy.assert_called_once_with(
             self.context, uuidsentinel.fake_host)
+        action = fields.EventNotificationAction.HOST_DELETE
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, host_obj, action=action,
+                      phase=phase_start),
+            mock.call(self.context, host_obj, action=action,
+                      phase=phase_end)]
+        mock_notify_about_host_api.assert_has_calls(notify_calls)
 
+    @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(db, 'host_delete')
-    def test_destroy_host_not_found(self, mock_host_destroy):
+    def test_destroy_host_not_found(self, mock_host_destroy,
+                                    mock_notify_about_host_api):
         mock_host_destroy.side_effect = exception.HostNotFound(id=123)
         host_obj = self._host_create_attributes()
         host_obj.id = 123
         self.assertRaises(exception.HostNotFound, host_obj.destroy)
+        action = fields.EventNotificationAction.HOST_DELETE
+        phase_start = fields.EventNotificationPhase.START
+        notify_calls = [
+            mock.call(self.context, host_obj, action=action,
+                      phase=phase_start)]
+        mock_notify_about_host_api.assert_has_calls(notify_calls)
 
     @mock.patch.object(db, 'host_get_all_by_filters')
     def test_get_host_by_filters(self, mock_api_get):
@@ -182,8 +223,9 @@ class TestHostObject(test_objects._LocalTest):
                           host.HostList.get_all,
                           self.context, limit=5, marker=host_name)
 
+    @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(db, 'host_update')
-    def test_save(self, mock_host_update):
+    def test_save(self, mock_host_update, mock_notify_about_host_api):
 
         mock_host_update.return_value = fake_host
 
@@ -201,6 +243,15 @@ class TestHostObject(test_objects._LocalTest):
                                   'uuid': uuidsentinel.fake_host,
                                   'reserved': False, 'on_maintenance': False
                                   }))
+        action = fields.EventNotificationAction.HOST_UPDATE
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, host_obj, action=action,
+                      phase=phase_start),
+            mock.call(self.context, host_obj, action=action,
+                      phase=phase_end)]
+        mock_notify_about_host_api.assert_has_calls(notify_calls)
 
     @mock.patch.object(db, 'host_update')
     def test_save_lazy_attribute_changed(self, mock_host_update):
@@ -213,8 +264,10 @@ class TestHostObject(test_objects._LocalTest):
         host_obj.id = 123
         self.assertRaises(exception.ObjectActionError, host_obj.save)
 
+    @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(db, 'host_update')
-    def test_save_host_already_exists(self, mock_host_update):
+    def test_save_host_already_exists(self, mock_host_update,
+                                      mock_notify_about_host_api):
 
         mock_host_update.side_effect = exception.HostExists(name="foo-host")
 
@@ -224,9 +277,17 @@ class TestHostObject(test_objects._LocalTest):
         host_object.uuid = uuidsentinel.fake_host
 
         self.assertRaises(exception.HostExists, host_object.save)
+        action = fields.EventNotificationAction.HOST_UPDATE
+        phase_start = fields.EventNotificationPhase.START
+        notify_calls = [
+            mock.call(self.context, host_object, action=action,
+                      phase=phase_start)]
+        mock_notify_about_host_api.assert_has_calls(notify_calls)
 
+    @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(db, 'host_update')
-    def test_save_host_not_found(self, mock_host_update):
+    def test_save_host_not_found(self, mock_host_update,
+                                 mock_notify_about_host_api):
 
         mock_host_update.side_effect = exception.HostNotFound(name="foo-host")
 
@@ -236,3 +297,9 @@ class TestHostObject(test_objects._LocalTest):
         host_object.uuid = uuidsentinel.fake_host
 
         self.assertRaises(exception.HostNotFound, host_object.save)
+        action = fields.EventNotificationAction.HOST_UPDATE
+        phase_start = fields.EventNotificationPhase.START
+        notify_calls = [
+            mock.call(self.context, host_object, action=action,
+                      phase=phase_start)]
+        mock_notify_about_host_api.assert_has_calls(notify_calls)

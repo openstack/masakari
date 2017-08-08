@@ -1,0 +1,20 @@
+{
+    "event_type": "notification.create.start",
+    "timestamp": "2018-11-27 13:46:23.060352",
+    "payload": {
+        "masakari_object.name": "NotificationApiPayload",
+        "masakari_object.data": {
+            "status": "new",
+            "source_host_uuid": "d4ffe3a4-b2a8-41f3-a2b0-bae3b06fc1a3",
+            "fault": null,
+            "generated_time": "2017-06-13T15:34:55Z",
+            "type": "VM",
+            "payload": {"process_name": "nova-compute"}
+        },
+        "masakari_object.version": "1.0",
+        "masakari_object.namespace": "masakari"
+    },
+    "priority": "INFO",
+    "publisher_id": "masakari-api:fake-mini",
+    "message_id": "5e2e4699-0bbd-4583-b1e2-a87c458f84eb"
+}

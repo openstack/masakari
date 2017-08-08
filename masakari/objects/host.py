@@ -16,6 +16,7 @@
 from oslo_log import log as logging
 from oslo_utils import uuidutils
 
+from masakari.api import utils as api_utils
 from masakari import db
 from masakari import exception
 from masakari import objects
@@ -91,7 +92,17 @@ class Host(base.MasakariPersistentObject, base.MasakariObject,
             raise exception.ObjectActionError(action='create',
                                               reason='failover segment '
                                                      'assigned')
+
+        api_utils.notify_about_host_api(self._context, self,
+            action=fields.EventNotificationAction.HOST_CREATE,
+            phase=fields.EventNotificationPhase.START)
+
         db_host = db.host_create(self._context, updates)
+
+        api_utils.notify_about_host_api(self._context, self,
+            action=fields.EventNotificationAction.HOST_CREATE,
+            phase=fields.EventNotificationPhase.END)
+
         self._from_db_object(self._context, self, db_host)
 
     @base.remotable
@@ -102,7 +113,17 @@ class Host(base.MasakariPersistentObject, base.MasakariObject,
                                               reason='failover segment '
                                                      'changed')
         updates.pop('id', None)
+
+        api_utils.notify_about_host_api(self._context, self,
+            action=fields.EventNotificationAction.HOST_UPDATE,
+            phase=fields.EventNotificationPhase.START)
+
         db_host = db.host_update(self._context, self.uuid, updates)
+
+        api_utils.notify_about_host_api(self._context, self,
+            action=fields.EventNotificationAction.HOST_UPDATE,
+            phase=fields.EventNotificationPhase.END)
+
         self._from_db_object(self._context, self, db_host)
 
     @base.remotable
@@ -114,7 +135,16 @@ class Host(base.MasakariPersistentObject, base.MasakariObject,
             raise exception.ObjectActionError(action='destroy',
                                               reason='no uuid')
 
+        api_utils.notify_about_host_api(self._context, self,
+            action=fields.EventNotificationAction.HOST_DELETE,
+            phase=fields.EventNotificationPhase.START)
+
         db.host_delete(self._context, self.uuid)
+
+        api_utils.notify_about_host_api(self._context, self,
+            action=fields.EventNotificationAction.HOST_DELETE,
+            phase=fields.EventNotificationPhase.END)
+
         delattr(self, base.get_attrname('id'))
 
 

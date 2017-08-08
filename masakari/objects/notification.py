@@ -17,6 +17,7 @@ from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import uuidutils
 
+from masakari.api import utils as api_utils
 from masakari import db
 from masakari import exception
 from masakari import objects
@@ -81,7 +82,16 @@ class Notification(base.MasakariPersistentObject, base.MasakariObject,
         if 'payload' in updates:
             updates['payload'] = jsonutils.dumps(updates['payload'])
 
+        api_utils.notify_about_notification_api(self._context, self,
+            action=fields.EventNotificationAction.NOTIFICATION_CREATE,
+            phase=fields.EventNotificationPhase.START)
+
         db_notification = db.notification_create(self._context, updates)
+
+        api_utils.notify_about_notification_api(self._context, self,
+            action=fields.EventNotificationAction.NOTIFICATION_CREATE,
+            phase=fields.EventNotificationPhase.END)
+
         self._from_db_object(self._context, self, db_notification)
 
     @base.remotable
@@ -129,3 +139,16 @@ class NotificationList(base.ObjectListBase, base.MasakariObject):
 
         return base.obj_make_list(context, cls(context), objects.Notification,
                                   groups)
+
+
+def notification_sample(sample):
+    """Class decorator to attach the notification sample information
+    to the notification object for documentation generation purposes.
+     :param sample: the path of the sample json file relative to the
+                   doc/notification_samples/ directory in the nova repository
+                   root.
+    """
+    def wrap(cls):
+        cls.sample = sample
+        return cls
+    return wrap

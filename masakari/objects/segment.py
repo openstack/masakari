@@ -16,6 +16,7 @@
 from oslo_log import log as logging
 from oslo_utils import uuidutils
 
+from masakari.api import utils as api_utils
 from masakari import db
 from masakari import exception
 from masakari import objects
@@ -74,15 +75,34 @@ class FailoverSegment(base.MasakariPersistentObject, base.MasakariObject,
             LOG.debug('Generated uuid %(uuid)s for failover segment',
                       dict(uuid=updates['uuid']))
 
+        api_utils.notify_about_segment_api(self._context, self,
+            action=fields.EventNotificationAction.SEGMENT_CREATE,
+            phase=fields.EventNotificationPhase.START)
+
         db_segment = db.failover_segment_create(self._context, updates)
+
+        api_utils.notify_about_segment_api(self._context, self,
+            action=fields.EventNotificationAction.SEGMENT_CREATE,
+            phase=fields.EventNotificationPhase.END)
+
         self._from_db_object(self._context, self, db_segment)
 
     @base.remotable
     def save(self):
         updates = self.masakari_obj_get_changes()
         updates.pop('id', None)
+
+        api_utils.notify_about_segment_api(self._context, self,
+            action=fields.EventNotificationAction.SEGMENT_UPDATE,
+            phase=fields.EventNotificationPhase.START)
+
         db_segment = db.failover_segment_update(self._context,
                                                 self.uuid, updates)
+
+        api_utils.notify_about_segment_api(self._context, self,
+            action=fields.EventNotificationAction.SEGMENT_UPDATE,
+            phase=fields.EventNotificationPhase.END)
+
         self._from_db_object(self._context, self, db_segment)
 
     @base.remotable
@@ -94,7 +114,16 @@ class FailoverSegment(base.MasakariPersistentObject, base.MasakariObject,
             raise exception.ObjectActionError(action='destroy',
                                               reason='no uuid')
 
+        api_utils.notify_about_segment_api(self._context, self,
+            action=fields.EventNotificationAction.SEGMENT_DELETE,
+            phase=fields.EventNotificationPhase.START)
+
         db.failover_segment_delete(self._context, self.uuid)
+
+        api_utils.notify_about_segment_api(self._context, self,
+            action=fields.EventNotificationAction.SEGMENT_DELETE,
+            phase=fields.EventNotificationPhase.END)
+
         delattr(self, base.get_attrname('id'))
 
     def is_under_recovery(self, filters=None):

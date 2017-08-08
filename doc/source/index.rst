@@ -76,3 +76,13 @@ Indices and tables
 ==================
 
 * :ref:`search`
+
+Versioned Notifications
+=======================
+
+This provides the list of existing versioned notifications with sample payloads.
+
+.. toctree::
+   :maxdepth: 1
+
+   notifications
