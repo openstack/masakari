@@ -30,13 +30,14 @@ class ExceptionPayload(base.NotificationPayloadBase):
         'module_name': fields.StringField(),
         'function_name': fields.StringField(),
         'exception': fields.StringField(),
-        'exception_message': fields.StringField()
+        'exception_message': fields.StringField(),
+        'traceback': fields.StringField()
     }
 
     @classmethod
-    def from_exception(cls, fault):
+    def from_exc_and_traceback(cls, fault, traceback):
         trace = inspect.trace()[-1]
-        # apply strutils.mask_password on exception_message and
+        # TODO(gibi): apply strutils.mask_password on exception_message and
         # consider emitting the exception_message only if the safe flag is
         # true in the exception like in the REST API
         module = inspect.getmodule(trace[0])
@@ -45,10 +46,11 @@ class ExceptionPayload(base.NotificationPayloadBase):
             function_name=trace[3],
             module_name=module_name,
             exception=fault.__class__.__name__,
-            exception_message=six.text_type(fault))
+            exception_message=six.text_type(fault),
+            traceback=traceback)
 
 
-@base.notification_sample('engine-exception.json')
+@base.notification_sample('error-exception.json')
 @masakari_base.MasakariObjectRegistry.register_notification
 class ExceptionNotification(base.NotificationBase):
     # Version 1.0: Initial version

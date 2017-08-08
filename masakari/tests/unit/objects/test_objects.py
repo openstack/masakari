@@ -661,7 +661,7 @@ object_data = {
     'NotificationList': '1.0-25ebe1b17fbd9f114fae8b6a10d198c0',
     'EventType': '1.0-d1d2010a7391fa109f0868d964152607',
     'ExceptionNotification': '1.0-1187e93f564c5cca692db76a66cda2a6',
-    'ExceptionPayload': '1.0-4516ae282a55fe2fd5c754967ee6248b',
+    'ExceptionPayload': '1.0-96f178a12691e3ef0d8e3188fc481b90',
     'HostApiNotification': '1.0-1187e93f564c5cca692db76a66cda2a6',
     'HostApiPayload': '1.0-ca9035d81cec6697f12dd4cac4c8f027',
     'HostApiPayloadBase': '1.0-211379087a876212df6194b011207339',
