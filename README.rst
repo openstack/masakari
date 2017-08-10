@@ -52,15 +52,18 @@ $ openstack endpoint create --region RegionOne masakari --publicurl http://<ip-a
 5. Clone masakari using
 $ git clone https://github.com/openstack/masakari.git
 
-6. Run setup.py from masakari
+6. Run pip install from masakari folder
+$ pip install -r requirements.txt
+
+7. Run setup.py from masakari
 $ sudo python setup.py install
 
-7. Create masakari directory in /etc/
+8. Create masakari directory in /etc/
 
-8. Copy masakari.conf, api-paste.ini and policy.json file from masakari/etc/ to
+9. Copy masakari.conf, api-paste.ini and policy.json file from masakari/etc/ to
    /etc/masakari folder
 
-9. To run masakari-api simply use following binary:
+10. To run masakari-api simply use following binary:
 $ masakari-api
 
 
