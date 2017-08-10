@@ -198,7 +198,7 @@ class HostAPI(object):
         """Delete the host"""
         segment = objects.FailoverSegment.get_by_uuid(context, segment_uuid)
 
-        host = objects.Host.get_by_uuid(context, id)
+        host = objects.Host.get_by_uuid(context, id, segment_uuid=segment_uuid)
         if is_failover_segment_under_recovery(segment):
             msg = _("Host %s can't be deleted as "
                     "it is in-use to process notifications.") % host.uuid

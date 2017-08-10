@@ -654,7 +654,7 @@ class TestRegistry(test.NoDBTestCase):
 object_data = {
     'FailoverSegment': '1.0-5e8b8bc8840b35439b5f2b621482d15d',
     'FailoverSegmentList': '1.0-dfc5c6f5704d24dcaa37b0bbb03cbe60',
-    'Host': '1.0-803264cd1563db37d0bf7cff48e34c1d',
+    'Host': '1.1-3fc4d548fa220c76906426095e5971fc',
     'HostList': '1.0-25ebe1b17fbd9f114fae8b6a10d198c0',
     'Notification': '1.0-eedfa3c203c100897021bd23f0ddf68c',
     'NotificationList': '1.0-25ebe1b17fbd9f114fae8b6a10d198c0',

@@ -192,17 +192,18 @@ def host_get_all_by_filters(
                                         marker=marker)
 
 
-def host_get_by_uuid(context, host_uuid):
+def host_get_by_uuid(context, host_uuid, segment_uuid=None):
     """Get host information by uuid.
 
     :param context: context to query under
     :param host_uuid: uuid of host
+    :param segment_uuid: uuid of failover_segment
 
     :returns: dictionary-like object containing host
 
     :raises: exception.HostNotFound if host with 'host_uuid' doesn't exist
     """
-    return IMPL.host_get_by_uuid(context, host_uuid)
+    return IMPL.host_get_by_uuid(context, host_uuid, segment_uuid=segment_uuid)
 
 
 def host_get_by_id(context, host_id):

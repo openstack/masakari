@@ -231,11 +231,16 @@ class HostsTestCase(test.TestCase, ModelsObjectComparatorMixin):
     def _create_host(self, values):
         return db.host_create(self.ctxt, values)
 
-    def _test_get_host(self, method, filter):
+    def _test_get_host(self, method, host_uuid_filter,
+                       failover_segment_id_filter=None):
         hosts = [self._create_host(p) for p in self._get_fake_values_list()]
         ignored_key = ['failover_segment']
         for host in hosts:
-            real_host = method(self.ctxt, host[filter])
+            if failover_segment_id_filter:
+                real_host = method(self.ctxt, host[host_uuid_filter],
+                                   host[failover_segment_id_filter])
+            else:
+                real_host = method(self.ctxt, host[host_uuid_filter])
             self._assertEqualObjects(host, real_host, ignored_key)
             self.assertEqual(host['failover_segment'].items(),
                              real_host['failover_segment'].items())
@@ -255,6 +260,29 @@ class HostsTestCase(test.TestCase, ModelsObjectComparatorMixin):
 
     def test_host_get_by_name(self):
         self._test_get_host(db.host_get_by_name, 'name')
+
+    def test_host_get_by_host_uuid_and_failover_segment_id(self):
+        self._test_get_host(db.host_get_by_uuid, 'uuid', 'failover_segment_id')
+
+    def test_host_get_by_uuid_filter_by_invalid_failover_segment(self):
+        # create hosts under failover_segment
+        # 'uuidsentinel.failover_segment_id'
+        for host in self._get_fake_values_list():
+            self._create_host(host)
+
+        # create one more failover_segment
+        values = {'uuid': uuidsentinel.failover_segment_id_1,
+                  'name': 'fake_segment_name_1',
+                  'service_type': 'fake_service_type',
+                  'description': 'fake_description',
+                  'recovery_method': 'auto'}
+        db.failover_segment_create(self.ctxt, values)
+
+        # try to get host with failover_segment
+        # 'uuidsentinel.failover_segment_id_1'
+        self.assertRaises(
+            exception.HostNotFoundUnderFailoverSegment, db.host_get_by_uuid,
+            self.ctxt, uuidsentinel.uuid_1, uuidsentinel.failover_segment_id_1)
 
     def test_host_update(self):
         update = {'name': 'updated_name', 'type': 'updated_type'}
