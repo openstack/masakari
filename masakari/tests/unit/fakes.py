@@ -24,12 +24,13 @@ NOW = timeutils.utcnow().replace(microsecond=0)
 class FakeNovaClient(object):
     class Server(object):
         def __init__(self, id=None, uuid=None, host=None, vm_state=None,
-                     ha_enabled=None, locked=False):
+                     power_state=1, ha_enabled=None, locked=False):
             self.id = id
             self.uuid = uuid or uuidutils.generate_uuid()
             self.host = host
             setattr(self, 'OS-EXT-SRV-ATTR:hypervisor_hostname', host)
             setattr(self, 'OS-EXT-STS:vm_state', vm_state)
+            setattr(self, 'OS-EXT-STS:power_state', power_state)
             self.metadata = {"HA_Enabled": ha_enabled}
             self.locked = locked
 
@@ -38,9 +39,10 @@ class FakeNovaClient(object):
             self._servers = []
 
         def create(self, id, uuid=None, host=None, vm_state='active',
-                   ha_enabled=False):
+                   power_state=1, ha_enabled=False):
             server = FakeNovaClient.Server(id=id, uuid=uuid, host=host,
                                            vm_state=vm_state,
+                                           power_state=power_state,
                                            ha_enabled=ha_enabled)
             self._servers.append(server)
             return server
@@ -69,9 +71,12 @@ class FakeNovaClient(object):
             if not host:
                 host = 'fake-host-1'
             server = self.get(uuid)
-            # pretending that instance is evacuated successfully on given host
             setattr(server, 'OS-EXT-SRV-ATTR:hypervisor_hostname', host)
-            setattr(server, 'OS-EXT-STS:vm_state', 'active')
+            # pretending that instance is evacuated successfully on given host
+            if getattr(server, "OS-EXT-STS:vm_state") == 'active':
+                setattr(server, 'OS-EXT-STS:vm_state', 'active')
+            else:
+                setattr(server, 'OS-EXT-STS:vm_state', 'stopped')
 
         def stop(self, id):
             server = self.get(id)
