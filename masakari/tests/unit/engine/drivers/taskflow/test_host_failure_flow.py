@@ -53,15 +53,21 @@ class HostFailureTestCase(test.TestCase):
         self.novaclient = nova.API()
         self.fake_client = fakes.FakeNovaClient()
 
-    def _verify_instance_evacuated(self):
-        for server in self.novaclient.get_servers(self.ctxt,
-                                                  self.instance_host):
+    def _verify_instance_evacuated(self, old_instance_list):
+        for server in old_instance_list:
             instance = self.novaclient.get_server(self.ctxt, server.id)
             self.assertIn(getattr(instance, 'OS-EXT-STS:vm_state'),
                           ['active', 'stopped', 'error'])
-            self.assertNotEqual(self.instance_host,
-                                getattr(instance,
-                                        'OS-EXT-SRV-ATTR:hypervisor_hostname'))
+
+            if CONF.host_failure.ignore_instances_in_error_state and getattr(
+                    server, 'OS-EXT-STS:vm_state') == 'error':
+                self.assertEqual(
+                    self.instance_host, getattr(
+                        instance, 'OS-EXT-SRV-ATTR:hypervisor_hostname'))
+            else:
+                self.assertNotEqual(
+                    self.instance_host, getattr(
+                        instance, 'OS-EXT-SRV-ATTR:hypervisor_hostname'))
 
     def _test_disable_compute_service(self, mock_enable_disable):
         task = host_failure.DisableComputeServiceTask(self.novaclient)
@@ -70,24 +76,27 @@ class HostFailureTestCase(test.TestCase):
         mock_enable_disable.assert_called_once_with(
             self.ctxt, self.instance_host)
 
-    def _test_instance_list(self):
+    def _test_instance_list(self, instances_evacuation_count):
         task = host_failure.PrepareHAEnabledInstancesTask(self.novaclient)
-        instance_list = task.execute(
-            self.ctxt, self.instance_host)
-        evacuate_all_instances = CONF.host_failure.evacuate_all_instances
+        instance_list = task.execute(self.ctxt, self.instance_host)
 
-        if evacuate_all_instances:
-            self.assertEqual(len(self.fake_client.servers.list()),
-                             len(instance_list['instance_list']))
-        else:
-            for instance in instance_list['instance_list']:
+        for instance in instance_list['instance_list']:
+            if CONF.host_failure.ignore_instances_in_error_state:
+                self.assertNotEqual("error",
+                                    getattr(instance, "OS-EXT-STS:vm_state"))
+            if not CONF.host_failure.evacuate_all_instances:
                 self.assertTrue(instance.metadata.get('HA_Enabled', False))
+
+        self.assertEqual(instances_evacuation_count,
+                         len(instance_list['instance_list']))
 
         return instance_list
 
     def _evacuate_instances(self, instance_list, mock_enable_disable,
                             reserved_host=None):
         task = host_failure.EvacuateInstancesTask(self.novaclient)
+        old_instance_list = copy.deepcopy(instance_list['instance_list'])
+
         if reserved_host:
             task.execute(self.ctxt, self.instance_host,
                          instance_list['instance_list'],
@@ -99,7 +108,7 @@ class HostFailureTestCase(test.TestCase):
                 self.ctxt, self.instance_host, instance_list['instance_list'])
 
         # make sure instance is active and has different host
-        self._verify_instance_evacuated()
+        self._verify_instance_evacuated(old_instance_list)
 
     @mock.patch('masakari.compute.nova.novaclient')
     def test_host_failure_flow_for_auto_recovery(
@@ -118,7 +127,7 @@ class HostFailureTestCase(test.TestCase):
         self._test_disable_compute_service(mock_enable_disable)
 
         # execute PrepareHAEnabledInstancesTask
-        instance_list = self._test_instance_list()
+        instance_list = self._test_instance_list(2)
 
         # execute EvacuateInstancesTask
         self._evacuate_instances(instance_list, mock_enable_disable)
@@ -146,7 +155,7 @@ class HostFailureTestCase(test.TestCase):
         self._test_disable_compute_service(mock_enable_disable)
 
         # execute PrepareHAEnabledInstancesTask
-        instance_list = self._test_instance_list()
+        instance_list = self._test_instance_list(2)
 
         # execute EvacuateInstancesTask
         with mock.patch.object(host_obj.Host, "save") as mock_save:
@@ -181,6 +190,50 @@ class HostFailureTestCase(test.TestCase):
 
         # execute EvacuateInstancesTask
         self._evacuate_instances(instance_list, mock_enable_disable)
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    def test_host_failure_flow_ignore_error_instances(
+            self, _mock_novaclient, mock_unlock, mock_lock,
+            mock_enable_disable):
+        self.override_config("ignore_instances_in_error_state",
+                             True, "host_failure")
+        self.override_config("evacuate_all_instances",
+                             True, "host_failure")
+        _mock_novaclient.return_value = self.fake_client
+
+        # create ha_enabled test data
+        self.fake_client.servers.create(id="1", host=self.instance_host,
+                                        vm_state='error',
+                                        ha_enabled=True)
+        self.fake_client.servers.create(id="2", host=self.instance_host,
+                                        vm_state='active',
+                                        ha_enabled=True)
+
+        # execute PrepareHAEnabledInstancesTask
+        instance_list = self._test_instance_list(1)
+
+        # execute EvacuateInstancesTask
+        self._evacuate_instances(instance_list, mock_enable_disable)
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    def test_host_failure_flow_ignore_error_instances_raise_skip_host_recovery(
+            self, _mock_novaclient, mock_unlock, mock_lock,
+            mock_enable_disable):
+        self.override_config("ignore_instances_in_error_state",
+                             True, "host_failure")
+        self.override_config("evacuate_all_instances",
+                             False, "host_failure")
+        _mock_novaclient.return_value = self.fake_client
+
+        # create ha_enabled test data
+        self.fake_client.servers.create(id="1", host=self.instance_host,
+                                        vm_state='error',
+                                        ha_enabled=True)
+
+        # execute PrepareHAEnabledInstancesTask
+        task = host_failure.PrepareHAEnabledInstancesTask(self.novaclient)
+        self.assertRaises(exception.SkipHostRecoveryException, task.execute,
+                          self.ctxt, self.instance_host)
 
     @mock.patch('masakari.compute.nova.novaclient')
     def test_host_failure_flow_all_instances_active_resized_instance(

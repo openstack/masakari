@@ -70,17 +70,35 @@ class PrepareHAEnabledInstancesTask(base.MasakariTask):
         self.novaclient = novaclient
 
     def execute(self, context, host_name):
+        def _filter_instances(instance_list):
+            ha_enabled_instances = []
+            non_ha_enabled_instances = []
+
+            for instance in instance_list:
+                is_instance_ha_enabled = strutils.bool_from_string(
+                    instance.metadata.get('HA_Enabled', False))
+                if CONF.host_failure.ignore_instances_in_error_state and (
+                        getattr(instance, "OS-EXT-STS:vm_state") == "error"):
+                    if is_instance_ha_enabled:
+                        msg = ("Ignoring recovery of HA_Enabled instance "
+                               "'%(instance_id)s' as it is in 'error' state.")
+                        LOG.info(msg, {'instance_id': instance.id})
+                    continue
+
+                if is_instance_ha_enabled:
+                    ha_enabled_instances.append(instance)
+                else:
+                    non_ha_enabled_instances.append(instance)
+
+            if CONF.host_failure.evacuate_all_instances:
+                ha_enabled_instances.extend(non_ha_enabled_instances)
+
+            return ha_enabled_instances
+
         instance_list = self.novaclient.get_servers(context, host_name)
 
-        if CONF.host_failure.evacuate_all_instances:
-            instance_list = sorted(
-                instance_list, key=lambda k: strutils.bool_from_string(
-                    k.metadata.get('HA_Enabled', False)), reverse=True)
-        else:
-            instance_list = (
-                [instance for instance in instance_list if
-                 strutils.bool_from_string(instance.metadata.get('HA_Enabled',
-                                                                 False))])
+        instance_list = _filter_instances(instance_list)
+
         if not instance_list:
             msg = _('No instances to evacuate on host: %s.') % host_name
             LOG.info(msg)
