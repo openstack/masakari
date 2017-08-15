@@ -51,7 +51,8 @@ class NovaClientTestCase(test.TestCase):
         nova.novaclient(self.ctx)
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
             auth_url='http://keystonehost/identity',
-            password='strongpassword', project_name=None, username='adminuser'
+            password='strongpassword', project_domain_name='default',
+            project_name=None, user_domain_name='default', username='adminuser'
         )
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
@@ -69,7 +70,8 @@ class NovaClientTestCase(test.TestCase):
         nova.novaclient(self.ctx)
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
             auth_url='http://keystonehost/identity',
-            password='strongpassword', project_name=None, username='adminuser'
+            password='strongpassword', project_domain_name='default',
+            project_name=None, user_domain_name='default', username='adminuser'
         )
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
@@ -89,7 +91,8 @@ class NovaClientTestCase(test.TestCase):
         nova.novaclient(self.ctx)
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
             auth_url='http://keystonehost/identity',
-            password='strongpassword', project_name=None, username='adminuser'
+            password='strongpassword', project_domain_name='default',
+            project_name=None, user_domain_name='default', username='adminuser'
         )
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
@@ -108,7 +111,8 @@ class NovaClientTestCase(test.TestCase):
         nova.novaclient(self.ctx)
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
             auth_url='http://keystonehost/identity',
-            password='strongpassword', project_name=None, username='adminuser'
+            password='strongpassword', project_domain_name='default',
+            project_name=None, user_domain_name='default', username='adminuser'
         )
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),

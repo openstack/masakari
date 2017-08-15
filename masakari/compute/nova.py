@@ -107,10 +107,13 @@ def novaclient(context, timeout=None):
     # project_name, let's build a Keystone session.
     loader = keystoneauth1.loading.get_plugin_loader(
         CONF.keystone_authtoken.auth_type)
-    auth = loader.load_from_options(auth_url=url,
-                                    username=context.user_id,
-                                    password=context.auth_token,
-                                    project_name=context.project_name)
+    auth = loader.load_from_options(
+        auth_url=url,
+        username=context.user_id,
+        password=context.auth_token,
+        project_name=context.project_name,
+        user_domain_name=CONF.os_user_domain_name,
+        project_domain_name=CONF.os_project_domain_name)
     keystone_session = keystoneauth1.session.Session(auth=auth)
 
     client_obj = nova_client.Client(

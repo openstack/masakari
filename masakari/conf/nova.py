@@ -45,6 +45,14 @@ nova_opts = [
     cfg.URIOpt('os_privileged_user_auth_url',
                help='Auth URL associated with the OpenStack privileged '
                     'account.'),
+    cfg.StrOpt('os_user_domain_name',
+               default="default",
+               help='User domain name associated with the OpenStack '
+                    'privileged account.'),
+    cfg.StrOpt('os_project_domain_name',
+               default="default",
+               help='Project domain name associated with the OpenStack '
+                    'privileged account.'),
 ]
 
 
