@@ -1,0 +1,6 @@
+---
+prelude: >
+    Domain name is needed when using keystone v3 to create keystone session,
+    if not provided, InvalidInput exception will be raised. Two new options
+    "os_user_domain_name" and "os_project_domain_name" with default value
+    "default" are added to fix the issue.
