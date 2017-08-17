@@ -1,0 +1,17 @@
+---
+features:
+  - |
+    Operators can decide whether error instances should be allowed for
+    evacuation along with other instances from a failed source compute node
+    or not. Added a new config option ``ignore_instances_in_error_state`` to
+    achieve this. When set to True, masakari will skip the recovery of error
+    instances otherwise it will evacuate error instances as well from a failed
+    source compute node.
+
+    To use this feature, following config option need to be set under
+    ``host_failure`` section in 'masakari.conf' file::
+
+        [host_failure]
+        ignore_instances_in_error_state = False
+
+    The default value for this config option is set to False.

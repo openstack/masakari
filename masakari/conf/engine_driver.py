@@ -39,6 +39,15 @@ instances which contain 'HA_Enabled=True' metadata key, and then it will
 evacuate the remaining ones. When set to False, it will evacuate only those
 instances which contain 'HA_Enabled=True' metadata key."""),
 
+    cfg.BoolOpt('ignore_instances_in_error_state',
+                default=False,
+                help="""
+Operators can decide whether error instances should be allowed for evacuation
+from a failed source compute node or not. When set to True, it will ignore
+error instances from evacuation from a failed source compute node. When set to
+False, it will evacuate error instances along with other instances from a
+failed source compute node."""),
+
     cfg.BoolOpt("add_reserved_host_to_aggregate",
                 default=False,
                 help="""
