@@ -21,6 +21,10 @@
 XTRACE=$(set +o | grep xtrace)
 set +o xtrace
 
+if is_service_enabled tls-proxy; then
+    MASAKARI_SERVICE_PROTOCOL="https"
+fi
+
 # Functions
 # ---------
 
@@ -50,9 +54,9 @@ function create_masakari_accounts {
             "ha" "OpenStack High Availability")
         get_or_create_endpoint $masakari_service \
             "$REGION_NAME" \
-            "http://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
-            "http://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
-            "http://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s"
+            "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
+            "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
+            "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s"
     fi
 }
 
@@ -117,6 +121,10 @@ function configure_masakari {
     iniset $MASAKARI_CONF DEFAULT os_privileged_user_password "$SERVICE_PASSWORD"
     iniset $MASAKARI_CONF DEFAULT os_privileged_user_tenant "$SERVICE_PROJECT_NAME"
     iniset $MASAKARI_CONF DEFAULT graceful_shutdown_timeout "$SERVICE_GRACEFUL_SHUTDOWN_TIMEOUT"
+
+    if is_service_enabled tls-proxy; then
+        iniset $MASAKARI_CONF DEFAULT masakari_api_listen_port $MASAKARI_SERVICE_PORT_INT
+    fi
 }
 
 # install_masakari() - Collect source and prepare
@@ -149,6 +157,11 @@ function init_masakari {
 
 # start_masakari() - Start running processes, including screen
 function start_masakari {
+
+    if is_service_enabled tls-proxy; then
+        start_tls_proxy masakari-service '*' $MASAKARI_SERVICE_PORT $SERVICE_HOST $MASAKARI_SERVICE_PORT_INT
+    fi
+
     run_process masakari-api "$MASAKARI_BIN_DIR/masakari-api --config-file=$MASAKARI_CONF --debug"
     run_process masakari-engine "$MASAKARI_BIN_DIR/masakari-engine --config-file=$MASAKARI_CONF --debug"
 }
