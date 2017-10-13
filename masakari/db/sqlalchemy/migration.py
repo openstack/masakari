@@ -72,5 +72,5 @@ def db_sync(version=None, init_version=INIT_VERSION, engine=None):
                                      abs_path=MIGRATE_REPO_PATH,
                                      version=version,
                                      init_version=init_version)
-    except oslo_exception.DbMigrationError as exc:
+    except oslo_exception.DBMigrationError as exc:
         raise exception.InvalidInput(reason=exc)
