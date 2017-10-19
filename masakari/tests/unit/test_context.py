@@ -130,22 +130,22 @@ class ContextTestCase(test.NoDBTestCase):
         self.assertDictContainsSubset(expected_values, values2)
 
     def test_convert_from_dict_then_to_dict(self):
-        values = {'is_admin': False,
+        values = {'is_admin': True,
+                  'tenant': '222',
                   'project_id': '222',
-                  'project_name': None,
-                  'read_deleted': 'no',
-                  'remote_address': None,
-                  'request_id':
-                  'req-679033b7-1755-4929-bf85-eb3bfaef7e0b',
+                  'project_name': 'projname',
+                  'read_deleted': 'yes',
+                  'remote_address': '192.0.2.1',
+                  'request_id': 'req-679033b7-1755-4929-bf85-eb3bfaef7e0b',
                   'service_catalog': [],
                   'timestamp': '2016-03-02T22:31:56.641629',
+                  'user': '111',
                   'user_id': '111',
-                  'user_name': None}
+                  'user_name': 'username'}
 
         ctx = context.RequestContext.from_dict(values)
         self.assertEqual('111', ctx.user)
         self.assertEqual('222', ctx.tenant)
-        self.assertEqual('111', ctx.user_id)
         self.assertEqual('111', ctx.user_id)
         self.assertEqual('222', ctx.project_id)
         values2 = ctx.to_dict()
