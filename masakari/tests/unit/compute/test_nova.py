@@ -57,8 +57,9 @@ class NovaClientTestCase(test.TestCase):
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name=None,
-            insecure=False, endpoint_type='publicURL', cacert=None,
-            timeout=None, global_request_id=self.ctx.global_id,
+            insecure=False, endpoint_type='publicURL',
+            service_type='compute', service_name='Compute Service',
+            cacert=None, timeout=None, global_request_id=self.ctx.global_id,
             extensions=nova.nova_extensions)
 
     @mock.patch('novaclient.api_versions.APIVersion')
@@ -76,8 +77,9 @@ class NovaClientTestCase(test.TestCase):
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name=None,
-            insecure=False, endpoint_type='publicURL', cacert=None,
-            timeout=None, global_request_id=self.ctx.global_id,
+            insecure=False, endpoint_type='publicURL',
+            service_type='compute', service_name='Compute Service',
+            cacert=None, timeout=None, global_request_id=self.ctx.global_id,
             extensions=nova.nova_extensions)
 
     @mock.patch('novaclient.api_versions.APIVersion')
@@ -97,8 +99,9 @@ class NovaClientTestCase(test.TestCase):
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name=None,
-            insecure=False, endpoint_type='publicURL', cacert=None,
-            timeout=None, global_request_id=self.ctx.global_id,
+            insecure=False, endpoint_type='publicURL',
+            service_type='compute', service_name='Compute Service',
+            cacert=None, timeout=None, global_request_id=self.ctx.global_id,
             extensions=nova.nova_extensions)
 
     @mock.patch('novaclient.api_versions.APIVersion')
@@ -117,8 +120,9 @@ class NovaClientTestCase(test.TestCase):
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name='farfaraway',
-            insecure=False, endpoint_type='publicURL', cacert=None,
-            timeout=None, global_request_id=self.ctx.global_id,
+            insecure=False, endpoint_type='publicURL',
+            service_type='compute', service_name='Compute Service',
+            cacert=None, timeout=None, global_request_id=self.ctx.global_id,
             extensions=nova.nova_extensions)
 
 

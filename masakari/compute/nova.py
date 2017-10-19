@@ -124,6 +124,8 @@ def novaclient(context, timeout=None):
         global_request_id=context.global_id,
         region_name=CONF.os_region_name,
         endpoint_type=endpoint_type,
+        service_type=service_type,
+        service_name=service_name,
         cacert=CONF.nova_ca_certificates_file,
         extensions=nova_extensions)
 
