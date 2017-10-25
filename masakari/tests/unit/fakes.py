@@ -24,12 +24,14 @@ NOW = timeutils.utcnow().replace(microsecond=0)
 class FakeNovaClient(object):
     class Server(object):
         def __init__(self, id=None, uuid=None, host=None, vm_state=None,
-                     power_state=1, ha_enabled=None, locked=False):
+                     task_state=None, power_state=1, ha_enabled=None,
+                     locked=False):
             self.id = id
             self.uuid = uuid or uuidutils.generate_uuid()
             self.host = host
             setattr(self, 'OS-EXT-SRV-ATTR:hypervisor_hostname', host)
             setattr(self, 'OS-EXT-STS:vm_state', vm_state)
+            setattr(self, 'OS-EXT-STS:task_state', task_state)
             setattr(self, 'OS-EXT-STS:power_state', power_state)
             self.metadata = {"HA_Enabled": ha_enabled}
             self.locked = locked
@@ -39,9 +41,10 @@ class FakeNovaClient(object):
             self._servers = []
 
         def create(self, id, uuid=None, host=None, vm_state='active',
-                   power_state=1, ha_enabled=False):
+                   task_state=None, power_state=1, ha_enabled=False):
             server = FakeNovaClient.Server(id=id, uuid=uuid, host=host,
                                            vm_state=vm_state,
+                                           task_state=task_state,
                                            power_state=power_state,
                                            ha_enabled=ha_enabled)
             self._servers.append(server)

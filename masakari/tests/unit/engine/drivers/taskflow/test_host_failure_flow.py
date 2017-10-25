@@ -314,3 +314,45 @@ class HostFailureTestCase(test.TestCase):
         task = host_failure.PrepareHAEnabledInstancesTask(self.novaclient)
         self.assertRaises(exception.SkipHostRecoveryException, task.execute,
                           self.ctxt, self.instance_host)
+
+    @mock.patch.object(nova.API, 'stop_server')
+    @mock.patch.object(nova.API, 'reset_instance_state')
+    @mock.patch('masakari.compute.nova.novaclient')
+    def test_host_failure_flow_for_task_state_not_none(
+            self, _mock_novaclient, mock_reset, mock_stop, mock_unlock,
+            mock_lock, mock_enable_disable):
+        _mock_novaclient.return_value = self.fake_client
+
+        # create ha_enabled test data
+        self.fake_client.servers.create(id="1", host=self.instance_host,
+                                        vm_state='active',
+                                        task_state='fake_task_state',
+                                        power_state=None,
+                                        ha_enabled=True)
+        self.fake_client.servers.create(id="2", host=self.instance_host,
+                                        vm_state='stopped',
+                                        task_state='fake_task_state',
+                                        power_state=None,
+                                        ha_enabled=True)
+        self.fake_client.servers.create(id="3", host=self.instance_host,
+                                        vm_state='error',
+                                        task_state='fake_task_state',
+                                        power_state=None,
+                                        ha_enabled=True)
+        instance_list = {
+            "instance_list": self.fake_client.servers.list()
+        }
+
+        # execute EvacuateInstancesTask
+        self._evacuate_instances(instance_list, mock_enable_disable)
+
+        reset_calls = [mock.call(self.ctxt, "1"),
+                       mock.call(self.ctxt, "2"),
+                       mock.call(self.ctxt, "3"),
+                       mock.call(self.ctxt, "3")]
+        mock_reset.assert_has_calls(reset_calls)
+        self.assertEqual(4, mock_reset.call_count)
+        stop_calls = [mock.call(self.ctxt, "2"),
+                      mock.call(self.ctxt, "3")]
+        mock_stop.assert_has_calls(stop_calls)
+        self.assertEqual(2, mock_stop.call_count)

@@ -177,6 +177,7 @@ class EvacuateInstancesTask(base.MasakariTask):
 
         try:
             vm_state = getattr(instance, "OS-EXT-STS:vm_state")
+            task_state = getattr(instance, "OS-EXT-STS:task_state")
 
             # Nova evacuates an instance only when vm_state is in active,
             # stopped or error state. If an instance is in other than active,
@@ -191,6 +192,15 @@ class EvacuateInstancesTask(base.MasakariTask):
                     stop_instance = False
 
                 vm_state = getattr(instance, "OS-EXT-STS:vm_state")
+
+            elif task_state is not None:
+                # Nova fails evacuation when the instance's task_state is not
+                # none. In this case, masakari resets the instance's vm_state
+                # to 'error' and task_state to none.
+                self.novaclient.reset_instance_state(context, instance.id)
+                instance = self.novaclient.get_server(context, instance.id)
+                if vm_state == 'active':
+                    stop_instance = False
 
             # evacuate the instance
             self.novaclient.evacuate_instance(
@@ -207,7 +217,7 @@ class EvacuateInstancesTask(base.MasakariTask):
                     CONF.wait_period_after_evacuation,
                     periodic_call.wait)
 
-                if vm_state not in ['active', 'stopped']:
+                if vm_state != 'active':
                     if stop_instance:
                         self._stop_after_evacuation(context, instance)
                         # If the instance was in 'error' state before failure
