@@ -69,14 +69,10 @@ function create_masakari_accounts {
         if [ "$MASAKARI_USE_MOD_WSGI" == "False" ]; then
             get_or_create_endpoint $masakari_service \
                 "$REGION_NAME" \
-                "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
-                "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
                 "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s"
         else
             get_or_create_endpoint $masakari_service \
                 "$REGION_NAME" \
-                "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST/instance-ha/v1/\$(tenant_id)s" \
-                "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST/instance-ha/v1/\$(tenant_id)s" \
                 "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST/instance-ha/v1/\$(tenant_id)s"
         fi
     fi

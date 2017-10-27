@@ -60,7 +60,7 @@ Configure masakari-api
 
    .. code-block:: shell-session
 
-      openstack endpoint create --region RegionOne masakari --publicurl http://<ip-address>:<port>/v1/%\(tenant_id\)s --adminurl http://<ip-address>:<port>/v1/%\(tenant_id\)s --internalurl http://<ip-address>:<port>/v1/%\(tenant_id\)s
+      openstack endpoint create --region RegionOne masakari --publicurl http://<ip-address>:<port>/v1/%\(tenant_id\)s
 
 #. Clone masakari using
 
