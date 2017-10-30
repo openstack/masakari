@@ -122,6 +122,8 @@ function configure_masakari {
     iniset $MASAKARI_CONF DEFAULT os_privileged_user_tenant "$SERVICE_PROJECT_NAME"
     iniset $MASAKARI_CONF DEFAULT graceful_shutdown_timeout "$SERVICE_GRACEFUL_SHUTDOWN_TIMEOUT"
 
+    iniset_rpc_backend masakari $MASAKARI_CONF DEFAULT
+
     if is_service_enabled tls-proxy; then
         iniset $MASAKARI_CONF DEFAULT masakari_api_listen_port $MASAKARI_SERVICE_PORT_INT
     fi
