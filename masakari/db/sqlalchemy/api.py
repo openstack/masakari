@@ -228,7 +228,7 @@ def failover_segment_get_all_by_filters(
                                                marker=marker_row,
                                                sort_dirs=sort_dirs)
     except db_exc.InvalidSortKey as e:
-        raise exception.InvalidSortKey(e.message)
+        raise exception.InvalidSortKey(e)
 
     return query.all()
 
@@ -395,7 +395,7 @@ def host_get_all_by_filters(
                                                marker=marker_row,
                                                sort_dirs=sort_dirs)
     except db_exc.InvalidSortKey as e:
-        raise exception.InvalidSortKey(e.message)
+        raise exception.InvalidSortKey(e)
 
     return query.all()
 
@@ -547,7 +547,7 @@ def notifications_get_all_by_filters(
                                                marker=marker_row,
                                                sort_dirs=sort_dirs)
     except db_exc.InvalidSortKey as err:
-        raise exception.InvalidSortKey(err.message)
+        raise exception.InvalidSortKey(err)
 
     return query.all()
 
