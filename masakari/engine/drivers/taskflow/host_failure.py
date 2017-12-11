@@ -254,13 +254,6 @@ class EvacuateInstancesTask(base.MasakariTask):
                 self.novaclient.enable_disable_service(
                     context, reserved_host.name, enable=True)
 
-                # Sleep until nova-compute service is marked as enabled.
-                msg = ("Sleeping %(wait)s sec before starting recovery "
-                       "thread until nova recognizes the node up.")
-                LOG.info(msg, {
-                    'wait': CONF.wait_period_after_service_update})
-                eventlet.sleep(CONF.wait_period_after_service_update)
-
                 # Set reserved property of reserved_host to False
                 reserved_host.reserved = False
                 reserved_host.save()
