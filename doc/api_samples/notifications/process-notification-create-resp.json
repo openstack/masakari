@@ -1,0 +1,18 @@
+{
+    "notification": {
+        "notification_uuid": "2b412acf-c55a-442d-8fd2-e823ec0d827f",
+        "status": "new",
+        "source_host_uuid": "083a8474-22c0-407f-b89b-c569134c3bfd",
+        "deleted": false,
+        "created_at": "2017-04-24T06:05:29.387678",
+        "updated_at": null,
+        "id": 2,
+        "generated_time": "2017-04-21T17:29:55.000000",
+        "deleted_at": null,
+        "type": "PROCESS",
+        "payload": {
+            "process_name": "nova-compute",
+            "event": "stopped"
+        }
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "host": {
+        "reserved": true,
+        "uuid": "083a8474-22c0-407f-b89b-c569134c3bfd",
+        "deleted": false,
+        "on_maintenance": false,
+        "created_at": "2017-04-21T10:09:20.000000",
+        "control_attributes": "SSH",
+        "updated_at": "2017-04-21T11:12:43.351320",
+        "name": "openstack-VirtualBox",
+        "failover_segment": {
+            "uuid": "9e800031-6946-4b43-bf09-8b3d1cab792b",
+            "deleted": false,
+            "created_at": "2017-04-20T10:17:17.000000",
+            "description": null,
+            "recovery_method": "auto",
+            "updated_at": null,
+            "service_type": "Compute",
+            "deleted_at": null,
+            "id": 2,
+            "name": "new_segment"
+        },
+        "deleted_at": null,
+        "type": "COMPUTE",
+        "id": 1,
+        "failover_segment_id": "9e800031-6946-4b43-bf09-8b3d1cab792b"
+    }
+}

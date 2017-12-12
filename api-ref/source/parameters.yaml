@@ -1,0 +1,417 @@
+# variables in path
+api_version:
+  in: path
+  required: true
+  type: string
+  description: >
+    The API version as returned in the links from the ``GET /`` call.
+host_id_path:
+  description: |
+    The UUID of the host.
+  in: path
+  required: true
+  type: string
+notification_id_path:
+  description: |
+    The UUID of the notification.
+  in: path
+  required: true
+  type: string
+segment_id_path:
+  description: |
+    The UUID of the segment.
+  in: path
+  required: true
+  type: string
+
+# variables in query
+generated_since_query_notifications:
+  description: |
+    Filter the notifications list result by notification generated time.
+  in: query
+  required: false
+  type: string
+limit:
+  description: |
+    Requests a page size of items. Returns a number of items up to a limit value.
+    Use the ``limit`` parameter to make an initial limited request and use the ID
+    of the last-seen item from the response as the ``marker`` parameter value in a
+    subsequent limited request.
+  in: query
+  required: false
+  type: integer
+marker:
+  description: |
+    The ID of the last-seen item. Use the ``limit`` parameter to make an initial limited
+    request and use the ID of the last-seen item from the response as the ``marker``
+    parameter value in a subsequent limited request.
+  in: query
+  required: false
+  type: string
+on_maintenance_query_host:
+  description: |
+    Filter the host list result by on_maintenance.
+  in: query
+  required: false
+  type: boolean
+recovery_method_query_segment:
+  description: |
+    Filter the segment list result by recovery_method.
+  in: query
+  required: false
+  type: string
+reserved_query_host:
+  description: |
+    Filter the host list result by reserved flag.
+  in: query
+  required: false
+  type: boolean
+service_type_query_segment:
+  description: |
+    Filter the segment list result by service_type.
+  in: query
+  required: false
+  type: string
+sort_dir:
+  description: |
+    Sort direction. A valid value is ``asc`` (ascending) or ``desc`` (descending).
+    Default is ``desc``. You can specify multiple pairs of sort key and sort direction
+    query parameters. If you omit the sort direction in a pair, the API uses the natural
+    sorting direction of the direction of the segment ``sort_key`` attribute.
+  in: query
+  required: false
+  type: string
+sort_key_host:
+  description: |
+    Sorts by a hosts attribute. Default attribute is ``created``. You can specify
+    multiple pairs of sort key and sort direction query parameters. If you omit the
+    sort direction in a pair, the API uses the natural sorting direction of the segment
+    ``sort_key`` attribute. The sort keys are limited to:
+
+    - ``created_at``
+    - ``type``
+    - ``name``
+    - ``updated_at``
+    - ``uuid``
+    - ``reserved``
+    - ``on_maintenance``
+  in: query
+  required: false
+  type: string
+sort_key_notification:
+  description: |
+    Sorts by a notification attribute. Default attribute is ``created``. You can specify
+    multiple pairs of sort key and sort direction query parameters. If you omit the
+    sort direction in a pair, the API uses the natural sorting direction of the segment
+    ``sort_key`` attribute. The sort keys are limited to:
+
+    - ``created_at``
+    - ``type``
+    - ``generated_time``
+    - ``updated_at``
+    - ``uuid``
+    - ``payload``
+    - ``status``
+    - ``source_host_uuid``
+  in: query
+  required: false
+  type: string
+sort_key_segment:
+  description: |
+    Sorts by a segment attribute. Default attribute is ``created``. You can specify
+    multiple pairs of sort key and sort direction query parameters. If you omit the
+    sort direction in a pair, the API uses the natural sorting direction of the segment
+    ``sort_key`` attribute. The sort keys are limited to:
+
+    - ``created_at``
+    - ``description``
+    - ``name``
+    - ``updated_at``
+    - ``uuid``
+    - ``recovery_method``
+    - ``service_type``
+  in: query
+  required: false
+  type: string
+source_host_uuid_query_notifications:
+  description: |
+    Filter the notifications list result by source_host_uuid.
+  in: query
+  required: false
+  type: string
+type_query_host:
+  description: |
+    Filter the host list result by type of host.
+  in: query
+  required: false
+  type: boolean
+type_query_notifications:
+  description: |
+    Filter the notifications list result by notification type.
+  in: query
+  required: false
+  type: string
+
+# variables in body
+control_attributes:
+  description: |
+    Attributes to control host.
+  in: body
+  required: true
+  type: string
+created:
+  description: |
+    The date and time when the resource was created. The date and time
+    stamp format is `ISO 8601 <https://en.wikipedia.org/wiki/ISO_8601>`_
+
+    ::
+
+      CCYY-MM-DDThh:mm:ss±hh:mm
+
+    For example, ``2017-04-21T09:49:58-05:00``. The ``±hh:mm``
+    value, if included, is the time zone as an offset from UTC.  In
+    the previous example, the offset value is ``-05:00``.
+  in: body
+  required: true
+  type: string
+deleted:
+  description: |
+    A boolean indicates whether this resource is deleted or not, if it has
+    not been deleted, ``false`` will appear.
+  in: body
+  required: true
+  type: boolean
+generated_time:
+  description: |
+    The date and time when the notification was created. The date and time
+    stamp format is `ISO 8601 <https://en.wikipedia.org/wiki/ISO_8601>`_
+
+    ::
+
+      CCYY-MM-DDThh:mm:ss±hh:mm
+
+    For example, ``2017-04-21T09:49:58-05:00``. The ``±hh:mm``
+    value, if included, is the time zone as an offset from UTC.  In
+    the previous example, the offset value is ``-05:00``.
+  in: body
+  required: true
+  type: string
+host:
+  description: |
+    A ``host`` object.
+  in: body
+  required: true
+  type: object
+host_id:
+  description: |
+    ID of host.
+  in: body
+  required: true
+  type: string
+host_name:
+  description: |
+    The host name.
+  in: body
+  required: true
+  type: string
+host_type:
+  description: |
+    Type of host.
+  in: body
+  required: true
+  type: string
+host_uuid:
+  description: |
+    The UUID of the host.
+  in: body
+  required: true
+  type: string
+hosts:
+  description: |
+    A list of ``host`` objects.
+  in: body
+  required: true
+  type: array
+links:
+  description: |
+    Links to the resources in question.
+  in: body
+  required: true
+  type: array
+notification:
+  description: |
+    A ``notification`` object.
+  in: body
+  required: true
+  type: object
+notification_host_name:
+  description: |
+    A name of host for which notification is created.
+  in: body
+  required: true
+  type: object
+notification_id:
+  description: |
+    ID of notification.
+  in: body
+  required: true
+  type: string
+notification_payload:
+  description: |
+    Payload for notification.
+
+    .. note:: This is a JSON string.
+  in: body
+  required: true
+  type: string
+notification_status:
+  description: |
+    The notification status.
+  in: body
+  required: true
+  type: string
+notification_type:
+  description: |
+    Type of notification, can be either ``PROCESS``, ``COMPUTE_HOST`` or ``VM``.
+  in: body
+  required: true
+  type: string
+notification_uuid:
+  description: |
+    The UUID of the notification.
+  in: body
+  required: true
+  type: string
+notifications:
+  description: |
+    A list of ``notification`` objects.
+  in: body
+  required: true
+  type: array
+on_maintenance:
+  description: |
+    A boolean indicates whether this host is on maintenance or not, if it is
+    not on maintenance mode, ``false`` will appear.
+  in: body
+  required: false
+  type: boolean
+reserved:
+  description: |
+    A boolean indicates whether this host is reserved or not, if it is
+    not reserved, ``false`` will appear.
+  in: body
+  required: false
+  type: boolean
+segment:
+  description: |
+    A ``segment`` object.
+  in: body
+  required: true
+  type: object
+segment_description:
+  type: string
+  in: body
+  required: false
+  description: |
+    A free form description of the segment. Limited to 255 characters
+    in length.
+segment_id:
+  description: |
+    The Id of the segment.
+  in: body
+  required: true
+  type: string
+segment_name:
+  description: |
+    The segment name.
+  in: body
+  required: true
+  type: string
+segment_recovery_method:
+  type: string
+  in: body
+  required: true
+  description: |
+    Type of recovery if any host in this segment goes down. User can mention
+    either 'AUTO', 'RESERVED_HOST', 'AUTO_PRIORITY' or 'RH_PRIORITY'.
+segment_service_type:
+  type: string
+  in: body
+  required: true
+  description: |
+    The name of service which will be deployed in this segment. As of now
+    user can mention 'COMPUTE' as service_type.
+segment_uuid:
+  description: |
+    The UUID of the segment.
+  in: body
+  required: true
+  type: string
+segments:
+  description: |
+    A list of ``segment`` objects.
+  in: body
+  required: true
+  type: array
+source_host_uuid:
+  description: |
+    The UUID of host for which notification is generated.
+  in: body
+  required: true
+  type: string
+updated:
+  description: |
+    The date and time when the resource was updated. The date and time
+    stamp format is `ISO 8601 <https://en.wikipedia.org/wiki/ISO_8601>`_
+
+    ::
+
+      CCYY-MM-DDThh:mm:ss±hh:mm
+
+    For example, ``2017-04-21T09:49:58-05:00``. The ``±hh:mm``
+    value, if included, is the time zone as an offset from UTC.  In
+    the previous example, the offset value is ``-05:00``.
+  in: body
+  required: true
+  type: string
+version:
+  description: |
+    The version.
+  in: body
+  required: true
+  type: string
+version_id:
+  type: string
+  in: body
+  required: true
+  description: >
+    A common name for the version in question. Informative only, it
+    has no real semantic meaning.
+version_max:
+  type: string
+  in: body
+  required: true
+  description: >
+    The maximum version supported by API.
+version_min:
+  type: string
+  in: body
+  required: true
+  description: >
+    The minimum version supported by API.
+version_status:
+  type: string
+  in: body
+  required: true
+  description: |
+    The status of this API version. This can be one of:
+
+    - ``CURRENT``: this is the preferred version of the API to use
+    - ``SUPPORTED``: this is an older, but still supported version of the API
+    - ``DEPRECATED``: a deprecated version of the API that is slated for removal
+versions:
+  type: array
+  in: body
+  required: true
+  description: >
+    A list of version objects that describe the API versions available.

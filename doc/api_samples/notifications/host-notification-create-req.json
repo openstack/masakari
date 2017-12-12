@@ -1,0 +1,12 @@
+{
+    "notification": {
+        "type": "COMPUTE_HOST",
+        "generated_time": "2017-04-24 08:34:46",
+        "payload": {
+            "event": "STOPPED",
+            "host_status": "UNKNOWN",
+            "cluster_status": "OFFLINE"
+        },
+        "hostname": "openstack-VirtualBox"
+    }
+}

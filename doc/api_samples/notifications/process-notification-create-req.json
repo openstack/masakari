@@ -1,0 +1,11 @@
+{
+    "notification": {
+        "type": "PROCESS",
+        "generated_time": "2017-04-21 17:29:55",
+        "payload": {
+            "process_name": "nova-compute",
+            "event": "stopped"
+        },
+        "hostname": "openstack-VirtualBox"
+    }
+}

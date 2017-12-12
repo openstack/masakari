@@ -1,0 +1,26 @@
+{
+    "version": {
+        "id": "v1",
+        "links": [
+            {
+                "href": "http://openstack.example.com/v1/",
+                "rel": "self"
+            },
+            {
+                "href": "http://docs.openstack.org/",
+                "rel": "describedby",
+                "type": "text/html"
+            }
+        ],
+        "media-types": [
+            {
+                "base": "application/json",
+                "type": "application/vnd.openstack.masakari+json;version=1"
+            }
+        ],
+        "status": "CURRENT",
+        "version": "1.0",
+        "min_version": "1.0",
+        "updated": "2016-07-01T11:33:21Z"
+    }
+}
