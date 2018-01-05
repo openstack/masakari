@@ -166,6 +166,47 @@ class HostFailureTestCase(test.TestCase):
             self.assertIn(reserved_host.name,
                           self.fake_client.aggregates.get('1').hosts)
 
+    @mock.patch.object(nova.API, 'add_host_to_aggregate')
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.LOG')
+    def test_host_failure_flow_ignores_conflict_error(
+            self, mock_log, _mock_novaclient, mock_add_host, mock_unlock,
+            mock_lock, mock_enable_disable):
+        _mock_novaclient.return_value = self.fake_client
+        mock_add_host.side_effect = exception.Conflict
+        self.override_config("add_reserved_host_to_aggregate",
+                             True, "host_failure")
+
+        # create test data
+        self.fake_client.servers.create(id="1", host=self.instance_host,
+                                        ha_enabled=True)
+        reserved_host = fakes.create_fake_host(name="fake-reserved-host",
+                                               reserved=True)
+        self.fake_client.aggregates.create(id="1", name='fake_agg',
+                                           hosts=[self.instance_host,
+                                                  reserved_host.name])
+        expected_msg_format = "Host '%(reserved_host)s' already has been " \
+                              "added to aggregate '%(aggregate)s'."
+        expected_msg_params = {'aggregate': 'fake_agg',
+                               'reserved_host': u'fake-reserved-host'}
+
+        # execute DisableComputeServiceTask
+        self._test_disable_compute_service(mock_enable_disable)
+
+        # execute PrepareHAEnabledInstancesTask
+        instance_list = self._test_instance_list(1)
+
+        # execute EvacuateInstancesTask
+        with mock.patch.object(host_obj.Host, "save") as mock_save:
+            self._evacuate_instances(
+                instance_list, mock_enable_disable,
+                reserved_host=reserved_host)
+            self.assertEqual(1, mock_save.call_count)
+            self.assertIn(reserved_host.name,
+                          self.fake_client.aggregates.get('1').hosts)
+            mock_log.info.assert_any_call(
+                expected_msg_format, expected_msg_params)
+
     @ddt.data('active', 'rescued', 'paused', 'shelved', 'suspended',
               'error', 'stopped', 'resized')
     @mock.patch('masakari.compute.nova.novaclient')
