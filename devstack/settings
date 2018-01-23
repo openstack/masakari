@@ -31,8 +31,5 @@ MASAKARI_MANAGE=$MASAKARI_BIN_DIR/masakari-manage
 MASAKARI_SERVICE_PORT=${MASAKARI_SERVICE_PORT:-15868}
 MASAKARI_SERVICE_PORT_INT=${MASAKARI_SERVICE_PORT_INT:-25868}
 
-# Tell Tempest this project is present
-TEMPEST_SERVICES+=,masakari
-
 enable_service masakari masakari-api masakari-engine
 
