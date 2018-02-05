@@ -68,6 +68,8 @@ This section will help you in configuring masakari mannualy.
     operators_guide
     sample_config
     sample_policy
+    recovery_workflow_sample_config
+    recovery_workflow_custom_task
 
 Indices and tables
 ==================

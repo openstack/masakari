@@ -17,6 +17,7 @@ import eventlet
 from eventlet import greenpool
 from eventlet import timeout as etimeout
 
+from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_service import loopingcall
 from oslo_utils import excutils
@@ -40,6 +41,8 @@ ACTION = 'instance:evacuate'
 
 # Instance power_state
 SHUTDOWN = 4
+
+TASKFLOW_CONF = cfg.CONF.taskflow_driver_recovery_flows
 
 
 class DisableComputeServiceTask(base.MasakariTask):
@@ -322,13 +325,30 @@ def get_auto_flow(novaclient, process_what):
     """
 
     flow_name = ACTION.replace(":", "_") + "_engine"
-    auto_evacuate_flow = linear_flow.Flow(flow_name)
+    nested_flow = linear_flow.Flow(flow_name)
 
-    auto_evacuate_flow.add(DisableComputeServiceTask(novaclient),
-                           PrepareHAEnabledInstancesTask(novaclient),
-                           EvacuateInstancesTask(novaclient))
+    task_dict = TASKFLOW_CONF.host_auto_failure_recovery_tasks
 
-    return taskflow.engines.load(auto_evacuate_flow, store=process_what)
+    auto_evacuate_flow_pre = linear_flow.Flow('pre_tasks')
+    for plugin in base.get_recovery_flow(task_dict['pre'],
+                                         novaclient=novaclient):
+        auto_evacuate_flow_pre.add(plugin)
+
+    auto_evacuate_flow_main = linear_flow.Flow('main_tasks')
+    for plugin in base.get_recovery_flow(task_dict['main'],
+                                         novaclient=novaclient):
+        auto_evacuate_flow_main.add(plugin)
+
+    auto_evacuate_flow_post = linear_flow.Flow('post_tasks')
+    for plugin in base.get_recovery_flow(task_dict['post'],
+                                         novaclient=novaclient):
+        auto_evacuate_flow_post.add(plugin)
+
+    nested_flow.add(auto_evacuate_flow_pre)
+    nested_flow.add(auto_evacuate_flow_main)
+    nested_flow.add(auto_evacuate_flow_post)
+
+    return taskflow.engines.load(nested_flow, store=process_what)
 
 
 def get_rh_flow(novaclient, process_what):
@@ -344,13 +364,28 @@ def get_rh_flow(novaclient, process_what):
     flow_name = ACTION.replace(":", "_") + "_engine"
     nested_flow = linear_flow.Flow(flow_name)
 
-    rh_flow = linear_flow.Flow(
+    task_dict = TASKFLOW_CONF.host_rh_failure_recovery_tasks
+
+    rh_evacuate_flow_pre = linear_flow.Flow('pre_tasks')
+    for plugin in base.get_recovery_flow(task_dict['pre'],
+                                         novaclient=novaclient):
+        rh_evacuate_flow_pre.add(plugin)
+
+    rh_evacuate_flow_main = linear_flow.Flow(
         "retry_%s" % flow_name, retry=retry.ParameterizedForEach(
             rebind=['reserved_host_list'], provides='reserved_host'))
 
-    rh_flow.add(PrepareHAEnabledInstancesTask(novaclient),
-                EvacuateInstancesTask(novaclient))
+    for plugin in base.get_recovery_flow(task_dict['main'],
+                                         novaclient=novaclient):
+        rh_evacuate_flow_main.add(plugin)
 
-    nested_flow.add(DisableComputeServiceTask(novaclient), rh_flow)
+    rh_evacuate_flow_post = linear_flow.Flow('post_tasks')
+    for plugin in base.get_recovery_flow(task_dict['post'],
+                                         novaclient=novaclient):
+        rh_evacuate_flow_post.add(plugin)
+
+    nested_flow.add(rh_evacuate_flow_pre)
+    nested_flow.add(rh_evacuate_flow_main)
+    nested_flow.add(rh_evacuate_flow_post)
 
     return taskflow.engines.load(nested_flow, store=process_what)

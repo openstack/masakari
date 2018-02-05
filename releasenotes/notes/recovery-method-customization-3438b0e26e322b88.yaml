@@ -1,0 +1,20 @@
+---
+features:
+  - |
+    Operator can now customize workflows to process each type of failure
+    notifications (hosts, instance and process) as per their requirements.
+    Added below new config section for customized recovery flow in a new conf
+    file masakari-custom-recovery-methods.conf
+
+    - [taskflow_driver_recovery_flows]
+
+    Under [taskflow_driver_recovery_flows] is added below five new config options
+
+    - 'instance_failure_recovery_tasks' is a dict of tasks which will recover
+      instance failure.
+    - 'process_failure_recovery_tasks' is a dict of tasks which will recover
+      process failure.
+    - 'host_auto_failure_recovery_tasks' is a dict of tasks which will recover
+      host failure for auto recovery.
+    - 'host_rh_failure_recovery_tasks' is a dict of tasks which will recover
+      host failure for rh recovery on failure host.

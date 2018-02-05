@@ -15,6 +15,7 @@
 
 from eventlet import timeout as etimeout
 
+from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_service import loopingcall
 import taskflow.engines
@@ -31,6 +32,8 @@ CONF = masakari.conf.CONF
 LOG = logging.getLogger(__name__)
 
 ACTION = "process:recovery"
+
+TASKFLOW_CONF = cfg.CONF.taskflow_driver_recovery_flows
 
 
 class DisableComputeNodeTask(base.MasakariTask):
@@ -93,11 +96,27 @@ def get_compute_process_recovery_flow(novaclient, process_what):
     """
 
     flow_name = ACTION.replace(":", "_") + "_engine"
-    compute_process_recovery_workflow = linear_flow.Flow(flow_name)
+    nested_flow = linear_flow.Flow(flow_name)
 
-    compute_process_recovery_workflow.add(
-        DisableComputeNodeTask(novaclient),
-        ConfirmComputeNodeDisabledTask(novaclient))
+    task_dict = TASKFLOW_CONF.process_failure_recovery_tasks
 
-    return taskflow.engines.load(compute_process_recovery_workflow,
-                                 store=process_what)
+    process_recovery_workflow_pre = linear_flow.Flow('pre_tasks')
+    for plugin in base.get_recovery_flow(task_dict['pre'],
+                                         novaclient=novaclient):
+        process_recovery_workflow_pre.add(plugin)
+
+    process_recovery_workflow_main = linear_flow.Flow('main_tasks')
+    for plugin in base.get_recovery_flow(task_dict['main'],
+                                         novaclient=novaclient):
+        process_recovery_workflow_main.add(plugin)
+
+    process_recovery_workflow_post = linear_flow.Flow('post_tasks')
+    for plugin in base.get_recovery_flow(task_dict['post'],
+                                         novaclient=novaclient):
+        process_recovery_workflow_post.add(plugin)
+
+    nested_flow.add(process_recovery_workflow_pre)
+    nested_flow.add(process_recovery_workflow_main)
+    nested_flow.add(process_recovery_workflow_post)
+
+    return taskflow.engines.load(nested_flow, store=process_what)

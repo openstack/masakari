@@ -14,6 +14,7 @@
 #    under the License.
 
 from oslo_config import cfg
+from oslo_config import types
 
 
 instance_recovery_group = cfg.OptGroup(
@@ -25,6 +26,12 @@ host_recovery_group = cfg.OptGroup(
     'host_failure',
     title='Host failure recovery options',
     help="Configuration options for host failure recovery")
+
+customized_recovery_flow_group = cfg.OptGroup(
+    'taskflow_driver_recovery_flows',
+    title='Customized recovery flow Options',
+    help="Configuration options for customizing various failure recovery"
+         "workflow tasks.")
 
 
 host_failure_opts = [
@@ -70,16 +77,131 @@ When set to False, it will only execute instance failure recovery actions
 for an instance which contain metadata key 'HA_Enabled=True'."""),
 ]
 
+taskflow_driver_recovery_flows = [
+    cfg.Opt('host_auto_failure_recovery_tasks',
+            type=types.Dict(
+                bounds=False,
+                value_type=types.List(bounds=True,
+                                      item_type=types.String(quotes=True))),
+            default={'pre': ['disable_compute_service_task'],
+                     'main': ['prepare_HA_enabled_instances_task'],
+                     'post': ['evacuate_instances_task']},
+            help=("""
+This option allows operator to customize tasks to be executed for host failure
+auto recovery workflow.
+
+Provide list of strings reflecting to the task classes that should be included
+to the host failure recovery workflow. The full classname path of all task
+classes should be defined in the 'masakari.task_flow.tasks' of setup.cfg and
+these classes may be implemented by OpenStack Masaskari project team, deployer
+or third party.
+
+By default below three tasks will be part of this config option:-
+1. disable_compute_service_task
+2. prepare_HA_enabled_instances_task
+3. evacuate_instances_task
+
+The allowed values for this option is comma separated dictionary of object
+names in between ``{`` and ``}``.""")),
+
+    cfg.Opt('host_rh_failure_recovery_tasks',
+            type=types.Dict(
+                bounds=False,
+                value_type=types.List(bounds=True,
+                                      item_type=types.String(quotes=True))),
+            default={'pre': ['disable_compute_service_task'],
+                     'main': ['prepare_HA_enabled_instances_task',
+                              'evacuate_instances_task'],
+                     'post': []},
+            help=("""
+This option allows operator to customize tasks to be executed for host failure
+reserved_host recovery workflow.
+
+Provide list of strings reflecting to the task classes that should be included
+to the host failure recovery workflow. The full classname path of all task
+classes should be defined in the 'masakari.task_flow.tasks' of setup.cfg and
+these classes may be implemented by OpenStack Masaskari project team, deployer
+or third party.
+
+By default below three tasks will be part of this config option:-
+1. disable_compute_service_task
+2. prepare_HA_enabled_instances_task
+3. evacuate_instances_task
+
+The allowed values for this option is comma separated dictionary of object
+names in between ``{`` and ``}``.""")),
+
+    cfg.Opt('instance_failure_recovery_tasks',
+            type=types.Dict(
+                bounds=False,
+                value_type=types.List(bounds=True,
+                                      item_type=types.String(quotes=True))),
+            default={'pre': ['stop_instance_task'],
+                     'main': ['start_instance_task'],
+                     'post': ['confirm_instance_active_task']},
+            help=("""
+This option allows operator to customize tasks to be executed for instance
+failure recovery workflow.
+
+Provide list of strings reflecting to the task classes that should be included
+to the instance failure recovery workflow. The full classname path of all task
+classes should be defined in the 'masakari.task_flow.tasks' of setup.cfg and
+these classes may be implemented by OpenStack Masaskari project team, deployer
+or third party.
+
+By default below three tasks will be part of this config option:-
+1. stop_instance_task
+2. start_instance_task
+3. confirm_instance_active_task
+
+The allowed values for this option is comma separated dictionary of object
+names in between ``{`` and ``}``.""")),
+
+    cfg.Opt('process_failure_recovery_tasks',
+            type=types.Dict(
+                bounds=False,
+                value_type=types.List(bounds=True,
+                                      item_type=types.String(quotes=True))),
+            default={'pre': ['disable_compute_node_task'],
+                     'main': ['confirm_compute_node_disabled_task'],
+                     'post': []},
+            help=("""
+This option allows operator to customize tasks to be executed for process
+failure recovery workflow.
+
+Provide list of strings reflecting to the task classes that should be included
+to the process failure recovery workflow. The full classname path of all task
+classes should be defined in the 'masakari.task_flow.tasks' of setup.cfg and
+these classes may be implemented by OpenStack Masaskari project team, deployer
+or third party.
+
+By default below two tasks will be part of this config option:-
+1. disable_compute_node_task
+2. confirm_compute_node_disabled_task
+
+The allowed values for this option is comma separated dictionary of object
+names in between ``{`` and ``}``."""))
+]
+
 
 def register_opts(conf):
     conf.register_group(instance_recovery_group)
     conf.register_group(host_recovery_group)
+    conf.register_group(customized_recovery_flow_group)
     conf.register_opts(instance_failure_options, group=instance_recovery_group)
     conf.register_opts(host_failure_opts, group=host_recovery_group)
+    conf.register_opts(taskflow_driver_recovery_flows,
+                       group=customized_recovery_flow_group)
 
 
 def list_opts():
     return {
         instance_recovery_group.name: instance_failure_options,
-        host_recovery_group.name: host_failure_opts
+        host_recovery_group.name: host_failure_opts,
+    }
+
+
+def customized_recovery_flow_list_opts():
+    return {
+        customized_recovery_flow_group.name: taskflow_driver_recovery_flows
     }

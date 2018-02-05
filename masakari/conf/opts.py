@@ -31,7 +31,14 @@ import importlib
 import os
 import pkgutil
 
+from masakari.conf import engine_driver
+
 LIST_OPTS_FUNC_NAME = "list_opts"
+
+_recovery_workflow_opts = [
+    ('taskflow_driver_recovery_flows',
+     engine_driver.taskflow_driver_recovery_flows)
+]
 
 
 def _tupleize(dct):
@@ -45,6 +52,11 @@ def list_opts():
     imported_modules = _import_modules(module_names)
     _append_config_options(imported_modules, opts)
     return _tupleize(opts)
+
+
+def list_recovery_workflow_opts():
+    """Return a list of oslo_config options available for recovery workflow"""
+    return [(key, val) for key, val in _recovery_workflow_opts]
 
 
 def _list_module_names():

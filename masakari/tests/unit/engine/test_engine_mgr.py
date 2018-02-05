@@ -20,6 +20,7 @@ from oslo_utils import timeutils
 import masakari.conf
 from masakari import context
 from masakari import exception
+from masakari.objects import fields
 from masakari.objects import host as host_obj
 from masakari.objects import notification as notification_obj
 from masakari import test
@@ -475,3 +476,113 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
 
             self.assertEqual(expected_log, args[0])
             self.assertEqual(expected_log_args_1, args[1])
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
+                'DisableComputeServiceTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
+                'PrepareHAEnabledInstancesTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
+                'EvacuateInstancesTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.no_op.LOG')
+    def test_host_failure_custom_flow_for_auto_recovery(
+            self, _mock_log, _mock_task1, _mock_task2, _mock_task3,
+            _mock_novaclient, _mock_notification_get):
+        self.override_config(
+            "host_auto_failure_recovery_tasks",
+            {'pre': ['disable_compute_service_task', 'no_op'],
+             'main': ['prepare_HA_enabled_instances_task'],
+             'post': ['evacuate_instances_task']},
+            "taskflow_driver_recovery_flows")
+
+        expected_msg_format = "Custom task executed successfully..!!"
+
+        self.engine.driver.execute_host_failure(
+            self.context, 'fake_host',
+            fields.FailoverSegmentRecoveryMethod.AUTO,
+            uuidsentinel.fake_notification)
+        # Ensure custom_task added to the 'host_auto_failure_recovery_tasks'
+        # is executed.
+        _mock_log.info.assert_called_with(expected_msg_format)
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
+                'DisableComputeServiceTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
+                'PrepareHAEnabledInstancesTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
+                'EvacuateInstancesTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.no_op.LOG')
+    def test_host_failure_custom_flow_for_rh_recovery(
+            self, _mock_log, _mock_task1, _mock_task2, _mock_task3,
+            _mock_novaclient, _mock_notification_get):
+        self.override_config(
+            "host_rh_failure_recovery_tasks",
+            {'pre': ['disable_compute_service_task'],
+             'main': [],
+             'post': ['no_op']},
+            "taskflow_driver_recovery_flows")
+
+        expected_msg_format = "Custom task executed successfully..!!"
+
+        self.engine.driver.execute_host_failure(
+            self.context, 'fake_host',
+            fields.FailoverSegmentRecoveryMethod.RESERVED_HOST,
+            uuidsentinel.fake_notification,
+            reserved_host_list=['host-1', 'host-2'])
+        # Ensure custom_task added to the 'host_rh_failure_recovery_tasks'
+        # is executed.
+        _mock_log.info.assert_called_with(expected_msg_format)
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.instance_failure.'
+                'StopInstanceTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.instance_failure.'
+                'StartInstanceTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.instance_failure.'
+                'ConfirmInstanceActiveTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.no_op.LOG')
+    def test_instance_failure_custom_flow_recovery(
+            self, _mock_log, _mock_task1, _mock_task2, _mock_task3,
+            _mock_novaclient, _mock_notification_get):
+        self.override_config(
+            "instance_failure_recovery_tasks",
+            {'pre': ['stop_instance_task', 'no_op'],
+             'main': ['start_instance_task'],
+             'post': ['confirm_instance_active_task']},
+            "taskflow_driver_recovery_flows")
+
+        expected_msg_format = "Custom task executed successfully..!!"
+
+        self.engine.driver.execute_instance_failure(
+            self.context, uuidsentinel.fake_ins,
+            uuidsentinel.fake_notification)
+        # Ensure custom_task added to the 'instance_failure_recovery_tasks'
+        # is executed.
+        _mock_log.info.assert_called_with(expected_msg_format)
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.process_failure.'
+                'DisableComputeNodeTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.process_failure.'
+                'ConfirmComputeNodeDisabledTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.no_op.LOG')
+    def test_process_failure_custom_flow_recovery(
+            self, _mock_log, _mock_task1, _mock_task2, _mock_novaclient,
+            _mock_notification_get):
+        self.override_config(
+            "process_failure_recovery_tasks",
+            {'pre': ['disable_compute_node_task', 'no_op'],
+             'main': ['confirm_compute_node_disabled_task'],
+             'post': []},
+            "taskflow_driver_recovery_flows")
+
+        expected_msg_format = "Custom task executed successfully..!!"
+
+        self.engine.driver.execute_process_failure(
+            self.context, 'nova-compute', 'fake_host',
+            uuidsentinel.fake_notification)
+        _mock_log.info.assert_any_call(expected_msg_format)
+        # Ensure custom_task added to the 'process_failure_recovery_tasks'
+        # is executed.
+        _mock_log.info.assert_called_with(expected_msg_format)

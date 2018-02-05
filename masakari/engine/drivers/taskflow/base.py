@@ -15,6 +15,7 @@
 import os
 
 from oslo_log import log as logging
+from stevedore import named
 # For more information please visit: https://wiki.openstack.org/wiki/TaskFlow
 from taskflow import formatters
 from taskflow.listeners import base
@@ -88,3 +89,16 @@ class DynamicLogListener(logging_listener.DynamicLoggingListener):
             flow_listen_for=flow_listen_for,
             retry_listen_for=retry_listen_for,
             log=logger, fail_formatter=SpecialFormatter(engine))
+
+
+def get_recovery_flow(task_list, **kwargs):
+    """This is used create extension object from provided task_list.
+
+    This method returns the extension object of the each task provided
+    in a list using stevedore extension manager.
+    """
+    extensions = named.NamedExtensionManager(
+        'masakari.task_flow.tasks', names=task_list,
+        name_order=True, invoke_on_load=True, invoke_kwds=kwargs)
+    for extension in extensions.extensions:
+        yield extension.obj
