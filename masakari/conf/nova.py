@@ -18,7 +18,7 @@ from oslo_config import cfg
 
 nova_opts = [
     cfg.StrOpt('nova_catalog_admin_info',
-               default='compute:Compute Service:publicURL',
+               default='compute:nova:publicURL',
                help='Match this value when searching for nova in the '
                     'service catalog. Format is: separated values of '
                     'the form: '
