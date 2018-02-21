@@ -58,7 +58,7 @@ class NovaClientTestCase(test.TestCase):
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name=None,
             insecure=False, endpoint_type='publicURL',
-            service_type='compute', service_name='Compute Service',
+            service_type='compute', service_name='nova',
             cacert=None, timeout=None, global_request_id=self.ctx.global_id,
             extensions=nova.nova_extensions)
 
@@ -78,7 +78,7 @@ class NovaClientTestCase(test.TestCase):
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name=None,
             insecure=False, endpoint_type='publicURL',
-            service_type='compute', service_name='Compute Service',
+            service_type='compute', service_name='nova',
             cacert=None, timeout=None, global_request_id=self.ctx.global_id,
             extensions=nova.nova_extensions)
 
@@ -100,7 +100,7 @@ class NovaClientTestCase(test.TestCase):
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name=None,
             insecure=False, endpoint_type='publicURL',
-            service_type='compute', service_name='Compute Service',
+            service_type='compute', service_name='nova',
             cacert=None, timeout=None, global_request_id=self.ctx.global_id,
             extensions=nova.nova_extensions)
 
@@ -121,7 +121,7 @@ class NovaClientTestCase(test.TestCase):
             p_api_version(nova.NOVA_API_VERSION),
             session=p_session.return_value, region_name='farfaraway',
             insecure=False, endpoint_type='publicURL',
-            service_type='compute', service_name='Compute Service',
+            service_type='compute', service_name='nova',
             cacert=None, timeout=None, global_request_id=self.ctx.global_id,
             extensions=nova.nova_extensions)
 
