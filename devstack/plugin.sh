@@ -25,6 +25,10 @@ if is_service_enabled tls-proxy; then
     MASAKARI_SERVICE_PROTOCOL="https"
 fi
 
+# Toggle for deploying Masakari under a wsgi server.
+MASAKARI_USE_MOD_WSGI=${MASAKARI_USE_MOD_WSGI:-True}
+
+
 # Functions
 # ---------
 
@@ -52,11 +56,19 @@ function create_masakari_accounts {
 
         local masakari_service=$(get_or_create_service "masakari" \
             "instance-ha" "OpenStack High Availability")
-        get_or_create_endpoint $masakari_service \
-            "$REGION_NAME" \
-            "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
-            "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
-            "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s"
+        if [ "$MASAKARI_USE_MOD_WSGI" == "False" ]; then
+            get_or_create_endpoint $masakari_service \
+                "$REGION_NAME" \
+                "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
+                "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
+                "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s"
+        else
+            get_or_create_endpoint $masakari_service \
+                "$REGION_NAME" \
+                "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST/instance-ha/v1/\$(tenant_id)s" \
+                "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST/instance-ha/v1/\$(tenant_id)s" \
+                "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST/instance-ha/v1/\$(tenant_id)s"
+        fi
     fi
 }
 
@@ -69,6 +81,10 @@ function cleanup_masakari {
 # Clean up dirs
     rm -fr $MASAKARI_AUTH_CACHE_DIR/*
     rm -fr $MASAKARI_CONF_DIR/*
+
+    if [ "$MASAKARI_USE_MOD_WSGI" == "True" ]; then
+        remove_uwsgi_config "$MASAKARI_UWSGI_CONF" "$MASAKARI_UWSGI"
+    fi
 }
 
 # iniset_conditional() - Sets the value in the inifile, but only if it's
@@ -127,6 +143,10 @@ function configure_masakari {
     if is_service_enabled tls-proxy; then
         iniset $MASAKARI_CONF DEFAULT masakari_api_listen_port $MASAKARI_SERVICE_PORT_INT
     fi
+
+    if [ "$MASAKARI_USE_MOD_WSGI" == "True" ]; then
+        write_uwsgi_config "$MASAKARI_UWSGI_CONF" "$MASAKARI_UWSGI" "/instance-ha"
+    fi
 }
 
 # install_masakari() - Collect source and prepare
@@ -157,20 +177,35 @@ function init_masakari {
     get_or_add_user_project_role admin ${ADMIN_ALT_USERNAME} ${ALT_TENANT_NAME}
 }
 
-# start_masakari() - Start running processes, including screen
+# start_masakari() - Start running processes
 function start_masakari {
+    local masakari_url
 
-    if is_service_enabled tls-proxy; then
-        start_tls_proxy masakari-service '*' $MASAKARI_SERVICE_PORT $SERVICE_HOST $MASAKARI_SERVICE_PORT_INT
+    if [[ "$ENABLED_SERVICES" =~ "masakari-api" ]]; then
+        if [ "$MASAKARI_USE_MOD_WSGI" == "False" ]; then
+            run_process masakari-api "$MASAKARI_BIN_DIR/masakari-api --config-file=$MASAKARI_CONF --debug"
+            masakari_url=$MASAKARI_SERVICE_PROTOCOL://$MASAKARI_SERVICE_HOST:$MASAKARI_SERVICE_PORT
+            # Start proxy if tls enabled
+            if is_service_enabled tls_proxy; then
+                start_tls_proxy masakari-service '*' $MASAKARI_SERVICE_PORT $SERVICE_HOST $MASAKARI_SERVICE_PORT_INT
+            fi
+        else
+            run_process "masakari-api" "$MASAKARI_BIN_DIR/uwsgi --procname-prefix masakari-api --ini $MASAKARI_UWSGI_CONF"
+            masakari_url=$MASAKARI_SERVICE_PROTOCOL://$MASAKARI_SERVICE_HOST/instance-ha/v1
+        fi
     fi
 
-    run_process masakari-api "$MASAKARI_BIN_DIR/masakari-api --config-file=$MASAKARI_CONF --debug"
+    echo "Waiting for Masakari API to start..."
+    if ! wait_for_service $SERVICE_TIMEOUT $masakari_url; then
+        die $LINENO "masakari-api did not start"
+    fi
+
     run_process masakari-engine "$MASAKARI_BIN_DIR/masakari-engine --config-file=$MASAKARI_CONF --debug"
 }
 
 # stop_masakari() - Stop running processes
 function stop_masakari {
-    # Kill the masakari screen windows
+    # Kill the masakari services
     local serv
     for serv in masakari-engine masakari-api; do
         stop_process $serv

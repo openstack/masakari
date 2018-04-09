@@ -1,0 +1,8 @@
+---
+upgrade:
+  - |
+    WSGI application script ``masakari-wsgi`` is now available. It allows
+    running the masakari APIs using a WSGI server of choice (for example
+    nginx and uwsgi, apache2 with mod_proxy_uwsgi or gunicorn).
+    The eventlet-based servers are still available, but the WSGI options will
+    allow greater deployment flexibility.
