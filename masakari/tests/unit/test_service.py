@@ -17,10 +17,7 @@
 Unit Tests for remote procedure calls using queue
 """
 
-import sys
-
 import mock
-from mox3 import mox
 from oslo_concurrency import processutils
 from oslo_config import cfg
 from oslo_service import service as _service
@@ -30,7 +27,6 @@ from masakari import manager
 from masakari import rpc
 from masakari import service
 from masakari import test
-from masakari import wsgi
 
 CONF = cfg.CONF
 
@@ -83,33 +79,26 @@ class ServiceTestCase(test.NoDBTestCase):
               "test_service.FakeManager>"
         self.assertEqual(exp, repr(serv))
 
+    @mock.patch.object(_service.Service, 'stop')
     @mock.patch.object(rpc, 'init')
     @mock.patch.object(rpc, 'get_server')
-    def test_parent_graceful_shutdown(self, mock_rpc, mock_rpc_init):
-        self.manager_mock = self.mox.CreateMock(FakeManager)
-        self.mox.StubOutWithMock(sys.modules[__name__],
-                'FakeManager', use_mock_anything=True)
-
-        self.mox.StubOutWithMock(_service.Service, 'stop')
-
-        FakeManager(host=self.host).AndReturn(self.manager_mock)
-
-        self.manager_mock.service_name = self.topic
-
-        _service.Service.stop()
-
-        self.mox.ReplayAll()
-
+    def test_parent_graceful_shutdown(self, mock_rpc, mock_rpc_init,
+                                      mock_stop):
         serv = service.Service(self.host,
                                self.binary,
                                self.topic,
                                'masakari.tests.unit.test_service.FakeManager')
+
+        serv.manager = mock.Mock()
+        serv.manager.service_name = self.topic
+
         serv.start()
 
         serv.stop()
 
         serv.rpcserver.start.assert_called_once_with()
         serv.rpcserver.stop.assert_called_once_with()
+        mock_stop.assert_called_once_with()
 
     @mock.patch.object(rpc, 'init')
     def test_reset(self, mock_rpc_init):
@@ -126,7 +115,7 @@ class TestWSGIService(test.NoDBTestCase):
 
     def setUp(self):
         super(TestWSGIService, self).setUp()
-        self.stubs.Set(wsgi.Loader, "load_app", mox.MockAnything())
+        self.stub_out('masakari.wsgi.Loader.load_app', mock.MagicMock())
 
     def test_workers_set_default(self):
         test_service = service.WSGIService("masakari_api")

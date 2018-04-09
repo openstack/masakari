@@ -27,7 +27,6 @@ from masakari.api.openstack import extensions
 from masakari.api.openstack import wsgi
 from masakari.api import versioned_method
 from masakari import exception
-from masakari import i18n
 from masakari import test
 from masakari.tests.unit.api.openstack import fakes
 from masakari.tests.unit import matchers
@@ -68,8 +67,8 @@ class RequestTest(MicroversionedTest):
         self.assertEqual(result, "application/json")
 
     def test_from_request(self):
-        self.stubs.Set(i18n, 'get_available_languages',
-                       fakes.fake_get_available_languages)
+        self.stub_out('masakari.i18n.get_available_languages',
+                      fakes.fake_get_available_languages)
 
         request = wsgi.Request.blank('/')
         accepted = 'bogus;q=1.1, en-gb;q=0.7,en-us,en;q=.5,*;q=.7'
@@ -79,8 +78,8 @@ class RequestTest(MicroversionedTest):
     def test_asterisk(self):
         # asterisk should match first available if there
         # are not any other available matches
-        self.stubs.Set(i18n, 'get_available_languages',
-                       fakes.fake_get_available_languages)
+        self.stub_out('masakari.i18n.get_available_languages',
+                      fakes.fake_get_available_languages)
 
         request = wsgi.Request.blank('/')
         accepted = '*,es;q=.5'
@@ -88,8 +87,8 @@ class RequestTest(MicroversionedTest):
         self.assertEqual(request.best_match_language(), 'en_GB')
 
     def test_prefix(self):
-        self.stubs.Set(i18n, 'get_available_languages',
-                       fakes.fake_get_available_languages)
+        self.stub_out('masakari.i18n.get_available_languages',
+                      fakes.fake_get_available_languages)
 
         request = wsgi.Request.blank('/')
         accepted = 'zh'
@@ -97,8 +96,8 @@ class RequestTest(MicroversionedTest):
         self.assertEqual(request.best_match_language(), 'zh_CN')
 
     def test_secondary(self):
-        self.stubs.Set(i18n, 'get_available_languages',
-                       fakes.fake_get_available_languages)
+        self.stub_out('masakari.i18n.get_available_languages',
+                      fakes.fake_get_available_languages)
 
         request = wsgi.Request.blank('/')
         accepted = 'nn,en-gb;q=.5'
@@ -106,8 +105,8 @@ class RequestTest(MicroversionedTest):
         self.assertEqual(request.best_match_language(), 'en_GB')
 
     def test_none_found(self):
-        self.stubs.Set(i18n, 'get_available_languages',
-                       fakes.fake_get_available_languages)
+        self.stub_out('masakari.i18n.get_available_languages',
+                      fakes.fake_get_available_languages)
 
         request = wsgi.Request.blank('/')
         accepted = 'nb-no'
@@ -115,8 +114,8 @@ class RequestTest(MicroversionedTest):
         self.assertIsNone(request.best_match_language())
 
     def test_no_lang_header(self):
-        self.stubs.Set(i18n, 'get_available_languages',
-                       fakes.fake_get_available_languages)
+        self.stub_out('masakari.i18n.get_available_languages',
+                      fakes.fake_get_available_languages)
 
         request = wsgi.Request.blank('/')
         accepted = ''
