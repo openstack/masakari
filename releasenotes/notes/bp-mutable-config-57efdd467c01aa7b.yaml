@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Masakari has been enabled for mutable config.
+    Below option may be reloaded by sending SIGHUP to the correct process.
+
+    'retry_notification_new_status_interval' option will apply to process
+    unfinished notifications.

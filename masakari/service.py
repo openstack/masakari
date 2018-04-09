@@ -271,7 +271,7 @@ class WSGIService(service.Service):
 
 
 def process_launcher():
-    return service.ProcessLauncher(CONF)
+    return service.ProcessLauncher(CONF, restart_method='mutate')
 
 
 # NOTE: the global launcher is to maintain the existing
@@ -285,7 +285,8 @@ def serve(server, workers=None):
     if _launcher:
         raise RuntimeError(_('serve() can only be called once'))
 
-    _launcher = service.launch(CONF, server, workers=workers)
+    _launcher = service.launch(CONF, server, workers=workers,
+                               restart_method='mutate')
 
 
 def wait():

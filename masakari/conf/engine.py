@@ -90,6 +90,7 @@ notification_opts = [
                     'are in error or new state.'),
     cfg.IntOpt('retry_notification_new_status_interval',
                default=60,
+               mutable=True,
                help="Interval in seconds for identifying notifications which "
                     "are in new state. If the notification is in new state "
                     "till this config option value after it's "
