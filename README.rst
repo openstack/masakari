@@ -1,6 +1,6 @@
-===============================
+========
 Masakari
-===============================
+========
 
 Virtual Machine High Availability (VMHA) service for OpenStack
 
@@ -36,43 +36,65 @@ detailed in the LICENSE file.
 Configure masakari-api
 ----------------------
 
-1. Create masakari user:
-$ openstack user create --password-prompt masakari
-(give password as masakari)
+#. Create masakari user:
 
-2. Add admin role to masakari user:
-$ openstack role add --project service --user masakari admin
+   .. code-block:: shell-session
 
-3. Create new service:
-$ openstack service create --name masakari --description "masakari high availability" masakari
+      openstack user create --password-prompt masakari
+      (give password as masakari)
 
-4. Create endpoint for masakari service:
-$ openstack endpoint create --region RegionOne masakari --publicurl http://<ip-address>:<port>/v1/%\(tenant_id\)s --adminurl http://<ip-address>:<port>/v1/%\(tenant_id\)s --internalurl http://<ip-address>:<port>/v1/%\(tenant_id\)s
+#. Add admin role to masakari user:
 
-5. Clone masakari using
-$ git clone https://github.com/openstack/masakari.git
+   .. code-block:: shell-session
 
-6. Run setup.py from masakari
-$ sudo python setup.py install
+      openstack role add --project service --user masakari admin
 
-7. Create masakari directory in /etc/
+#. Create new service:
 
-8. Copy masakari.conf, api-paste.ini and policy.json file from masakari/etc/ to
-   /etc/masakari folder
+   .. code-block:: shell-session
 
-9. To run masakari-api simply use following binary:
-$ masakari-api
+      openstack service create --name masakari --description "masakari high availability" masakari
 
+#. Create endpoint for masakari service:
+
+   .. code-block:: shell-session
+
+      openstack endpoint create --region RegionOne masakari --publicurl http://<ip-address>:<port>/v1/%\(tenant_id\)s --adminurl http://<ip-address>:<port>/v1/%\(tenant_id\)s --internalurl http://<ip-address>:<port>/v1/%\(tenant_id\)s
+
+#. Clone masakari using
+
+   .. code-block:: shell-session
+
+      git clone https://github.com/openstack/masakari.git
+
+#. Run setup.py from masakari
+
+   .. code-block:: shell-session
+
+      sudo python setup.py install
+
+#. Create directory ``/etc/masakari``
+
+#. Copy ``masakari.conf``, ``api-paste.ini`` and ``policy.json`` file
+   from ``masakari/etc/`` to ``/etc/masakari`` folder
+
+#. To run masakari-api simply use following binary:
+
+   .. code-block:: shell-session
+
+      masakari-api
 
 Configure masakari database
 ---------------------------
 
-1. Create 'masakari' database
+#. Create 'masakari' database
 
-2. After running setup.py for masakari '$ sudo python setup.py install'
-    run 'masakari-manage' command to sync the database
-    $ masakari-manage db sync
+#. After running setup.py for masakari (``sudo python setup.py install``),
+   run ``masakari-manage`` command to sync the database
 
+   .. code-block:: shell-session
+
+      masakari-manage db sync
 
 Features
 --------
