@@ -23,10 +23,10 @@ from masakari.api.openstack import wsgi
 from masakari.api import validation
 from masakari import exception
 from masakari.ha import api as segment_api
+from masakari.policies import segments as segment_policies
 
 
 ALIAS = 'segments'
-authorize = extensions.os_masakari_authorizer(ALIAS)
 
 
 class SegmentsController(wsgi.Controller):
@@ -39,7 +39,7 @@ class SegmentsController(wsgi.Controller):
     def index(self, req):
         """Returns a summary list of failover segments."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(segment_policies.SEGMENTS % 'index')
 
         try:
             limit, marker = common.get_limit_and_marker(req)
@@ -66,7 +66,7 @@ class SegmentsController(wsgi.Controller):
     def show(self, req, id):
         """Return data about the given segment id."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(segment_policies.SEGMENTS % 'detail')
 
         try:
             segment = self.api.get_segment(context, id)
@@ -80,7 +80,7 @@ class SegmentsController(wsgi.Controller):
     def create(self, req, body):
         """Creates a new failover segment."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(segment_policies.SEGMENTS % 'create')
 
         segment_data = body['segment']
         try:
@@ -95,7 +95,7 @@ class SegmentsController(wsgi.Controller):
     def update(self, req, id, body):
         """Updates the existing segment."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(segment_policies.SEGMENTS % 'update')
         segment_data = body['segment']
 
         try:
@@ -113,7 +113,7 @@ class SegmentsController(wsgi.Controller):
     def delete(self, req, id):
         """Removes a segment by uuid."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(segment_policies.SEGMENTS % 'delete')
 
         try:
             self.api.delete_segment(context, id)

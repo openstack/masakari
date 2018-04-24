@@ -338,15 +338,15 @@ class NotificationCasePolicyNotAuthorized(test.NoDBTestCase):
         self.controller = notifications.NotificationsController()
         self.req = fakes.HTTPRequest.blank('/v1/notifications')
         self.context = self.req.environ['masakari.context']
-        self.rule_name = "os_masakari_api:notifications"
-        self.policy.set_rules({self.rule_name: "project:non_fake"})
 
-    def _check_rule(self, exc):
+    def _check_rule(self, exc, rule_name):
         self.assertEqual(
-            "Policy doesn't allow %s to be performed." % self.rule_name,
+            "Policy doesn't allow %s to be performed." % rule_name,
             exc.format_message())
 
     def test_create_no_admin(self):
+        rule_name = "os_masakari_api:notifications:create"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         body = {
             "notification": {"hostname": "fake_host",
                              "payload": {"event": "STOPPED",
@@ -357,16 +357,20 @@ class NotificationCasePolicyNotAuthorized(test.NoDBTestCase):
         exc = self.assertRaises(exception.PolicyNotAuthorized,
                                 self.controller.create,
                                 self.req, body=body)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)
 
     def test_show_no_admin(self):
+        rule_name = "os_masakari_api:notifications:detail"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         exc = self.assertRaises(exception.PolicyNotAuthorized,
                                 self.controller.show,
                                 self.req, uuidsentinel.fake_notification)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)
 
     def test_index_no_admin(self):
+        rule_name = "os_masakari_api:notifications:index"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         exc = self.assertRaises(exception.PolicyNotAuthorized,
                                 self.controller.index,
                                 self.req)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)

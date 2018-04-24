@@ -322,21 +322,23 @@ class FailoverSegmentTestCasePolicyNotAuthorized(test.NoDBTestCase):
         self.controller = segments.SegmentsController()
         self.req = fakes.HTTPRequest.blank('/v1/segments')
         self.context = self.req.environ['masakari.context']
-        self.rule_name = "os_masakari_api:segments"
-        self.policy.set_rules({self.rule_name: "project:non_fake"})
 
-    def _check_rule(self, exc):
+    def _check_rule(self, exc, rule_name):
         self.assertEqual(
-            "Policy doesn't allow %s to be performed." % self.rule_name,
+            "Policy doesn't allow %s to be performed." % rule_name,
             exc.format_message())
 
     def test_index_no_admin(self):
+        rule_name = "os_masakari_api:segments:index"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         exc = self.assertRaises(exception.PolicyNotAuthorized,
                                 self.controller.index,
                                 self.req)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)
 
     def test_create_no_admin(self):
+        rule_name = "os_masakari_api:segments:create"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         body = {
             "segment": {
                 "name": "segment1",
@@ -348,15 +350,19 @@ class FailoverSegmentTestCasePolicyNotAuthorized(test.NoDBTestCase):
         exc = self.assertRaises(exception.PolicyNotAuthorized,
                                 self.controller.create,
                                 self.req, body=body)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)
 
     def test_show_no_admin(self):
+        rule_name = "os_masakari_api:segments:detail"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         exc = self.assertRaises(exception.PolicyNotAuthorized,
                                 self.controller.show,
                                 self.req, uuidsentinel.fake_segment)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)
 
     def test_update_no_admin(self):
+        rule_name = "os_masakari_api:segments:update"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         body = {
             "segment": {
                 "name": "segment1",
@@ -368,10 +374,12 @@ class FailoverSegmentTestCasePolicyNotAuthorized(test.NoDBTestCase):
         exc = self.assertRaises(exception.PolicyNotAuthorized,
                                 self.controller.update,
                                 self.req, uuidsentinel.fake_segment, body=body)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)
 
     def test_delete_no_admin(self):
+        rule_name = "os_masakari_api:segments:delete"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         exc = self.assertRaises(exception.PolicyNotAuthorized,
                                 self.controller.delete,
                                 self.req, uuidsentinel.fake_segment)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)

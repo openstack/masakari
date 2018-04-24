@@ -29,9 +29,9 @@ from masakari import exception
 from masakari.ha import api as host_api
 from masakari.i18n import _
 from masakari import objects
+from masakari.policies import hosts as host_policies
 
 ALIAS = "os-hosts"
-authorize = extensions.os_masakari_authorizer(ALIAS)
 
 
 class HostsController(wsgi.Controller):
@@ -45,7 +45,7 @@ class HostsController(wsgi.Controller):
     def index(self, req, segment_id):
         """Returns a list a hosts."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(host_policies.HOSTS % 'index')
 
         try:
             filters = {}
@@ -103,7 +103,7 @@ class HostsController(wsgi.Controller):
     def create(self, req, segment_id, body):
         """Creates a host."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(host_policies.HOSTS % 'create')
         host_data = body.get('host')
         try:
             host = self.api.create_host(context, segment_id, host_data)
@@ -118,7 +118,7 @@ class HostsController(wsgi.Controller):
     def show(self, req, segment_id, id):
         """Shows the details of a host."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(host_policies.HOSTS % 'detail')
         try:
             host = self.api.get_host(context, segment_id, id)
         except exception.HostNotFound as e:
@@ -133,7 +133,7 @@ class HostsController(wsgi.Controller):
     def update(self, req, segment_id, id, body):
         """Updates the existing host."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(host_policies.HOSTS % 'update')
         host_data = body.get('host')
         try:
             host = self.api.update_host(context, segment_id, id, host_data)
@@ -152,7 +152,7 @@ class HostsController(wsgi.Controller):
     def delete(self, req, segment_id, id):
         """Removes a host by id."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(host_policies.HOSTS % 'delete')
         try:
             self.api.delete_host(context, segment_id, id)
         except exception.FailoverSegmentNotFound as e:

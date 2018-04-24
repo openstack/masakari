@@ -20,6 +20,7 @@ from oslo_serialization import jsonutils
 
 import masakari.conf
 from masakari.conf import paths
+from masakari import policies
 import masakari.policy
 from masakari.tests.unit import fake_policy
 
@@ -52,9 +53,10 @@ class RealPolicyFixture(fixtures.Fixture):
         masakari.policy.init()
         self.addCleanup(masakari.policy.reset)
 
-    def set_rules(self, rules):
+    def set_rules(self, rules, overwrite=True):
         policy = masakari.policy._ENFORCER
-        policy.set_rules(oslo_policy.Rules.from_dict(rules))
+        policy.set_rules(oslo_policy.Rules.from_dict(rules),
+                         overwrite=overwrite)
 
 
 class PolicyFixture(RealPolicyFixture):
@@ -91,13 +93,10 @@ class RoleBasedPolicyFixture(RealPolicyFixture):
         self.role = role
 
     def _prepare_policy(self):
-        with open(CONF.oslo_policy.policy_file) as fp:
-            policy = fp.read()
-        policy = jsonutils.loads(policy)
-
-        # Convert all actions to require specified role
-        for action, rule in policy.items():
-            policy[action] = 'role:%s' % self.role
+        # Convert all actions to require the specified role
+        policy = {}
+        for rule in policies.list_rules():
+            policy[rule.name] = 'role:%s' % self.role
 
         self.policy_dir = self.useFixture(fixtures.TempDir())
         self.policy_file = os.path.join(self.policy_dir.path, 'policy.json')

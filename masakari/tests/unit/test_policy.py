@@ -56,11 +56,11 @@ class PolicyFileTestCase(test.NoDBTestCase):
             action = "example:test"
             with open(tmpfilename, "w") as policyfile:
                 policyfile.write('{"example:test": ""}')
-            policy.enforce(self.context, action, self.target)
+            policy.authorize(self.context, action, self.target)
             with open(tmpfilename, "w") as policyfile:
                 policyfile.write('{"example:test": "!"}')
             policy._ENFORCER.load_rules(True)
-            self.assertRaises(exception.PolicyNotAuthorized, policy.enforce,
+            self.assertRaises(exception.PolicyNotAuthorized, policy.authorize,
                               self.context, action, self.target)
 
 
@@ -90,38 +90,69 @@ class PolicyTestCase(test.NoDBTestCase):
         self.context = context.RequestContext('fake', 'fake', roles=['member'])
         self.target = {}
 
-    def test_enforce_bad_action_throws(self):
-        action = "example:denied"
-        self.assertRaises(exception.PolicyNotAuthorized, policy.enforce,
+    def test_authorize_nonexistent_action_throws(self):
+        action = "example:noexist"
+        self.assertRaises(oslo_policy.PolicyNotRegistered, policy.authorize,
                           self.context, action, self.target)
 
-    def test_enforce_bad_action_noraise(self):
+    def test_authorize_bad_action_throws(self):
         action = "example:denied"
-        result = policy.enforce(self.context, action, self.target, False)
+        self.assertRaises(exception.PolicyNotAuthorized, policy.authorize,
+                          self.context, action, self.target)
+
+    def test_authorize_bad_action_noraise(self):
+        action = "example:denied"
+        result = policy.authorize(self.context, action, self.target, False)
         self.assertFalse(result)
 
-    def test_enforce_good_action(self):
+    def test_authorize_good_action(self):
         action = "example:allowed"
-        result = policy.enforce(self.context, action, self.target)
+        result = policy.authorize(self.context, action, self.target)
         self.assertTrue(result)
 
     @requests_mock.mock()
-    def test_enforce_http_true(self, req_mock):
+    def test_authorize_http_true(self, req_mock):
         req_mock.post('http://www.example.com/',
                       text='True')
         action = "example:get_http"
         target = {}
-        result = policy.enforce(self.context, action, target)
+        result = policy.authorize(self.context, action, target)
         self.assertTrue(result)
 
     @requests_mock.mock()
-    def test_enforce_http_false(self, req_mock):
+    def test_authorize_http_false(self, req_mock):
         req_mock.post('http://www.example.com/',
                       text='False')
         action = "example:get_http"
         target = {}
-        self.assertRaises(exception.PolicyNotAuthorized, policy.enforce,
+        self.assertRaises(exception.PolicyNotAuthorized, policy.authorize,
                           self.context, action, target)
+
+    def test_templatized_authorization(self):
+        target_mine = {'project_id': 'fake'}
+        target_not_mine = {'project_id': 'another'}
+        action = "example:my_file"
+        policy.authorize(self.context, action, target_mine)
+        self.assertRaises(exception.PolicyNotAuthorized, policy.authorize,
+                          self.context, action, target_not_mine)
+
+    def test_early_AND_authorization(self):
+        action = "example:early_and_fail"
+        self.assertRaises(exception.PolicyNotAuthorized, policy.authorize,
+                          self.context, action, self.target)
+
+    def test_early_OR_authorization(self):
+        action = "example:early_or_success"
+        policy.authorize(self.context, action, self.target)
+
+    def test_ignore_case_role_check(self):
+        lowercase_action = "example:lowercase_admin"
+        uppercase_action = "example:uppercase_admin"
+        admin_context = context.RequestContext('admin',
+                                               'fake',
+                                               roles=['AdMiN'])
+        policy.authorize(admin_context, lowercase_action, self.target)
+        policy.authorize(admin_context, uppercase_action, self.target)
 
 
 class IsAdminCheckTestCase(test.NoDBTestCase):
@@ -160,6 +191,23 @@ class IsAdminCheckTestCase(test.NoDBTestCase):
                                policy._ENFORCER), True)
 
 
+class AdminRolePolicyTestCase(test.NoDBTestCase):
+    def setUp(self):
+        super(AdminRolePolicyTestCase, self).setUp()
+        self.policy = self.useFixture(policy_fixture.RoleBasedPolicyFixture())
+        self.context = context.RequestContext('fake', 'fake', roles=['member'])
+        self.actions = policy.get_rules().keys()
+        self.target = {}
+
+    def test_authorize_admin_actions_with_nonadmin_context_throws(self):
+        """Check if non-admin context passed to admin actions throws
+           Policy not authorized exception
+        """
+        for action in self.actions:
+            self.assertRaises(exception.PolicyNotAuthorized, policy.authorize,
+                          self.context, action, self.target)
+
+
 class RealRolePolicyTestCase(test.NoDBTestCase):
     def setUp(self):
         super(RealRolePolicyTestCase, self).setUp()
@@ -172,10 +220,21 @@ class RealRolePolicyTestCase(test.NoDBTestCase):
         self.fake_policy = jsonutils.loads(fake_policy.policy_data)
 
         self.admin_only_rules = (
-            "os_masakari_api:extensions",
-            "os_masakari_api:os-hosts",
-            "os_masakari_api:segments",
-            "os_masakari_api:notifications"
+            "os_masakari_api:extensions:index",
+            "os_masakari_api:extensions:detail",
+            "os_masakari_api:os-hosts:index",
+            "os_masakari_api:os-hosts:detail",
+            "os_masakari_api:os-hosts:create",
+            "os_masakari_api:os-hosts:update",
+            "os_masakari_api:os-hosts:delete",
+            "os_masakari_api:segments:index",
+            "os_masakari_api:segments:detail",
+            "os_masakari_api:segments:create",
+            "os_masakari_api:segments:update",
+            "os_masakari_api:segments:delete",
+            "os_masakari_api:notifications:index",
+            "os_masakari_api:notifications:detail",
+            "os_masakari_api:notifications:create"
         )
 
     def test_all_rules_in_sample_file(self):
@@ -187,7 +246,7 @@ class RealRolePolicyTestCase(test.NoDBTestCase):
 
     def test_admin_only_rules(self):
         for rule in self.admin_only_rules:
-            self.assertRaises(exception.PolicyNotAuthorized, policy.enforce,
+            self.assertRaises(exception.PolicyNotAuthorized, policy.authorize,
                               self.non_admin_context, rule,
                               {'project_id': 'fake', 'user_id': 'fake'})
-            policy.enforce(self.admin_context, rule, self.target)
+            policy.authorize(self.admin_context, rule, self.target)

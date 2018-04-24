@@ -35,6 +35,8 @@ UNDERSCORE_IMPORT_FILES = []
 session_check = re.compile(r"\w*def [a-zA-Z0-9].*[(].*session.*[)]")
 cfg_re = re.compile(r".*\scfg\.")
 cfg_opt_re = re.compile(r".*[\s\[]cfg\.[a-zA-Z]*Opt\(")
+rule_default_re = re.compile(r".*RuleDefault\(")
+policy_enforce_re = re.compile(r".*_ENFORCER\.enforce\(")
 asse_trueinst_re = re.compile(
     r"(.)*assertTrue\(isinstance\((\w|\.|\'|\"|\[|\])+, "
     "(\w|\.|\'|\"|\[|\])+\)\)")
@@ -412,6 +414,38 @@ def yield_followed_by_space(logical_line):
                "M332: Yield keyword should be followed by a space.")
 
 
+def check_policy_registration_in_central_place(logical_line, filename):
+    msg = ('M333: Policy registration should be in the central location '
+           '"/masakari/policies/*".')
+    # This is where registration should happen
+    if "masakari/policies/" in filename:
+        return
+    # A couple of policy tests register rules
+    if "masakari/tests/unit/test_policy.py" in filename:
+        return
+
+    if rule_default_re.match(logical_line):
+        yield (0, msg)
+
+
+def check_policy_enforce(logical_line, filename):
+    """Look for uses of masakari.policy._ENFORCER.enforce()
+
+    Now that policy defaults are registered in code the _ENFORCER.authorize
+    method should be used. That ensures that only registered policies are used.
+    Uses of _ENFORCER.enforce could allow unregistered policies to be used, so
+    this check looks for uses of that method.
+
+    M333
+    """
+
+    msg = ('M334: masakari.policy._ENFORCER.enforce() should not be used. '
+           'Use the authorize() method instead.')
+
+    if policy_enforce_re.match(logical_line):
+        yield (0, msg)
+
+
 def factory(register):
     register(no_db_session_in_public_api)
     register(use_timeutils_utcnow)
@@ -438,3 +472,5 @@ def factory(register):
     register(no_os_popen)
     register(no_log_warn)
     register(yield_followed_by_space)
+    register(check_policy_registration_in_central_place)
+    register(check_policy_enforce)

@@ -457,3 +457,39 @@ class HackingTestCase(test.NoDBTestCase):
                   yieldx_func(a, b)
                """
         self._assert_has_no_errors(code, checks.yield_followed_by_space)
+
+    def test_check_policy_registration_in_central_place(self):
+        errors = [(3, 0, "M333")]
+        code = """
+        from masakari import policy
+
+        policy.RuleDefault('context_is_admin', 'role:admin')
+        """
+        # registration in the proper place
+        self._assert_has_no_errors(
+            code, checks.check_policy_registration_in_central_place,
+            filename="masakari/policies/base.py")
+        # option at a location which is not in scope right now
+        self._assert_has_errors(
+            code, checks.check_policy_registration_in_central_place,
+            filename="masakari/api/openstack/ha/non_existent.py",
+            expected_errors=errors)
+
+    def test_check_policy_enforce(self):
+        errors = [(3, 0, "M334")]
+        code = """
+        from masakari import policy
+
+        policy._ENFORCER.enforce('context_is_admin', target, credentials)
+        """
+        self._assert_has_errors(code, checks.check_policy_enforce,
+                                expected_errors=errors)
+
+    def test_check_policy_enforce_does_not_catch_other_enforce(self):
+        # Simulate a different enforce method defined in masakari
+        code = """
+        from masakari import foo
+
+        foo.enforce()
+        """
+        self._assert_has_no_errors(code, checks.check_policy_enforce)

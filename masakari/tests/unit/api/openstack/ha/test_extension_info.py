@@ -64,14 +64,14 @@ class ExtensionInfoTest(test.NoDBTestCase):
             self.assertEqual(e['links'], [])
             self.assertEqual(6, len(e))
 
-    @mock.patch.object(policy, 'enforce', mock.Mock(return_value=True))
+    @mock.patch.object(policy, 'authorize', mock.Mock(return_value=True))
     def test_extension_info_list(self):
         req = fakes.HTTPRequest.blank('/extensions')
         res_dict = self.controller.index(req)
         self.assertGreaterEqual(len(res_dict['extensions']), 3)
         self._filter_extensions(res_dict)
 
-    @mock.patch.object(policy, 'enforce', mock.Mock(return_value=True))
+    @mock.patch.object(policy, 'authorize', mock.Mock(return_value=True))
     def test_extension_info_show(self):
         req = fakes.HTTPRequest.blank('/extensions/ext1-alias')
         res_dict = self.controller.show(req, 'ext1-alias')
@@ -86,7 +86,7 @@ class ExtensionInfoTest(test.NoDBTestCase):
         self.assertEqual(res_dict['extension']['links'], [])
         self.assertEqual(6, len(res_dict['extension']))
 
-    @mock.patch.object(policy, 'enforce')
+    @mock.patch.object(policy, 'authorize')
     def test_extension_info_list_not_all_discoverable(self, mock_authorize):
         mock_authorize.side_effect = fake_policy_authorize_selective
         req = fakes.HTTPRequest.blank('/extensions')

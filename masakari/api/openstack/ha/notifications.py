@@ -25,9 +25,9 @@ from masakari.api import validation
 from masakari import exception
 from masakari.ha import api as notification_api
 from masakari.i18n import _
+from masakari.policies import notifications as notifications_policies
 
 ALIAS = 'notifications'
-authorize = extensions.os_masakari_authorizer(ALIAS)
 
 
 class NotificationsController(wsgi.Controller):
@@ -43,7 +43,7 @@ class NotificationsController(wsgi.Controller):
     def create(self, req, body):
         """Creates a new notification."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(notifications_policies.NOTIFICATIONS % 'create')
 
         notification_data = body['notification']
         try:
@@ -61,7 +61,7 @@ class NotificationsController(wsgi.Controller):
     def index(self, req):
         """Returns a summary list of notifications."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(notifications_policies.NOTIFICATIONS % 'index')
         try:
             limit, marker = common.get_limit_and_marker(req)
             sort_keys, sort_dirs = common.get_sort_params(req.params)
@@ -95,7 +95,7 @@ class NotificationsController(wsgi.Controller):
     def show(self, req, id):
         """Return data about the given notification id."""
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(notifications_policies.NOTIFICATIONS % 'detail')
 
         try:
             notification = self.api.get_notification(context, id)

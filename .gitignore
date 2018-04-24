@@ -60,3 +60,7 @@ releasenotes/build
 
 # PyCharm IDE
 .idea/
+
+# policy sample generation
+etc/masakari/policy.yaml.sample
+

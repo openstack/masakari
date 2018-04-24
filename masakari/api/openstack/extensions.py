@@ -22,11 +22,9 @@ import six
 import webob.dec
 import webob.exc
 
-import masakari.api.openstack
 from masakari.api.openstack import wsgi
 from masakari import exception
 from masakari.i18n import _
-import masakari.policy
 
 LOG = logging.getLogger(__name__)
 
@@ -314,45 +312,6 @@ def load_standard_extensions(ext_mgr, logger, path, package, ext_list=None):
         # remain in dirnames'
         # https://docs.python.org/2/library/os.html#os.walk
         dirnames[:] = subdirs
-
-
-# This will be deprecated after policy cleanup finished
-def core_authorizer(api_name, extension_name):
-    def authorize(context, target=None, action=None):
-        if target is None:
-            target = {'project_id': context.project_id,
-                      'user_id': context.user_id}
-        if action is None:
-            act = '%s:%s' % (api_name, extension_name)
-        else:
-            act = '%s:%s:%s' % (api_name, extension_name, action)
-        masakari.policy.enforce(context, act, target)
-    return authorize
-
-
-def _soft_authorizer(hard_authorizer, api_name, extension_name):
-    hard_authorize = hard_authorizer(api_name, extension_name)
-
-    def authorize(context, target=None, action=None):
-        try:
-            hard_authorize(context, target=target, action=action)
-            return True
-        except exception.Forbidden:
-            return False
-    return authorize
-
-
-# This will be deprecated after policy cleanup finished
-def soft_core_authorizer(api_name, extension_name):
-    return _soft_authorizer(core_authorizer, api_name, extension_name)
-
-
-def os_masakari_authorizer(extension_name):
-    return core_authorizer('os_masakari_api', extension_name)
-
-
-def os_masakari_soft_authorizer(extension_name):
-    return soft_core_authorizer('os_masakari_api', extension_name)
 
 
 @six.add_metaclass(abc.ABCMeta)

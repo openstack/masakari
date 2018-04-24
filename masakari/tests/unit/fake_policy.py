@@ -17,9 +17,20 @@ policy_data = """
 {
     "context_is_admin": "role:admin or role:administrator",
 
-    "os_masakari_api:extensions": "",
-    "os_masakari_api:segments": "",
-    "os_masakari_api:os-hosts": "",
-    "os_masakari_api:notifications": ""
+    "os_masakari_api:extensions:index": "",
+    "os_masakari_api:extensions:detail": "",
+    "os_masakari_api:segments:index": "",
+    "os_masakari_api:segments:detail": "",
+    "os_masakari_api:segments:create": "",
+    "os_masakari_api:segments:update": "",
+    "os_masakari_api:segments:delete": "",
+    "os_masakari_api:os-hosts:index": "",
+    "os_masakari_api:os-hosts:detail": "",
+    "os_masakari_api:os-hosts:create": "",
+    "os_masakari_api:os-hosts:update": "",
+    "os_masakari_api:os-hosts:delete": "",
+    "os_masakari_api:notifications:index": "",
+    "os_masakari_api:notifications:detail": "",
+    "os_masakari_api:notifications:create": ""
 }
 """

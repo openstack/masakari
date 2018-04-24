@@ -480,25 +480,27 @@ class HostTestCasePolicyNotAuthorized(test.NoDBTestCase):
         self.req = fakes.HTTPRequest.blank(
             '/v1/segments/%s/hosts' % uuidsentinel.fake_segment1)
         self.context = self.req.environ['masakari.context']
-        self.rule_name = "os_masakari_api:os-hosts"
-        self.policy.set_rules({self.rule_name: "project:non_fake"})
 
     def setUp(self):
         super(HostTestCasePolicyNotAuthorized, self).setUp()
         self._set_up()
 
-    def _check_rule(self, exc):
+    def _check_rule(self, exc, rule_name):
         self.assertEqual(
-            "Policy doesn't allow %s to be performed." % self.rule_name,
+            "Policy doesn't allow %s to be performed." % rule_name,
             exc.format_message())
 
     def test_index_no_admin(self):
+        rule_name = "os_masakari_api:os-hosts:index"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         exc = self.assertRaises(exception.PolicyNotAuthorized,
                                 self.controller.index,
                                 self.req, uuidsentinel.fake_segment1)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)
 
     def test_create_no_admin(self):
+        rule_name = "os_masakari_api:os-hosts:create"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         body = {
             "host": {
                 "name": "host-1", "type": "fake", "reserved": False,
@@ -510,16 +512,20 @@ class HostTestCasePolicyNotAuthorized(test.NoDBTestCase):
                                 self.controller.create,
                                 self.req, uuidsentinel.fake_segment1,
                                 body=body)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)
 
     def test_show_no_admin(self):
+        rule_name = "os_masakari_api:os-hosts:detail"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         exc = self.assertRaises(exception.PolicyNotAuthorized,
                                 self.controller.show,
                                 self.req, uuidsentinel.fake_segment1,
                                 uuidsentinel.fake_host_1)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)
 
     def test_update_no_admin(self):
+        rule_name = "os_masakari_api:os-hosts:update"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         body = {
             "host": {
                 "name": "host-1", "type": "fake", "reserved": False,
@@ -531,11 +537,13 @@ class HostTestCasePolicyNotAuthorized(test.NoDBTestCase):
                                 self.controller.update,
                                 self.req, uuidsentinel.fake_segment1,
                                 uuidsentinel.fake_host_1, body=body)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)
 
     def test_delete_no_admin(self):
+        rule_name = "os_masakari_api:os-hosts:delete"
+        self.policy.set_rules({rule_name: "project:non_fake"})
         exc = self.assertRaises(exception.PolicyNotAuthorized,
                                 self.controller.delete,
                                 self.req, uuidsentinel.fake_segment1,
                                 uuidsentinel.fake_host_1)
-        self._check_rule(exc)
+        self._check_rule(exc, rule_name)

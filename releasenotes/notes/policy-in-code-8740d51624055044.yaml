@@ -1,0 +1,22 @@
+---
+features:
+  - |
+    Masakari now support policy in code, which means if operators doesn't need to
+    modify any of the default policy rules, they do not need a policy file.
+    Operators can modify/generate a ``policy.yaml.sample`` file which will override
+    specific policy rules from their defaults.
+
+    Masakari is now configured to work with two oslo.policy CLI scripts that
+    have been added:
+
+    - The first of these can be called like
+      ``oslopolicy-list-redundant --namespace masakari`` and will output a list of
+      policy rules in policy.[json|yaml] that match the project defaults. These
+      rules can be removed from the policy file as they have no effect there.
+    - The second script can be called like
+      ``oslopolicy-policy-generator --namespace masakari --output-file policy-merged.yaml``
+      and will populate the policy-merged.yaml file with the effective policy.
+      This is the merged results of project defaults and config file overrides.
+
+    NOTE: Default `policy.json` file is now removed as Masakari now uses default
+    policies. A policy file is only needed if overriding one of the defaults.

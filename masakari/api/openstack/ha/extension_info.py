@@ -19,10 +19,11 @@ import webob.exc
 from masakari.api.openstack import extensions
 from masakari.api.openstack import wsgi
 from masakari import exception
+from masakari.policies import base as base_policies
+from masakari.policies import extension_info as extension_policies
 
 ALIAS = 'extensions'
 LOG = logging.getLogger(__name__)
-authorize = extensions.os_masakari_authorizer(ALIAS)
 
 
 class FakeExtension(object):
@@ -53,10 +54,10 @@ class ExtensionInfoController(wsgi.Controller):
         """Filter extensions list based on policy."""
 
         discoverable_extensions = dict()
-
         for alias, ext in self.extension_info.get_extensions().items():
-            authorize = extensions.os_masakari_soft_authorizer(alias)
-            if authorize(context, action='discoverable'):
+            action = ':'.join([
+                base_policies.MASAKARI_API, alias, 'discoverable'])
+            if context.can(action, fatal=False):
                 discoverable_extensions[alias] = ext
             else:
                 LOG.debug("Filter out extension %s from discover list",
@@ -67,7 +68,7 @@ class ExtensionInfoController(wsgi.Controller):
     @extensions.expected_errors(())
     def index(self, req):
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(extension_policies.EXTENSIONS % 'index')
         discoverable_extensions = self._get_extensions(context)
         sorted_ext_list = sorted(discoverable_extensions.items())
 
@@ -80,7 +81,7 @@ class ExtensionInfoController(wsgi.Controller):
     @extensions.expected_errors(http_client.NOT_FOUND)
     def show(self, req, id):
         context = req.environ['masakari.context']
-        authorize(context)
+        context.can(extension_policies.EXTENSIONS % 'detail')
         try:
             ext = self._get_extensions(context)[id]
         except KeyError:

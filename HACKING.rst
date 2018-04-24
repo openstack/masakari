@@ -43,3 +43,5 @@ Masakari Specific Commandments
 - [M329] Deprecated library function os.popen()
 - [M331] LOG.warn is deprecated. Enforce use of LOG.warning.
 - [M332] Yield must always be followed by a space when yielding a value.
+- [M333] Policy registration should be in the central location ``masakari/policies/``
+- [M334] Do not use the oslo_policy.policy.Enforcer.enforce() method.
