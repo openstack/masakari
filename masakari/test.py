@@ -32,7 +32,6 @@ import testtools
 
 from oslo_config import cfg
 from oslo_log import log as logging
-from oslotest import moxstubout
 
 from masakari.tests import fixtures as masakari_fixtures
 from masakari.tests.unit import conf_fixture
@@ -89,9 +88,6 @@ class TestCase(testtools.TestCase):
         super(TestCase, self).setUp()
 
         self.useFixture(conf_fixture.ConfFixture(CONF))
-        mox_fixture = self.useFixture(moxstubout.MoxStubout())
-        self.mox = mox_fixture.mox
-        self.stubs = mox_fixture.stubs
         self.policy = self.useFixture(policy_fixture.PolicyFixture())
 
         if self.USES_DB:
