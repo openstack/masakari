@@ -79,7 +79,7 @@ notification_opts = [
                default=1,
                help='The monitoring interval for looping'),
     cfg.IntOpt('wait_period_after_power_off',
-               default=60,
+               default=180,
                help='Number of seconds to wait for instance to shut down'),
     cfg.IntOpt('wait_period_after_power_on',
                default=60,
