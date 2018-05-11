@@ -51,7 +51,7 @@ function create_masakari_accounts {
         create_service_user "masakari" "admin"
 
         local masakari_service=$(get_or_create_service "masakari" \
-            "ha" "OpenStack High Availability")
+            "instance-ha" "OpenStack High Availability")
         get_or_create_endpoint $masakari_service \
             "$REGION_NAME" \
             "$MASAKARI_SERVICE_PROTOCOL://$SERVICE_HOST:$MASAKARI_SERVICE_PORT/v1/\$(tenant_id)s" \
