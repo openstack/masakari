@@ -170,13 +170,13 @@ class ExpectedArgsTestCase(base.NoDBTestCase):
         self.assertRaises(TypeError, dec, func)
 
 
-class SpawnNTestCase(base.NoDBTestCase):
+class SpawnTestCase(base.NoDBTestCase):
     def setUp(self):
-        super(SpawnNTestCase, self).setUp()
+        super(SpawnTestCase, self).setUp()
         self.useFixture(context_fixture.ClearRequestContext())
-        self.spawn_name = 'spawn_n'
+        self.spawn_name = 'spawn'
 
-    def test_spawn_n_no_context(self):
+    def test_spawn_no_context(self):
         self.assertIsNone(common_context.get_current())
 
         def _fake_spawn(func, *args, **kwargs):
@@ -191,7 +191,7 @@ class SpawnNTestCase(base.NoDBTestCase):
             getattr(utils, self.spawn_name)(fake, 'test')
         self.assertIsNone(common_context.get_current())
 
-    def test_spawn_n_context(self):
+    def test_spawn_context(self):
         self.assertIsNone(common_context.get_current())
         ctxt = context.RequestContext('user', 'project')
 
@@ -208,7 +208,7 @@ class SpawnNTestCase(base.NoDBTestCase):
             getattr(utils, self.spawn_name)(fake, ctxt, kwarg1='test')
         self.assertEqual(ctxt, common_context.get_current())
 
-    def test_spawn_n_context_different_from_passed(self):
+    def test_spawn_context_different_from_passed(self):
         self.assertIsNone(common_context.get_current())
         ctxt = context.RequestContext('user', 'project')
         ctxt_passed = context.RequestContext('user', 'project',
@@ -227,12 +227,6 @@ class SpawnNTestCase(base.NoDBTestCase):
         with mock.patch.object(eventlet, self.spawn_name, _fake_spawn):
             getattr(utils, self.spawn_name)(fake, ctxt_passed, kwarg1='test')
         self.assertEqual(ctxt, common_context.get_current())
-
-
-class SpawnTestCase(SpawnNTestCase):
-    def setUp(self):
-        super(SpawnTestCase, self).setUp()
-        self.spawn_name = 'spawn'
 
 
 class ValidateIntegerTestCase(base.NoDBTestCase):

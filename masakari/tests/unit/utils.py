@@ -24,17 +24,8 @@ import masakari.utils
 CONF = masakari.conf.CONF
 
 
-def get_test_admin_context():
-    return masakari.context.get_admin_context()
-
-
 def is_linux():
     return platform.system() == 'Linux'
-
-
-def coreutils_readlink_available():
-    _out, err = masakari.utils.trycmd('readlink', '-nm', '/')
-    return err == ''
 
 
 def is_ipv6_supported():
@@ -58,17 +49,3 @@ def is_ipv6_supported():
             has_ipv6_support = False
 
     return has_ipv6_support
-
-
-def get_api_version(request):
-    if request.path[2:3].isdigit():
-        return int(request.path[2:3])
-
-
-def _compare_args(args1, args2, cmp):
-    return all(cmp(*pair) for pair in zip(args1, args2))
-
-
-def _compare_kwargs(kwargs1, kwargs2, cmp):
-    return all(cmp(kwargs1[k], kwargs2[k])
-               for k in set(list(kwargs1.keys()) + list(kwargs2.keys())))

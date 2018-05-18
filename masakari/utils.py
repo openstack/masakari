@@ -171,26 +171,6 @@ def strtime(at):
     return at.strftime("%Y-%m-%dT%H:%M:%S.%f")
 
 
-class ExceptionHelper(object):
-    """Class to wrap another and translate the ClientExceptions raised by its
-    function calls to the actual ones.
-    """
-
-    def __init__(self, target):
-        self._target = target
-
-    def __getattr__(self, name):
-        func = getattr(self._target, name)
-
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                reraise(*e.exc_info)
-        return wrapper
-
-
 def spawn(func, *args, **kwargs):
     """Passthrough method for eventlet.spawn.
 
