@@ -47,7 +47,7 @@ def _get_config_files(env=None):
 
 
 def main():
-    config.parse_args(sys.argv)
+    api_config.parse_args(sys.argv)
     logging.setup(CONF, "masakari")
     log = logging.getLogger(__name__)
     objects.register_all()
