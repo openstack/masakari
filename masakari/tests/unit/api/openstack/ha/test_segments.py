@@ -130,6 +130,21 @@ class FailoverSegmentTestCase(test.TestCase):
         self._assert_segment_data(FAILOVER_SEGMENT, _make_segment_obj(result))
 
     @mock.patch.object(ha_api.FailoverSegmentAPI, 'create_segment')
+    def test_create_with_multiline_description(self, mock_create):
+        body = {
+            "segment": {
+                "name": "segment1",
+                "service_type": "COMPUTE",
+                "recovery_method": "auto",
+                "description": "failover_segment\nfor\ncompute"
+            }
+        }
+        mock_create.return_value = FAILOVER_SEGMENT
+        result = self.controller.create(self.req, body=body)
+        result = result['segment']
+        self._assert_segment_data(FAILOVER_SEGMENT, _make_segment_obj(result))
+
+    @mock.patch.object(ha_api.FailoverSegmentAPI, 'create_segment')
     def test_create_with_duplicate_segment_name(self, mock_create):
         body = {
             "segment": {

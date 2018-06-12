@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Allows segment description to contain new line characters.
+    `LP#1776385 <https://launchpad.net/bugs/1776385>`__
