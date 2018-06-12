@@ -116,7 +116,7 @@ def _build_regex_range(ws=True, invert=False, exclude=None):
     return regex
 
 
-valid_description_regex_base = '^[%s]*$'
+valid_description_regex_base = '^[\n%s]*$'
 
 valid_name_regex_base = '^(?![%s])[%s]*(?<![%s])$'
 
