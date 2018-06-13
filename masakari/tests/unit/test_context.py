@@ -116,96 +116,30 @@ class ContextTestCase(test.NoDBTestCase):
             111, 222, request_id='req-679033b7-1755-4929-bf85-eb3bfaef7e0b',
             timestamp='2016-03-02T22:31:56.641629')
         values2 = ctx.to_dict()
-        expected_values = {'auth_token': None,
-                           'domain': None,
-                           'is_admin': False,
-                           'global_request_id': None,
-                           'is_admin_project': True,
-                           'project': 222,
-                           'project_domain': None,
+        expected_values = {'is_admin': False,
                            'project_id': 222,
                            'project_name': None,
                            'read_deleted': 'no',
-                           'read_only': False,
                            'remote_address': None,
                            'request_id':
                                'req-679033b7-1755-4929-bf85-eb3bfaef7e0b',
-                           'resource_uuid': None,
-                           'roles': [],
                            'service_catalog': [],
-                           'show_deleted': False,
-                           'tenant': 222,
                            'timestamp': '2016-03-02T22:31:56.641629',
-                           'user': 111,
-                           'user_domain': None,
                            'user_id': 111,
-                           'user_identity': '111 222 - - -',
                            'user_name': None}
-
-        self.assertEqual(expected_values, values2)
-
-    def test_convert_from_dict_to_dict_version_2_4_x(self):
-        # fake dict() created with oslo.context 2.4.x, Missing is_admin_project
-        # key
-        values = {'auth_token': None,
-                  'domain': None,
-                  'is_admin': True,
-                  'global_request_id': None,
-                  'is_admin_project': True,
-                  'project': '222',
-                  'project_domain': None,
-                  'project_id': '222',
-                  'project_name': None,
-                  'read_deleted': 'no',
-                  'read_only': False,
-                  'remote_address': None,
-                  'request_id': 'req-956637ad-354a-4bc5-b969-66fd1cc00f50',
-                  'resource_uuid': None,
-                  'roles': [],
-                  'service_catalog': [],
-                  'show_deleted': False,
-                  'tenant': '222',
-                  'timestamp': '2016-03-02T20:03:59.416299',
-                  'user': '111',
-                  'user_domain': None,
-                  'user_id': '111',
-                  'user_identity': '111 222 - - -',
-                  'user_name': None}
-
-        ctx = context.RequestContext.from_dict(values)
-        self.assertEqual('111', ctx.user)
-        self.assertEqual('222', ctx.tenant)
-        self.assertEqual('111', ctx.user_id)
-        self.assertEqual('222', ctx.project_id)
-        # to_dict() will add is_admin_project
-        values.update({'is_admin_project': True})
-        values2 = ctx.to_dict()
-        self.assertEqual(values, values2)
+        self.assertDictContainsSubset(expected_values, values2)
 
     def test_convert_from_dict_then_to_dict(self):
-        values = {'auth_token': None,
-                  'domain': None,
-                  'is_admin': True,
-                  'global_request_id': None,
-                  'is_admin_project': True,
-                  'project': '222',
-                  'project_domain': None,
+        values = {'is_admin': False,
                   'project_id': '222',
                   'project_name': None,
                   'read_deleted': 'no',
-                  'read_only': False,
                   'remote_address': None,
-                  'request_id': 'req-956637ad-354a-4bc5-b969-66fd1cc00f50',
-                  'resource_uuid': None,
-                  'roles': [],
+                  'request_id':
+                  'req-679033b7-1755-4929-bf85-eb3bfaef7e0b',
                   'service_catalog': [],
-                  'show_deleted': False,
-                  'tenant': '222',
-                  'timestamp': '2016-03-02T20:03:59.416299',
-                  'user': '111',
-                  'user_domain': None,
+                  'timestamp': '2016-03-02T22:31:56.641629',
                   'user_id': '111',
-                  'user_identity': '111 222 - - -',
                   'user_name': None}
 
         ctx = context.RequestContext.from_dict(values)
@@ -215,4 +149,4 @@ class ContextTestCase(test.NoDBTestCase):
         self.assertEqual('111', ctx.user_id)
         self.assertEqual('222', ctx.project_id)
         values2 = ctx.to_dict()
-        self.assertEqual(values, values2)
+        self.assertDictContainsSubset(values, values2)
