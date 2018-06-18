@@ -186,6 +186,26 @@ class MasakariManager(manager.Manager):
                      {'notification_uuid': notification.notification_uuid,
                       'type': notification.type})
 
+            # Get notification from db
+            notification_db = objects.Notification.get_by_uuid(context,
+                                        notification.notification_uuid)
+
+            # NOTE(tpatil): To fix bug 1773132, process notification only
+            # if the notification status is New and the current notification
+            # from DB status is Not New to avoid recovering from failure twice
+            if (notification.status == fields.NotificationStatus.NEW and
+                    notification_db.status != fields.NotificationStatus.NEW):
+                LOG.warning("Processing of notification is skipped to avoid "
+                            "recovering from failure twice. "
+                            "Notification received is '%(uuid)s' "
+                            "and it's status is '%(new_status)s' and the "
+                            "current status of same notification in db "
+                            "is '%(old_status)s'",
+                            {"uuid": notification.notification_uuid,
+                            "new_status": notification.status,
+                            "old_status": notification_db.status})
+                return
+
             update_data = {
                 'status': fields.NotificationStatus.RUNNING,
             }
