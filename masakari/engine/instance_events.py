@@ -20,6 +20,8 @@ instance recovery failure.
 """
 
 INSTANCE_EVENTS = {
+    # Add QEMU guest agent events here.
+    'QEMU_GUEST_AGENT_ERROR': ['STOPPED_FAILED'],
     # Add more events and vir_domain_events here.
     'LIFECYCLE': ['STOPPED_FAILED'],
     'IO_ERROR': ['IO_ERROR_REPORT']
