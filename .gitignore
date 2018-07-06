@@ -27,6 +27,7 @@ cover/
 !.coveragerc
 .tox
 nosetests.xml
+.stestr
 .testrepository
 .venv
 
