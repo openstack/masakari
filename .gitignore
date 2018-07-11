@@ -28,7 +28,6 @@ cover/
 .tox
 nosetests.xml
 .stestr
-.testrepository
 .venv
 
 # Translations
