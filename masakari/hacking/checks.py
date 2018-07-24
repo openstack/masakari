@@ -85,6 +85,7 @@ spawn_re = re.compile(
 contextlib_nested = re.compile(r"^with (contextlib\.)?nested\(")
 doubled_words_re = re.compile(
     r"\b(then?|[iao]n|i[fst]|but|f?or|at|and|[dt]o)\s+\1\b")
+yield_not_followed_by_space = re.compile(r"^\s*yield(?:\(|{|\[|\"|').*$")
 _all_log_levels = {'critical', 'error', 'exception', 'info',
                    'warning', 'debug'}
 _all_hints = {'_', '_LE', '_LI', '_LW', '_LC'}
@@ -126,7 +127,7 @@ def capital_cfg_help(logical_line, tokens):
             if tokens[t][1] == "help":
                 txt = tokens[t + 2][1]
                 if len(txt) > 1 and txt[1].islower():
-                    yield(0, msg)
+                    yield (0, msg)
 
 
 def assert_true_instance(logical_line):
@@ -159,7 +160,7 @@ def no_translate_logs(logical_line):
     M308
     """
     if log_translation_re.match(logical_line):
-        yield(0, "M308: Log messages should not be translated")
+        yield (0, "M308: Log messages should not be translated")
 
 
 def no_import_translation_in_tests(logical_line, filename):
@@ -169,7 +170,7 @@ def no_import_translation_in_tests(logical_line, filename):
     if 'masakari/tests/' in filename:
         res = import_translation_for_log_or_exception.match(logical_line)
         if res:
-            yield(0, "M309 Don't import translation in tests")
+            yield (0, "M309 Don't import translation in tests")
 
 
 def no_setting_conf_directly_in_tests(logical_line, filename):
@@ -213,8 +214,8 @@ def check_explicit_underscore_import(logical_line, filename):
         UNDERSCORE_IMPORT_FILES.append(filename)
     elif (translated_log.match(logical_line) or
           string_translation.match(logical_line)):
-        yield(0, "M316: Found use of _() without explicit "
-                 "import of _ !")
+        yield (0, "M316: Found use of _() without explicit "
+                  "import of _ !")
 
 
 def use_jsonutils(logical_line, filename):
@@ -304,7 +305,7 @@ def check_no_contextlib_nested(logical_line, filename):
            "is an alternative as well.")
 
     if contextlib_nested.match(logical_line):
-        yield(0, msg)
+        yield (0, msg)
 
 
 def check_config_option_in_central_place(logical_line, filename):
@@ -328,7 +329,7 @@ def check_config_option_in_central_place(logical_line, filename):
         return
 
     if cfg_opt_re.match(logical_line):
-        yield(0, msg)
+        yield (0, msg)
 
 
 def check_doubled_words(physical_line, filename):
@@ -348,7 +349,7 @@ def check_python3_no_iteritems(logical_line):
     msg = ("M326: Use dict.items() instead of dict.iteritems().")
 
     if re.search(r".*\.iteritems\(\)", logical_line):
-        yield(0, msg)
+        yield (0, msg)
 
 
 def check_python3_no_iterkeys(logical_line):
@@ -356,14 +357,14 @@ def check_python3_no_iterkeys(logical_line):
            "dict.iterkeys()'.")
 
     if re.search(r".*\.iterkeys\(\)", logical_line):
-        yield(0, msg)
+        yield (0, msg)
 
 
 def check_python3_no_itervalues(logical_line):
     msg = ("M328: Use dict.values() instead of dict.itervalues().")
 
     if re.search(r".*\.itervalues\(\)", logical_line):
-        yield(0, msg)
+        yield (0, msg)
 
 
 def no_os_popen(logical_line):
@@ -376,8 +377,8 @@ def no_os_popen(logical_line):
     """
 
     if 'os.popen(' in logical_line:
-        yield(0, 'M329 Deprecated library function os.popen(). '
-                 'Replace it using subprocess module. ')
+        yield (0, 'M329 Deprecated library function os.popen(). '
+                  'Replace it using subprocess module. ')
 
 
 def no_log_warn(logical_line):
@@ -392,6 +393,23 @@ def no_log_warn(logical_line):
     msg = ("M331: LOG.warn is deprecated, please use LOG.warning!")
     if "LOG.warn(" in logical_line:
         yield (0, msg)
+
+
+def yield_followed_by_space(logical_line):
+    """Yield should be followed by a space.
+
+    Yield should be followed by a space to clarify that yield is
+    not a function. Adding a space may force the developer to rethink
+    if there are unnecessary parentheses in the written code.
+
+    Not correct: yield(x), yield(a, b)
+    Correct: yield x, yield (a, b), yield a, b
+
+    M332
+    """
+    if yield_not_followed_by_space.match(logical_line):
+        yield (0,
+               "M332: Yield keyword should be followed by a space.")
 
 
 def factory(register):
@@ -419,3 +437,4 @@ def factory(register):
     register(check_python3_no_itervalues)
     register(no_os_popen)
     register(no_log_warn)
+    register(yield_followed_by_space)
