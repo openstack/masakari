@@ -39,6 +39,8 @@ class FakeNovaClient(object):
     class ServerManager(object):
         def __init__(self):
             self._servers = []
+            self.reset_state_calls = []
+            self.stop_calls = []
 
         def create(self, id, uuid=None, host=None, vm_state='active',
                    task_state=None, power_state=1, ha_enabled=False):
@@ -67,6 +69,8 @@ class FakeNovaClient(object):
             return matching
 
         def reset_state(self, uuid, status):
+            current_status = getattr(self.get(uuid), "OS-EXT-STS:vm_state")
+            self.reset_state_calls.append((uuid, current_status))
             server = self.get(uuid)
             setattr(server, 'OS-EXT-STS:vm_state', status)
 
@@ -76,12 +80,13 @@ class FakeNovaClient(object):
             server = self.get(uuid)
             setattr(server, 'OS-EXT-SRV-ATTR:hypervisor_hostname', host)
             # pretending that instance is evacuated successfully on given host
-            if getattr(server, "OS-EXT-STS:vm_state") == 'active':
+            if getattr(server, "OS-EXT-STS:vm_state") in ['active', 'error']:
                 setattr(server, 'OS-EXT-STS:vm_state', 'active')
             else:
                 setattr(server, 'OS-EXT-STS:vm_state', 'stopped')
 
         def stop(self, id):
+            self.stop_calls.append(id)
             server = self.get(id)
             setattr(server, 'OS-EXT-STS:vm_state', 'stopped')
 

@@ -194,8 +194,6 @@ class EvacuateInstancesTask(base.MasakariTask):
                 if vm_state == 'resized' and power_state != SHUTDOWN:
                     stop_instance = False
 
-                vm_state = getattr(instance, "OS-EXT-STS:vm_state")
-
             elif task_state is not None:
                 # Nova fails evacuation when the instance's task_state is not
                 # none. In this case, masakari resets the instance's vm_state
