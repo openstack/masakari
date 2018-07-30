@@ -200,6 +200,23 @@ function start_masakari {
     run_process masakari-engine "$MASAKARI_BIN_DIR/masakari-engine --config-file=$MASAKARI_CONF --debug"
 }
 
+#install masakari-dashboard
+function install_masakaridashboard {
+    git_clone $MASAKARI_DASHBOARD_REPO $MASAKARI_DASHBOARD_DIR $MASAKARI_DASHBOARD_BRANCH
+    setup_develop $MASAKARI_DASHBOARD_DIR
+    ln -fs $MASAKARI_DASHBOARD_DIR/masakaridashboard/local/enabled/_50_masakaridashboard.py $HORIZON_DIR/openstack_dashboard/local/enabled
+    ln -fs $MASAKARI_DASHBOARD_DIR/masakaridashboard/local/local_settings.d/_50_masakari.py $HORIZON_DIR/openstack_dashboard/local/local_settings.d
+    ln -fs $MASAKARI_DASHBOARD_DIR/masakaridashboard/conf/masakari_policy.json $HORIZON_DIR/openstack_dashboard/conf
+}
+
+#uninstall masakari-dashboard
+function uninstall_masakaridashboard {
+    sudo rm -f  $DEST/horizon/openstack_dashboard/local/enabled/_50_masakaridashboard.py
+    sudo rm -f  $DEST/horizon/openstack_dashboard/local/local_settings.d/_50_masakari.py
+    sudo rm -f  $DEST/horizon/penstack_dashboard/conf/masakari_policy.json
+    restart_apache_server
+}
+
 # stop_masakari() - Stop running processes
 function stop_masakari {
     # Kill the masakari services
@@ -229,9 +246,18 @@ if is_service_enabled masakari; then
         # Start the masakari API and masakari taskmgr components
         echo_summary "Starting Masakari"
         start_masakari
+        if is_service_enabled horizon; then
+            # install masakari-dashboard
+            echo_summary "Installing masakari-dashboard"
+            install_masakaridashboard
+        fi
     fi
 
     if [[ "$1" == "unstack" ]]; then
+        if is_service_enabled horizon; then
+            echo_summary "Uninstall masakari-dashboard"
+            uninstall_masakaridashboard
+        fi
         stop_masakari
         cleanup_masakari
     fi
