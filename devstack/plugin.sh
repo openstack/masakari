@@ -110,9 +110,6 @@ function configure_masakari {
     # Copy api-paste file over to the masakari conf dir
     cp $MASAKARI_LOCAL_API_PASTE_INI $MASAKARI_API_PASTE_INI
 
-    # Copy policy.json file over to the masakari conf dir
-    cp $MASAKARI_LOCAL_POLICY_JSON $MASAKARI_POLICY_JSON
-
     # (Re)create masakari conf files
     rm -f $MASAKARI_CONF
 
