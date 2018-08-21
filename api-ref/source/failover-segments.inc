@@ -35,7 +35,7 @@ recovery action to be followed when any host in a segment goes down. The
 possible `recovery_method` values are:
 
 - ``AUTO``. Auto recovery action.
-- ``RESEVED_HOST``. Reserved host recovery action.
+- ``RESERVED_HOST``. Reserved host recovery action.
 - ``AUTO_PRIORITY``. First executes auto and if auto fails then retried with
   reserved host recover action.
 - ``RH_PRIORITY``. First executes reserved host and if it fails then retried
