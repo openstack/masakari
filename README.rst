@@ -53,7 +53,7 @@ Configure masakari-api
 
    .. code-block:: shell-session
 
-      openstack service create --name masakari --description "masakari high availability" masakari
+      openstack service create --name masakari --description "masakari high availability" instance-ha
 
 #. Create endpoint for masakari service:
 
