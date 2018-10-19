@@ -66,6 +66,7 @@ This section will help you in configuring masakari mannualy.
     :maxdepth: 1
 
     operators_guide
+    cli/index
     sample_config
     sample_policy
     recovery_workflow_sample_config
