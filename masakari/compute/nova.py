@@ -39,7 +39,7 @@ CONF.import_group('keystone_authtoken', 'keystonemiddleware.auth_token')
 
 LOG = logging.getLogger(__name__)
 
-NOVA_API_VERSION = "2.14"
+NOVA_API_VERSION = "2.53"
 
 nova_extensions = [ext for ext in
                    nova_client.discover_extensions(NOVA_API_VERSION)
@@ -243,3 +243,18 @@ class API(object):
         msg = ('Call unlock server command for instance %(uuid)s')
         LOG.info(msg, {'uuid': uuid})
         return nova.servers.unlock(uuid)
+
+    @translate_nova_exception
+    def hypervisor_search(self, context, host_name):
+        """Search hypervisor with case sensitive hostname."""
+        nova = novaclient(context)
+        msg = ("Call hypervisor search command to get list of matching "
+               "host name '%(host_name)s'")
+        LOG.info(msg, {'host_name': host_name})
+        try:
+            hypervisors_list = nova.hypervisors.search(host_name)
+            if host_name not in [host.hypervisor_hostname for host in
+                            hypervisors_list]:
+                raise exception.HostNotFoundByName(host_name=host_name)
+        except nova_exception.NotFound:
+            raise exception.HostNotFoundByName(host_name=host_name)

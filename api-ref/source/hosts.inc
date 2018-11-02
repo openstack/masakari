@@ -114,6 +114,8 @@ Response Codes
   A conflict(409) is returned if host with same name is already present under
   given segment.
 
+  BadRequest (400) is returned if host doesn't exists in nova.
+
 Request
 -------
 

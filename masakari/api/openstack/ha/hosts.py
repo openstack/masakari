@@ -97,8 +97,8 @@ class HostsController(wsgi.Controller):
         return {'hosts': hosts}
 
     @wsgi.response(http.CREATED)
-    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND,
-                                 http.CONFLICT))
+    @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN,
+                                 http.NOT_FOUND, http.CONFLICT))
     @validation.schema(schema.create)
     def create(self, req, segment_id, body):
         """Creates a host."""
@@ -107,6 +107,8 @@ class HostsController(wsgi.Controller):
         host_data = body.get('host')
         try:
             host = self.api.create_host(context, segment_id, host_data)
+        except exception.HostNotFoundByName as e:
+            raise exc.HTTPBadRequest(explanation=e.message)
         except exception.FailoverSegmentNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
         except exception.HostExists as e:

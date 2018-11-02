@@ -18,6 +18,7 @@ from oslo_log import log as logging
 from oslo_utils import strutils
 from oslo_utils import uuidutils
 
+from masakari.compute import nova
 import masakari.conf
 from masakari.engine import rpcapi as engine_rpcapi
 from masakari import exception
@@ -166,6 +167,8 @@ class HostAPI(object):
         host.reserved = strutils.bool_from_string(
             host_data.get('reserved', False), strict=True)
 
+        novaclient = nova.API()
+        novaclient.hypervisor_search(context, host.name)
         host.create()
         return host
 

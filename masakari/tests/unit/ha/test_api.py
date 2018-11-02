@@ -19,6 +19,7 @@ import copy
 import mock
 from oslo_utils import timeutils
 
+from masakari.compute import nova as nova_obj
 from masakari.engine import rpcapi as engine_rpcapi
 from masakari import exception
 from masakari.ha import api as ha_api
@@ -254,11 +255,14 @@ class HostAPITestCase(test.NoDBTestCase):
 
     @mock.patch.object(host_obj, 'Host')
     @mock.patch.object(host_obj.Host, 'create')
+    @mock.patch.object(nova_obj.API, 'hypervisor_search')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
-    def test_create(self, mock_get, mock_host_create, mock_host_obj):
+    def test_create(self, mock_get, mock_hypervisor_search,
+                mock_host_create, mock_host_obj):
         mock_get.return_value = self.failover_segment
+
         host_data = {
-            "name": "host-1", "type": "fake-type",
+            "name": 'host-1', "type": "fake-type",
             "reserved": False,
             "on_maintenance": False,
             "control_attributes": "fake-control_attributes"
@@ -270,11 +274,33 @@ class HostAPITestCase(test.NoDBTestCase):
                                            host_data)
         self._assert_host_data(self.host, _make_host_obj(result))
 
+    @mock.patch.object(nova_obj.API, 'hypervisor_search')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_create_non_existing_host(self, mock_segment_get,
+                                    mock_hypervisor_search):
+        mock_segment_get.return_value = self.failover_segment
+        mock_hypervisor_search.side_effect = exception\
+            .HostNotFoundByName(host_name='host-2')
+
+        host_data = {
+            "name": 'host-2',
+            "type": "fake-type",
+            "reserved": False,
+            "on_maintenance": False,
+            "control_attributes": "fake-control_attributes"
+        }
+
+        self.assertRaises(exception.HostNotFoundByName,
+                          self.host_api.create_host,
+                          self.context, uuidsentinel.fake_segment1, host_data)
+
     @mock.patch('oslo_utils.uuidutils.generate_uuid')
     @mock.patch('masakari.db.host_create')
     @mock.patch.object(host_obj.Host, '_from_db_object')
+    @mock.patch.object(nova_obj.API, 'hypervisor_search')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_create_convert_boolean_attributes(self, mock_get_segment,
+                                               mock_hypervisor_search,
                                                mock__from_db_object,
                                                mock_host_create,
                                                mock_generate_uuid):

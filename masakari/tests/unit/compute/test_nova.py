@@ -293,3 +293,28 @@ class NovaApiTestCase(test.TestCase):
 
         mock_novaclient.assert_called_once_with(self.ctx)
         mock_servers.unlock.assert_called_once_with(uuidsentinel.fake_server)
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    def test_hypervisor_search_non_existing_host_name(self, mock_novaclient):
+        mock_novaclient.return_value.hypervisors.search.side_effect = (
+            nova_exception.NotFound(http.NOT_FOUND))
+
+        self.assertRaises(exception.HostNotFoundByName,
+                          self.api.hypervisor_search, context, 'abc')
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    def test_hypervisor_search_case_sensitive(self, mock_novaclient):
+        test_hypers = [
+            dict(id=1,
+                 uuid=uuidsentinel.hyper1,
+                 hypervisor_hostname="xyz.one"),
+            dict(id=2,
+                 uuid=uuidsentinel.hyper2,
+                 hypervisor_hostname="xyz.two", ),
+            dict(id=3,
+                 uuid=uuidsentinel.hyper3,
+                 hypervisor_hostname="XYZ", )
+        ]
+        mock_novaclient.hypervisors.search.return_value = test_hypers
+        self.assertRaises(exception.HostNotFoundByName,
+                          self.api.hypervisor_search, context, 'xyz')
