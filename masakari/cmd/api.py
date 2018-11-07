@@ -53,18 +53,12 @@ def main():
     objects.register_all()
 
     launcher = service.process_launcher()
-    started = 0
     try:
         server = service.WSGIService("masakari_api", use_ssl=CONF.use_ssl)
         launcher.launch_service(server, workers=server.workers or 1)
-        started += 1
     except exception.PasteAppNotFound as ex:
-        log.warning("%s. ``enabled_apis`` includes bad values. "
-                "Fix to remove this warning.", six.text_type(ex))
-
-    if started == 0:
-        log.error('No APIs were started. '
-                  'Check the enabled_apis config option.')
+        log.error("Failed to start ``masakari_api`` service. Error: %s",
+                  six.text_type(ex))
         sys.exit(1)
 
     launcher.wait()
