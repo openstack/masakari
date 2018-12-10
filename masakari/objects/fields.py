@@ -84,6 +84,75 @@ class NotificationType(Enum):
         return cls.ALL[index]
 
 
+class EventType(Enum):
+    """Represents possible event types."""
+
+    STARTED = "STARTED"
+    STOPPED = "STOPPED"
+
+    ALL = (STARTED, STOPPED)
+
+    def __init__(self):
+        super(EventType,
+              self).__init__(valid_values=EventType.ALL)
+
+    @classmethod
+    def index(cls, value):
+        """Return an index into the Enum given a value."""
+        return cls.ALL.index(value)
+
+    @classmethod
+    def from_index(cls, index):
+        """Return the Enum value at a given index."""
+        return cls.ALL[index]
+
+
+class HostStatusType(Enum):
+    """Represents possible event types for Host status."""
+
+    NORMAL = "NORMAL"
+    UNKNOWN = "UNKNOWN"
+
+    ALL = (NORMAL, UNKNOWN)
+
+    def __init__(self):
+        super(HostStatusType,
+              self).__init__(valid_values=HostStatusType.ALL)
+
+    @classmethod
+    def index(cls, value):
+        """Return an index into the Enum given a value."""
+        return cls.ALL.index(value)
+
+    @classmethod
+    def from_index(cls, index):
+        """Return the Enum value at a given index."""
+        return cls.ALL[index]
+
+
+class ClusterStatusType(Enum):
+    """Represents possible event types for Cluster status."""
+
+    ONLINE = "ONLINE"
+    OFFLINE = "OFFLINE"
+
+    ALL = (ONLINE, OFFLINE)
+
+    def __init__(self):
+        super(ClusterStatusType,
+              self).__init__(valid_values=ClusterStatusType.ALL)
+
+    @classmethod
+    def index(cls, value):
+        """Return an index into the Enum given a value."""
+        return cls.ALL.index(value)
+
+    @classmethod
+    def from_index(cls, index):
+        """Return the Enum value at a given index."""
+        return cls.ALL[index]
+
+
 class NotificationStatus(Enum):
     """Represents possible statuses for notifications."""
 

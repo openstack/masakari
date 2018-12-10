@@ -27,6 +27,7 @@ from masakari.engine import rpcapi as engine_rpcapi
 from masakari import exception
 from masakari.ha import api as ha_api
 from masakari.objects import base as obj_base
+from masakari.objects import fields
 from masakari.objects import notification as notification_obj
 from masakari import test
 from masakari.tests.unit.api.openstack import fakes
@@ -154,12 +155,30 @@ class NotificationTestCase(test.TestCase):
 
         mock_create.return_value = NOTIFICATION
         result = self.controller.create(self.req, body={
-            "notification": {"hostname": "fake_host",
-                             "payload": {"event": "STOPPED",
-                                         "host_status": "NORMAL",
-                                         "cluster_status": "ONLINE"},
-                             "type": "VM",
-                             "generated_time": "2016-09-13T09:11:21.656788"}})
+            "notification": {
+                "hostname": "fake_host",
+                "payload": {
+                    "instance_uuid": uuidsentinel.instance_uuid,
+                    "vir_domain_event": "STOPPED_FAILED",
+                    "event": "LIFECYCLE"
+                },
+                "type": "VM",
+                "generated_time": "2016-09-13T09:11:21.656788"}})
+        result = result['notification']
+        test_objects.compare_obj(self, result, NOTIFICATION_DATA)
+
+    @mock.patch.object(ha_api.NotificationAPI, 'create_notification')
+    def test_create_process_notification(self, mock_create):
+        mock_create.return_value = NOTIFICATION
+        result = self.controller.create(self.req, body={
+            "notification": {
+                "hostname": "fake_host",
+                "payload": {
+                    "process_name": "nova-compute",
+                    "event": "STOPPED"
+                },
+                "type": "PROCESS",
+                "generated_time": "2016-09-13T09:11:21.656788"}})
         result = result['notification']
         test_objects.compare_obj(self, result, NOTIFICATION_DATA)
 
@@ -171,9 +190,9 @@ class NotificationTestCase(test.TestCase):
             "notification": {
                 "hostname": "fake_host",
                 "payload": {
-                    "event": "STOPPED",
-                    "host_status": "NORMAL",
-                    "cluster_status": "ONLINE"
+                    "instance_uuid": uuidsentinel.instance_uuid,
+                    "vir_domain_event": "STOPPED_FAILED",
+                    "event": "LIFECYCLE"
                 },
                 "type": "VM",
                 "generated_time": NOW
@@ -189,12 +208,17 @@ class NotificationTestCase(test.TestCase):
     @mock.patch.object(ha_api.NotificationAPI, 'create_notification')
     def test_create_host_not_found(self, mock_create):
         body = {
-            "notification": {"hostname": "fake_host",
-                             "payload": {"event": "STOPPED",
-                                         "host_status": "NORMAL",
-                                         "cluster_status": "ONLINE"},
-                             "type": "VM",
-                             "generated_time": "2016-09-13T09:11:21.656788"}}
+            "notification": {
+                "hostname": "fake_host",
+                "payload": {
+                    "instance_uuid": uuidsentinel.instance_uuid,
+                    "vir_domain_event": "STOPPED_FAILED",
+                    "event": "LIFECYCLE"
+                },
+                "type": "VM",
+                "generated_time": "2016-09-13T09:11:21.656788"
+            }
+        }
         mock_create.side_effect = exception.HostNotFoundByName(
             host_name="fake_host")
         self.assertRaises(exc.HTTPBadRequest, self.controller.create,
@@ -269,6 +293,54 @@ class NotificationTestCase(test.TestCase):
     )
     @ddt.unpack
     def test_create_failure(self, body):
+        self.assertRaises(self.bad_request, self.controller.create,
+                          self.req, body=body)
+
+    @ddt.data(
+        # invalid event for PROCESS type
+        {"params": {"payload": {"event": "invalid",
+                                "process_name": "nova-compute"},
+                    "type": fields.NotificationType.PROCESS}},
+
+        # invalid event for VM type
+        {"params": {"payload": {"event": "invalid",
+                                "host_status": fields.HostStatusType.NORMAL,
+                          "cluster_status": fields.ClusterStatusType.ONLINE},
+                    "type": fields.NotificationType.VM}},
+
+        # invalid event for HOST_COMPUTE type
+        {"params": {"payload": {"event": "invalid"},
+                    "type": fields.NotificationType.COMPUTE_HOST}},
+
+        # empty payload
+        {"params": {"payload": {},
+                    "type": fields.NotificationType.COMPUTE_HOST}},
+
+        # empty process_name
+        {"params": {"payload": {"event": fields.EventType.STOPPED,
+                                "process_name": ""},
+                    "type": fields.NotificationType.PROCESS}},
+
+        # process_name too long value
+        {"params": {"payload": {"event": fields.EventType.STOPPED,
+                              "process_name": "a" * 4097},
+                  "type": fields.NotificationType.PROCESS}},
+
+        # process_name invalid data_type
+        {"params": {"payload": {"event": fields.EventType.STOPPED,
+                              "process_name": 123},
+                  "type": fields.NotificationType.PROCESS}}
+    )
+    @ddt.unpack
+    def test_create_with_invalid_payload(self, params):
+        body = {
+            "notification": {"hostname": "fake_host",
+                             "generated_time": "2016-09-13T09:11:21.656788"
+                             }
+        }
+
+        body['notification']['payload'] = params['payload']
+        body['notification']['type'] = params['type']
         self.assertRaises(self.bad_request, self.controller.create,
                           self.req, body=body)
 
