@@ -14,6 +14,7 @@
 #    under the License.
 
 from oslo_db.sqlalchemy import models
+from oslo_utils import timeutils
 from sqlalchemy import (Column, DateTime, Index, Integer, Enum, String,
                         schema)
 from sqlalchemy.ext.declarative import declarative_base
@@ -24,7 +25,20 @@ from sqlalchemy import ForeignKey, Boolean, Text
 BASE = declarative_base()
 
 
-class MasakariAPIBase(models.TimestampMixin, models.ModelBase):
+class MasakariTimestampMixin(object):
+    # Note(tpatil): timeutils.utcnow() method return microseconds part but db
+    # doesn't store it because of which subsequent calls to get resources
+    # from the same db session object instance doesn't return microsecond for
+    # datetime fields. To avoid this discrepancy, removed microseconds from
+    # datetime fields so that there is no need to remove it for create/update
+    # cases in the respective versioned objects.
+    created_at = Column(DateTime, default=lambda: timeutils.utcnow().replace(
+                        microsecond=0))
+    updated_at = Column(DateTime, onupdate=lambda: timeutils.utcnow().replace(
+                        microsecond=0))
+
+
+class MasakariAPIBase(MasakariTimestampMixin, models.ModelBase):
     """Base class for MasakariAPIBase Models."""
 
     metadata = None
