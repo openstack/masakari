@@ -29,6 +29,7 @@ detailed in the LICENSE file.
 
 * Free software: Apache license 2.0
 * Documentation: https://docs.openstack.org/masakari/latest
+* Release notes: https://docs.openstack.org/releasenotes/masakari/
 * Source: https://git.openstack.org/cgit/openstack/masakari
 * Bugs: https://bugs.launchpad.net/masakari
 
