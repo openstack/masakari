@@ -30,8 +30,8 @@ OpenStack Wide Patterns
 Masakari follows most of the generally adopted norms for OpenStack projects.
 You can get more details here:
 
-* http://docs.openstack.org/infra/manual/developers.html
-* http://docs.openstack.org/project-team-guide/
+* https://docs.openstack.org/infra/manual/developers.html
+* https://docs.openstack.org/project-team-guide/
 
 If you are new to Masakari, please read this first: :ref:`getting_involved`.
 
@@ -43,7 +43,7 @@ implement. How do I make that happen?
 
 You can get most of your questions answered here:
 
--  http://docs.openstack.org/infra/manual/developers.html
+-  https://docs.openstack.org/infra/manual/developers.html
 
 But let's put a Masakari specific twist on things...
 
@@ -58,7 +58,7 @@ Where do you track bugs?
 
 We track bugs here:
 
--  http://bugs.launchpad.net/masakari
+-  https://bugs.launchpad.net/masakari
 
 If you fix an issue, please raise a bug so others who spot that issue
 can find the fix you kindly created for them.
