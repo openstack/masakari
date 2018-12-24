@@ -149,19 +149,19 @@ class API(object):
     @translate_nova_exception
     def enable_disable_service(self, context, host_name, enable=False,
                                reason=None):
-        """Enable or disable the service specified by hostname and binary."""
+        """Enable or disable the service specified by nova service id."""
         nova = novaclient(context)
+        service = nova.services.list(host=host_name, binary='nova-compute')[0]
 
         if not enable:
             LOG.info('Disable nova-compute on %s', host_name)
             if reason:
-                nova.services.disable_log_reason(host_name, 'nova-compute',
-                                                 reason)
+                nova.services.disable_log_reason(service.id, reason)
             else:
-                nova.services.disable(host_name, 'nova-compute')
+                nova.services.disable(service.id)
         else:
             LOG.info('Enable nova-compute on %s', host_name)
-            nova.services.enable(host_name, 'nova-compute')
+            nova.services.enable(service.id)
 
     @translate_nova_exception
     def is_service_down(self, context, host_name, binary):
