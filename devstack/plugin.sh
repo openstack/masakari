@@ -213,7 +213,7 @@ function install_masakaridashboard {
 function uninstall_masakaridashboard {
     sudo rm -f  $DEST/horizon/openstack_dashboard/local/enabled/_50_masakaridashboard.py
     sudo rm -f  $DEST/horizon/openstack_dashboard/local/local_settings.d/_50_masakari.py
-    sudo rm -f  $DEST/horizon/penstack_dashboard/conf/masakari_policy.json
+    sudo rm -f  $DEST/horizon/openstack_dashboard/conf/masakari_policy.json
     restart_apache_server
 }
 
