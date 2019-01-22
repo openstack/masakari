@@ -136,8 +136,10 @@ class FakeNovaClient(object):
                                                          binary=binary,
                                                          status=status))
 
-        def disable(self, host_name, binary):
-            service = self.list(host=host_name, binary=binary)[0]
+        def disable(self, service_id):
+            for _service in self._services:
+                if _service.id == service_id:
+                    service = _service
             service.status = 'disabled'
 
         def list(self, host=None, binary=None):

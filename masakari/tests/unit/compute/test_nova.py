@@ -182,31 +182,40 @@ class NovaApiTestCase(test.TestCase):
         host = 'fake'
         mock_services = mock.MagicMock()
         mock_novaclient.return_value = mock.MagicMock(services=mock_services)
+        mock_services.list.return_value = [mock.MagicMock(id='fake_id')]
         self.api.enable_disable_service(self.ctx, host, enable=True)
 
         mock_novaclient.assert_called_once_with(self.ctx)
-        mock_services.enable.assert_called_once_with(host, 'nova-compute')
+        mock_services.list.assert_called_once_with(binary='nova-compute',
+                                                   host='fake')
+        mock_services.enable.assert_called_once_with('fake_id')
 
     @mock.patch('masakari.compute.nova.novaclient')
     def test_enable_disable_service_disable(self, mock_novaclient):
         host = 'fake'
         mock_services = mock.MagicMock()
         mock_novaclient.return_value = mock.MagicMock(services=mock_services)
+        mock_services.list.return_value = [mock.MagicMock(id='fake_id')]
         self.api.enable_disable_service(self.ctx, host)
 
         mock_novaclient.assert_called_once_with(self.ctx)
-        mock_services.disable.assert_called_once_with(host, 'nova-compute')
+        mock_services.list.assert_called_once_with(binary='nova-compute',
+                                                   host='fake')
+        mock_services.disable.assert_called_once_with('fake_id')
 
     @mock.patch('masakari.compute.nova.novaclient')
     def test_enable_disable_service_disable_reason(self, mock_novaclient):
         host = 'fake'
         mock_services = mock.MagicMock()
         mock_novaclient.return_value = mock.MagicMock(services=mock_services)
+        mock_services.list.return_value = [mock.MagicMock(id='fake_id')]
         self.api.enable_disable_service(self.ctx, host, reason='fake_reason')
 
         mock_novaclient.assert_called_once_with(self.ctx)
+        mock_services.list.assert_called_once_with(binary='nova-compute',
+                                                   host='fake')
         mock_services.disable_log_reason.assert_called_once_with(
-            host, 'nova-compute', 'fake_reason')
+            'fake_id', 'fake_reason')
 
     @mock.patch('masakari.compute.nova.novaclient')
     def test_is_service_down(self, mock_novaclient):
