@@ -1,3 +1,77 @@
+- nodeset:
+    name: masakari-openstack-multi-nodes
+    nodes:
+      - name: controller
+        label: ubuntu-xenial
+      - name: compute1
+        label: ubuntu-xenial
+    groups:
+      # Nodes running the compute service
+      - name: compute
+        nodes:
+          - controller
+          - compute1
+      # Nodes that are not the controller
+      - name: subnode
+        nodes:
+          - compute1
+      # Switch node for multinode networking setup
+      - name: switch
+        nodes:
+          - controller
+      # Peer nodes for multinode networking setup
+      - name: peers
+        nodes:
+          - compute1
+
+- job:
+    name: masakari-functional-devstack-multinode
+    parent: devstack
+    description: |
+      Base multinodes job for devstack-based functional tests
+    nodeset: masakari-openstack-multi-nodes
+    pre-run: playbooks/devstack/pre.yaml
+    run: playbooks/devstack/run.yaml
+    post-run: playbooks/devstack/post.yaml
+    roles:
+      - zuul: openstack-infra/devstack
+    timeout: 9000
+    required-projects:
+      - openstack/horizon
+      - openstack/python-masakariclient
+      - openstack/masakari
+      - openstack/masakari-monitors
+    vars:
+      test_matrix_configs: [neutron]
+      devstack_services:
+        horizon: false
+        swift: false
+      zuul_work_dir: src/git.openstack.org/openstack/masakari
+    host-vars:
+      controller:
+        devstack_plugins:
+          masakari: https://git.openstack.org/openstack/masakari
+        devstack_services:
+          horizon: false
+          swift: false
+          q-svc: true
+        tox_install_siblings: false
+        tox_envlist: functional
+    group-vars:
+      subnode:
+        devstack_services:
+          q-agt: true
+          n-api: false
+          n-api-meta: false
+          n-cauth: false
+          n-cond: false
+          n-cpu: true
+          n-novnc: false
+          n-sch: false
+          horizon: false
+          tls-proxy: false
+
+
 - project:
     templates:
       - check-requirements
@@ -8,6 +82,10 @@
       - openstack-python36-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
+    check:
+      jobs:
+        - masakari-functional-devstack-multinode:
+            voting: True
 
 - project:
     masakari-systemfault-integration-ci:

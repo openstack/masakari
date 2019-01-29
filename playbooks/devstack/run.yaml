@@ -1,0 +1,3 @@
+- hosts: controller
+  roles:
+    - tox
