@@ -41,7 +41,10 @@ class ProcessFailureTestCase(test.TestCase):
         self.override_config('wait_period_after_service_update', 2)
 
     @mock.patch('masakari.compute.nova.novaclient')
-    def test_compute_process_failure_flow(self, _mock_novaclient):
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_compute_process_failure_flow(self, _mock_notify,
+                                          _mock_novaclient):
         _mock_novaclient.return_value = self.fake_client
 
         # create test data
@@ -50,20 +53,35 @@ class ProcessFailureTestCase(test.TestCase):
                                          status="enabled")
 
         # test DisableComputeNodeTask
-        task = process_failure.DisableComputeNodeTask(self.novaclient)
-        task.execute(self.ctxt, self.process_name, self.service_host)
+        task = process_failure.DisableComputeNodeTask(self.ctxt,
+                                                      self.novaclient)
+        task.execute(self.process_name, self.service_host)
 
         # test ConfirmComputeNodeDisabledTask
-        task = process_failure.ConfirmComputeNodeDisabledTask(self.novaclient)
-        task.execute(self.ctxt, self.process_name, self.service_host)
+        task = process_failure.ConfirmComputeNodeDisabledTask(self.ctxt,
+                                                              self.novaclient)
+        task.execute(self.process_name, self.service_host)
 
         # verify service is disabled
         self.assertTrue(self.novaclient.is_service_down(self.ctxt,
                                                         self.service_host,
                                                         self.process_name))
 
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0),
+            mock.call("Confirming compute service is disabled on host: "
+                      "'fake-host'"),
+            mock.call("Confirmed compute service is disabled on host: "
+                      "'fake-host'", 1.0)
+        ])
+
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_compute_process_failure_flow_disabled_process(self,
+                                                           _mock_notify,
                                                            _mock_novaclient):
         _mock_novaclient.return_value = self.fake_client
 
@@ -73,18 +91,28 @@ class ProcessFailureTestCase(test.TestCase):
                                          status="disabled")
 
         # test DisableComputeNodeTask
-        task = process_failure.DisableComputeNodeTask(self.novaclient)
+        task = process_failure.DisableComputeNodeTask(self.ctxt,
+                                                      self.novaclient)
         with mock.patch.object(
             self.novaclient,
             'enable_disable_service') as mock_enable_disabled:
-            task.execute(self.ctxt, self.process_name, self.service_host)
+            task.execute(self.process_name, self.service_host)
 
         # ensure that enable_disable_service method is not called
         self.assertEqual(0, mock_enable_disabled.call_count)
 
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call('Skipping recovery for process nova-compute as it is '
+                      'already disabled', 1.0)
+        ])
+
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_compute_process_failure_flow_compute_service_disabled_failed(
-        self, _mock_novaclient):
+        self, _mock_notify, _mock_novaclient):
         _mock_novaclient.return_value = self.fake_client
 
         # create test data
@@ -97,14 +125,24 @@ class ProcessFailureTestCase(test.TestCase):
             return False
 
         # test DisableComputeNodeTask
-        task = process_failure.DisableComputeNodeTask(self.novaclient)
-        task.execute(self.ctxt, self.process_name, self.service_host)
+        task = process_failure.DisableComputeNodeTask(self.ctxt,
+                                                      self.novaclient)
+        task.execute(self.process_name, self.service_host)
 
         with mock.patch.object(self.novaclient, 'is_service_down',
                                fake_is_service_down):
             # test ConfirmComputeNodeDisabledTask
             task = process_failure.ConfirmComputeNodeDisabledTask(
-                self.novaclient)
+                self.ctxt, self.novaclient)
             self.assertRaises(exception.ProcessRecoveryFailureException,
-                              task.execute, self.ctxt, self.process_name,
+                              task.execute, self.process_name,
                               self.service_host)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0),
+            mock.call("Confirming compute service is disabled on host: "
+                      "'fake-host'"),
+            mock.call('Failed to disable service nova-compute', 1.0)
+        ])

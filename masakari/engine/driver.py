@@ -52,6 +52,16 @@ class NotificationDriver(object):
                                 notification_uuid):
         pass
 
+    @abc.abstractmethod
+    def get_notification_recovery_workflow_details(self, context,
+                                                   recovery_method,
+                                                   notification_uuid):
+        pass
+
+    @abc.abstractmethod
+    def upgrade_backend(self, backend):
+        pass
+
 
 def load_masakari_driver(masakari_driver=None):
     """Load a masakari driver module.

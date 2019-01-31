@@ -1,0 +1,29 @@
+---
+features:
+  - |
+    Added support to record the recovery workflow details of the notification
+    which will be returned in a new microversion 1.1 in
+    `GET /notifications/{notification_id}` API.
+
+    For example, GET /notifications/<notification_uuid> response will contain
+    `recovery_workflow_details` parameter as shown here `notification_details`_
+
+    Added a new config section in Masakari conf file for configuring the back
+    end to be used by taskflow driver::
+
+            [taskflow]
+            # The back end for storing recovery_workflow details of the notification.
+            # (string value)
+
+            connection = mysql+pymysql://root:admin@127.0.0.1/<db name>?charset=utf8
+
+            # Where db_name, can be a new database or you can also specify masakari
+            # database.
+
+    Operator should run `masakari-manage db sync` command to add new db tables
+    required for storing recovery_workflow_details.
+
+    Note: When you run `masakari-manage db sync`, make sure you have
+    `notification_driver=taskflow_driver` set in masakari.conf.
+
+    ..  _`notification_details`: https://developer.openstack.org/api-ref/instance-ha/?expanded=show-notification-details-detail#show-notification-details

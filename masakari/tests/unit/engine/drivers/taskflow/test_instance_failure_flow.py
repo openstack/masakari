@@ -44,23 +44,26 @@ class InstanceFailureTestCase(test.TestCase):
                              False, "instance_failure")
 
     def _test_stop_instance(self):
-        task = instance_failure.StopInstanceTask(self.novaclient)
-        task.execute(self.ctxt, self.instance_id)
+        task = instance_failure.StopInstanceTask(self.ctxt, self.novaclient)
+        task.execute(self.instance_id)
         # verify instance is stopped
         instance = self.novaclient.get_server(self.ctxt, self.instance_id)
         self.assertEqual('stopped',
                          getattr(instance, 'OS-EXT-STS:vm_state'))
 
     def _test_confirm_instance_is_active(self):
-        task = instance_failure.ConfirmInstanceActiveTask(self.novaclient)
-        task.execute(self.ctxt, self.instance_id)
+        task = instance_failure.ConfirmInstanceActiveTask(self.ctxt,
+                                                          self.novaclient)
+        task.execute(self.instance_id)
         # verify instance is in active state
         instance = self.novaclient.get_server(self.ctxt, self.instance_id)
         self.assertEqual('active',
                          getattr(instance, 'OS-EXT-STS:vm_state'))
 
     @mock.patch('masakari.compute.nova.novaclient')
-    def test_instance_failure_flow(self, _mock_novaclient):
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_instance_failure_flow(self, _mock_notify, _mock_novaclient):
         _mock_novaclient.return_value = self.fake_client
 
         # create test data
@@ -72,14 +75,29 @@ class InstanceFailureTestCase(test.TestCase):
         self._test_stop_instance()
 
         # test StartInstanceTask
-        task = instance_failure.StartInstanceTask(self.novaclient)
-        task.execute(self.ctxt, self.instance_id)
+        task = instance_failure.StartInstanceTask(self.ctxt, self.novaclient)
+        task.execute(self.instance_id)
 
         # test ConfirmInstanceActiveTask
         self._test_confirm_instance_is_active()
 
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call('Stopping instance: ' + self.instance_id),
+            mock.call("Stopped instance: '" + self.instance_id + "'", 1.0),
+            mock.call("Starting instance: '" + self.instance_id + "'"),
+            mock.call("Instance started: '" + self.instance_id + "'", 1.0),
+            mock.call("Confirming instance '" + self.instance_id +
+                      "' vm_state is ACTIVE"),
+            mock.call("Confirmed instance '" + self.instance_id +
+                      "' vm_state is ACTIVE", 1.0)
+        ])
+
     @mock.patch('masakari.compute.nova.novaclient')
-    def test_instance_failure_flow_resized_instance(self, _mock_novaclient):
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_instance_failure_flow_resized_instance(self, _mock_notify,
+                                                    _mock_novaclient):
         _mock_novaclient.return_value = self.fake_client
 
         # create test data
@@ -91,14 +109,29 @@ class InstanceFailureTestCase(test.TestCase):
         self._test_stop_instance()
 
         # test StartInstanceTask
-        task = instance_failure.StartInstanceTask(self.novaclient)
-        task.execute(self.ctxt, self.instance_id)
+        task = instance_failure.StartInstanceTask(self.ctxt, self.novaclient)
+        task.execute(self.instance_id)
 
         # test ConfirmInstanceActiveTask
         self._test_confirm_instance_is_active()
 
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call('Stopping instance: ' + self.instance_id),
+            mock.call("Stopped instance: '" + self.instance_id + "'", 1.0),
+            mock.call("Starting instance: '" + self.instance_id + "'"),
+            mock.call("Instance started: '" + self.instance_id + "'", 1.0),
+            mock.call("Confirming instance '" + self.instance_id +
+                      "' vm_state is ACTIVE"),
+            mock.call("Confirmed instance '" + self.instance_id +
+                      "' vm_state is ACTIVE", 1.0)
+        ])
+
     @mock.patch('masakari.compute.nova.novaclient')
-    def test_instance_failure_flow_stop_failed(self, _mock_novaclient):
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_instance_failure_flow_stop_failed(self, _mock_notify,
+                                               _mock_novaclient):
         _mock_novaclient.return_value = self.fake_client
 
         # create test data
@@ -112,29 +145,70 @@ class InstanceFailureTestCase(test.TestCase):
             return server
 
         # test StopInstanceTask
-        task = instance_failure.StopInstanceTask(self.novaclient)
+        task = instance_failure.StopInstanceTask(self.ctxt, self.novaclient)
         with mock.patch.object(self.novaclient, 'stop_server',
                                fake_stop_server):
             self.assertRaises(
                 exception.InstanceRecoveryFailureException, task.execute,
-                self.ctxt, self.instance_id)
+                self.instance_id)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call('Stopping instance: ' + self.instance_id),
+            mock.call('Failed to stop instance ' + self.instance_id, 1.0)
+        ])
 
     @mock.patch('masakari.compute.nova.novaclient')
-    def test_instance_failure_flow_not_ha_enabled(self, _mock_novaclient):
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_instance_failure_flow_not_ha_enabled(self, _mock_notify,
+                                                  _mock_novaclient):
         _mock_novaclient.return_value = self.fake_client
 
         # create test data
         self.fake_client.servers.create(self.instance_id, host="fake-host")
 
         # test StopInstanceTask
-        task = instance_failure.StopInstanceTask(self.novaclient)
+        task = instance_failure.StopInstanceTask(self.ctxt, self.novaclient)
         self.assertRaises(
             exception.SkipInstanceRecoveryException, task.execute,
-            self.ctxt, self.instance_id)
+            self.instance_id)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call('Skipping recovery for instance: ' + self.instance_id +
+                      ' as it is not Ha_Enabled', 1.0)
+        ])
 
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_instance_failure_flow_vm_in_paused_state(self, _mock_notify,
+                                                  _mock_novaclient):
+        _mock_novaclient.return_value = self.fake_client
+
+        # create test data
+        self.fake_client.servers.create(self.instance_id,
+                                        host="fake-host", ha_enabled=True,
+                                        vm_state="paused")
+
+        # test StopInstanceTask
+        task = instance_failure.StopInstanceTask(self.ctxt, self.novaclient)
+        self.assertRaises(
+            exception.IgnoreInstanceRecoveryException, task.execute,
+            self.instance_id)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Recovery of instance '" + self.instance_id +
+                      "' is ignored as it is in 'paused' state.", 1.0)
+        ])
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_instance_failure_flow_not_ha_enabled_but_conf_option_is_set(
-            self, _mock_novaclient):
+            self, _mock_notify, _mock_novaclient):
         # Setting this config option to True indicates masakari has to recover
         # the instance irrespective of whether it is HA_Enabled or not.
         self.override_config("process_all_instances",
@@ -149,14 +223,29 @@ class InstanceFailureTestCase(test.TestCase):
         self._test_stop_instance()
 
         # test StartInstanceTask
-        task = instance_failure.StartInstanceTask(self.novaclient)
-        task.execute(self.ctxt, self.instance_id)
+        task = instance_failure.StartInstanceTask(self.ctxt, self.novaclient)
+        task.execute(self.instance_id)
 
         # test ConfirmInstanceActiveTask
         self._test_confirm_instance_is_active()
 
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call('Stopping instance: ' + self.instance_id),
+            mock.call("Stopped instance: '" + self.instance_id + "'", 1.0),
+            mock.call("Starting instance: '" + self.instance_id + "'"),
+            mock.call("Instance started: '" + self.instance_id + "'", 1.0),
+            mock.call("Confirming instance '" + self.instance_id +
+                      "' vm_state is ACTIVE"),
+            mock.call("Confirmed instance '" + self.instance_id +
+                      "' vm_state is ACTIVE", 1.0)
+        ])
+
     @mock.patch('masakari.compute.nova.novaclient')
-    def test_instance_failure_flow_start_failed(self, _mock_novaclient):
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_instance_failure_flow_start_failed(self, _mock_notify,
+                                                _mock_novaclient):
         _mock_novaclient.return_value = self.fake_client
 
         # create test data
@@ -173,13 +262,25 @@ class InstanceFailureTestCase(test.TestCase):
             return server
 
         # test StartInstanceTask
-        task = instance_failure.StartInstanceTask(self.novaclient)
+        task = instance_failure.StartInstanceTask(self.ctxt, self.novaclient)
         with mock.patch.object(self.novaclient, 'start_server',
                                fake_start_server):
-            task.execute(self.ctxt, self.instance_id)
+            task.execute(self.instance_id)
 
         # test ConfirmInstanceActiveTask
-        task = instance_failure.ConfirmInstanceActiveTask(self.novaclient)
+        task = instance_failure.ConfirmInstanceActiveTask(self.ctxt,
+                                                          self.novaclient)
         self.assertRaises(
             exception.InstanceRecoveryFailureException, task.execute,
-            self.ctxt, self.instance_id)
+            self.instance_id)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call('Stopping instance: ' + self.instance_id),
+            mock.call("Stopped instance: '" + self.instance_id + "'", 1.0),
+            mock.call("Starting instance: '" + self.instance_id + "'"),
+            mock.call("Instance started: '" + self.instance_id + "'", 1.0),
+            mock.call("Confirming instance '" + self.instance_id +
+                      "' vm_state is ACTIVE"),
+            mock.call('Failed to start instance 1', 1.0)
+        ])

@@ -86,3 +86,11 @@ class EngineRpcAPITestCase(test.TestCase):
                               rpc_method='cast',
                               notification=self.fake_notification_obj,
                               version='1.0')
+
+    @mock.patch("masakari.rpc.get_client")
+    def test_get_notification_recovery_workflow_details(self,
+                                                        mock_get_client):
+        self._test_engine_api('get_notification_recovery_workflow_details',
+                              rpc_method='call',
+                              notification=self.fake_notification_obj,
+                              version='1.1')

@@ -55,15 +55,15 @@ class HostFailureTestCase(test.TestCase):
 
     def _verify_instance_evacuated(self, old_instance_list):
         for server in old_instance_list:
-            instance = self.novaclient.get_server(self.ctxt, server.id)
+            instance = self.novaclient.get_server(self.ctxt, server)
 
-            if getattr(server, 'OS-EXT-STS:vm_state') in \
-                ['active', 'stopped', 'error']:
-                self.assertEqual(getattr(server, 'OS-EXT-STS:vm_state'),
-                                 getattr(instance, 'OS-EXT-STS:vm_state'))
+            if getattr(instance, 'OS-EXT-STS:vm_state') in \
+                    ['active', 'stopped', 'error']:
+                self.assertIn(getattr(instance, 'OS-EXT-STS:vm_state'),
+                              ['active', 'stopped', 'error'])
             else:
-                if getattr(server, 'OS-EXT-STS:vm_state') == 'resized' and \
-                    getattr(server, 'OS-EXT-STS:power_state') != 4:
+                if getattr(instance, 'OS-EXT-STS:vm_state') == 'resized' and \
+                        getattr(instance, 'OS-EXT-STS:power_state') != 4:
                     self.assertEqual('active',
                                      getattr(instance, 'OS-EXT-STS:vm_state'))
                 else:
@@ -71,7 +71,7 @@ class HostFailureTestCase(test.TestCase):
                                      getattr(instance, 'OS-EXT-STS:vm_state'))
 
             if CONF.host_failure.ignore_instances_in_error_state and getattr(
-                    server, 'OS-EXT-STS:vm_state') == 'error':
+                    instance, 'OS-EXT-STS:vm_state') == 'error':
                 self.assertEqual(
                     self.instance_host, getattr(
                         instance, 'OS-EXT-SRV-ATTR:hypervisor_hostname'))
@@ -81,49 +81,58 @@ class HostFailureTestCase(test.TestCase):
                         instance, 'OS-EXT-SRV-ATTR:hypervisor_hostname'))
 
     def _test_disable_compute_service(self, mock_enable_disable):
-        task = host_failure.DisableComputeServiceTask(self.novaclient)
-        task.execute(self.ctxt, self.instance_host)
+        task = host_failure.DisableComputeServiceTask(self.ctxt,
+                                                      self.novaclient)
+        task.execute(self.instance_host)
 
         mock_enable_disable.assert_called_once_with(
             self.ctxt, self.instance_host)
 
     def _test_instance_list(self, instances_evacuation_count):
-        task = host_failure.PrepareHAEnabledInstancesTask(self.novaclient)
-        instance_list = task.execute(self.ctxt, self.instance_host)
-
-        for instance in instance_list['instance_list']:
+        task = host_failure.PrepareHAEnabledInstancesTask(self.ctxt,
+                                                          self.novaclient)
+        instances = task.execute(self.instance_host)
+        instance_uuid_list = []
+        for instance_id in instances['instance_list']:
+            instance = self.novaclient.get_server(self.ctxt, instance_id)
             if CONF.host_failure.ignore_instances_in_error_state:
                 self.assertNotEqual("error",
                                     getattr(instance, "OS-EXT-STS:vm_state"))
             if not CONF.host_failure.evacuate_all_instances:
                 self.assertTrue(instance.metadata.get('HA_Enabled', False))
 
-        self.assertEqual(instances_evacuation_count,
-                         len(instance_list['instance_list']))
+            instance_uuid_list.append(instance.id)
 
-        return instance_list
+        self.assertEqual(instances_evacuation_count,
+                         len(instances['instance_list']))
+
+        return {
+            "instance_list": instance_uuid_list,
+        }
 
     def _evacuate_instances(self, instance_list, mock_enable_disable,
                             reserved_host=None):
-        task = host_failure.EvacuateInstancesTask(self.novaclient)
+        task = host_failure.EvacuateInstancesTask(self.ctxt, self.novaclient)
         old_instance_list = copy.deepcopy(instance_list['instance_list'])
 
         if reserved_host:
-            task.execute(self.ctxt, self.instance_host,
+            task.execute(self.instance_host,
                          instance_list['instance_list'],
                          reserved_host=reserved_host)
 
             self.assertTrue(mock_enable_disable.called)
         else:
             task.execute(
-                self.ctxt, self.instance_host, instance_list['instance_list'])
+                self.instance_host, instance_list['instance_list'])
 
         # make sure instance is active and has different host
         self._verify_instance_evacuated(old_instance_list)
 
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_host_failure_flow_for_auto_recovery(
-            self, _mock_novaclient, mock_unlock, mock_lock,
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
             mock_enable_disable):
         _mock_novaclient.return_value = self.fake_client
         self.override_config("evacuate_all_instances",
@@ -143,9 +152,31 @@ class HostFailureTestCase(test.TestCase):
         # execute EvacuateInstancesTask
         self._evacuate_instances(instance_list, mock_enable_disable)
 
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0),
+            mock.call('Preparing instances for evacuation'),
+            mock.call("Total instances running on failed host 'fake-host' is 2"
+                      "", 0.3),
+            mock.call("Total HA Enabled instances count: '1'", 0.6),
+            mock.call("Total Non-HA Enabled instances count: '1'", 0.7),
+            mock.call("All instances (HA Enabled/Non-HA Enabled) should be "
+                      "considered for evacuation. Total count is: '2'", 0.8),
+            mock.call("Instances to be evacuated are: '1,2'", 1.0),
+            mock.call("Start evacuation of instances from failed host "
+                      "'fake-host', instance uuids are : '1,2'"),
+            mock.call("Evacuation of instance started : '1'", 0.5),
+            mock.call("Instance '1' evacuated successfully", 0.7),
+            mock.call("Evacuation of instance started : '2'", 0.5),
+            mock.call("Instance '2' evacuated successfully", 0.7),
+        ])
+
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_host_failure_flow_for_reserved_host_recovery(
-            self, _mock_novaclient, mock_unlock, mock_lock,
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
             mock_enable_disable):
         _mock_novaclient.return_value = self.fake_client
         self.override_config("evacuate_all_instances",
@@ -177,12 +208,39 @@ class HostFailureTestCase(test.TestCase):
             self.assertIn(reserved_host.name,
                           self.fake_client.aggregates.get('1').hosts)
 
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0),
+            mock.call('Preparing instances for evacuation'),
+            mock.call("Total instances running on failed host 'fake-host' is 2"
+                      "", 0.3),
+            mock.call("Total HA Enabled instances count: '1'", 0.6),
+            mock.call("Total Non-HA Enabled instances count: '1'", 0.7),
+            mock.call("All instances (HA Enabled/Non-HA Enabled) should be "
+                      "considered for evacuation. Total count is: '2'", 0.8),
+            mock.call("Instances to be evacuated are: '1,2'", 1.0),
+            mock.call("Start evacuation of instances from failed host "
+                      "'fake-host', instance uuids are : '1,2'"),
+            mock.call("Enabling reserved host: 'fake-reserved-host'", 0.1),
+            mock.call('Add host fake-reserved-host to aggregate fake_agg',
+                      0.2),
+            mock.call('Added host fake-reserved-host to aggregate fake_agg',
+                      0.3),
+            mock.call("Evacuation of instance started : '1'", 0.5),
+            mock.call("Instance '1' evacuated successfully", 0.7),
+            mock.call("Evacuation of instance started : '2'", 0.5),
+            mock.call("Instance '2' evacuated successfully", 0.7)
+        ])
+
     @mock.patch.object(nova.API, 'add_host_to_aggregate')
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     @mock.patch('masakari.engine.drivers.taskflow.host_failure.LOG')
     def test_host_failure_flow_ignores_conflict_error(
-            self, mock_log, _mock_novaclient, mock_add_host, mock_unlock,
-            mock_lock, mock_enable_disable):
+            self, mock_log, _mock_notify, _mock_novaclient, mock_add_host,
+            mock_unlock, mock_lock, mock_enable_disable):
         _mock_novaclient.return_value = self.fake_client
         mock_add_host.side_effect = exception.Conflict
         self.override_config("add_reserved_host_to_aggregate",
@@ -196,10 +254,10 @@ class HostFailureTestCase(test.TestCase):
         self.fake_client.aggregates.create(id="1", name='fake_agg',
                                            hosts=[self.instance_host,
                                                   reserved_host.name])
-        expected_msg_format = "Host '%(reserved_host)s' already has been " \
-                              "added to aggregate '%(aggregate)s'."
-        expected_msg_params = {'aggregate': 'fake_agg',
-                               'reserved_host': u'fake-reserved-host'}
+        expected_msg_format = ("Host '%(reserved_host)s' already has been "
+                               "added to aggregate '%(aggregate)s'.") % {
+            'reserved_host': 'fake-reserved-host', 'aggregate': 'fake_agg'
+        }
 
         # execute DisableComputeServiceTask
         self._test_disable_compute_service(mock_enable_disable)
@@ -215,15 +273,36 @@ class HostFailureTestCase(test.TestCase):
             self.assertEqual(1, mock_save.call_count)
             self.assertIn(reserved_host.name,
                           self.fake_client.aggregates.get('1').hosts)
-            mock_log.info.assert_any_call(
-                expected_msg_format, expected_msg_params)
+            mock_log.info.assert_any_call(expected_msg_format)
 
-    @ddt.data('active', 'rescued', 'paused', 'shelved', 'suspended',
-              'error', 'stopped', 'resized')
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0),
+            mock.call('Preparing instances for evacuation'),
+            mock.call("Total instances running on failed host 'fake-host' is 1"
+                      "", 0.3),
+            mock.call("Total HA Enabled instances count: '1'", 0.6),
+            mock.call("Instances to be evacuated are: '1'", 1.0),
+            mock.call("Start evacuation of instances from failed host "
+                      "'fake-host', instance uuids are : '1'"),
+            mock.call("Enabling reserved host: 'fake-reserved-host'", 0.1),
+            mock.call('Add host fake-reserved-host to aggregate fake_agg',
+                      0.2),
+            mock.call("Host 'fake-reserved-host' already has been added to "
+                      "aggregate 'fake_agg'.", 1.0),
+            mock.call("Evacuation of instance started : '1'", 0.5),
+            mock.call("Instance '1' evacuated successfully", 0.7)
+        ])
+
+    @ddt.data('rescued', 'paused', 'shelved', 'suspended',
+              'error', 'resized', 'active', 'resized', 'stopped')
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_host_failure_flow_all_instances(
-            self, vm_state, _mock_novaclient, mock_unlock, mock_lock,
-            mock_enable_disable):
+            self, vm_state, _mock_notify, _mock_novaclient, mock_unlock,
+            mock_lock, mock_enable_disable):
         _mock_novaclient.return_value = self.fake_client
 
         # create ha_enabled test data
@@ -236,16 +315,33 @@ class HostFailureTestCase(test.TestCase):
                                         vm_state=vm_state,
                                         power_state=power_state,
                                         ha_enabled=True)
+
+        instance_uuid_list = []
+        for instance in self.fake_client.servers.list():
+            instance_uuid_list.append(instance.id)
+
         instance_list = {
-            "instance_list": self.fake_client.servers.list()
+            "instance_list": instance_uuid_list,
         }
 
         # execute EvacuateInstancesTask
         self._evacuate_instances(instance_list, mock_enable_disable)
 
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Start evacuation of instances from failed host "
+                      "'fake-host', instance uuids are : '1,2'"),
+            mock.call("Evacuation of instance started : '1'", 0.5),
+            mock.call("Instance '1' evacuated successfully", 0.7),
+            mock.call("Evacuation of instance started : '2'", 0.5),
+            mock.call("Instance '2' evacuated successfully", 0.7)
+        ])
+
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_host_failure_flow_ignore_error_instances(
-            self, _mock_novaclient, mock_unlock, mock_lock,
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
             mock_enable_disable):
         self.override_config("ignore_instances_in_error_state",
                              True, "host_failure")
@@ -267,9 +363,29 @@ class HostFailureTestCase(test.TestCase):
         # execute EvacuateInstancesTask
         self._evacuate_instances(instance_list, mock_enable_disable)
 
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call('Preparing instances for evacuation'),
+            mock.call("Total instances running on failed host 'fake-host' is 2"
+                      "", 0.3),
+            mock.call("Ignoring recovery of HA_Enabled instance '1' as it is "
+                      "in 'error' state.", 0.4),
+            mock.call("Total HA Enabled instances count: '1'", 0.6),
+            mock.call("Total Non-HA Enabled instances count: '0'", 0.7),
+            mock.call("All instances (HA Enabled/Non-HA Enabled) should be "
+                      "considered for evacuation. Total count is: '1'", 0.8),
+            mock.call("Instances to be evacuated are: '2'", 1.0),
+            mock.call("Start evacuation of instances from failed host "
+                      "'fake-host', instance uuids are : '2'"),
+            mock.call("Evacuation of instance started : '2'", 0.5),
+            mock.call("Instance '2' evacuated successfully", 0.7)
+        ])
+
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_host_failure_flow_ignore_error_instances_raise_skip_host_recovery(
-            self, _mock_novaclient, mock_unlock, mock_lock,
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
             mock_enable_disable):
         self.override_config("ignore_instances_in_error_state",
                              True, "host_failure")
@@ -283,13 +399,28 @@ class HostFailureTestCase(test.TestCase):
                                         ha_enabled=True)
 
         # execute PrepareHAEnabledInstancesTask
-        task = host_failure.PrepareHAEnabledInstancesTask(self.novaclient)
+        task = host_failure.PrepareHAEnabledInstancesTask(self.ctxt,
+                                                          self.novaclient)
         self.assertRaises(exception.SkipHostRecoveryException, task.execute,
-                          self.ctxt, self.instance_host)
+                          self.instance_host)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call('Preparing instances for evacuation'),
+            mock.call("Total instances running on failed host 'fake-host' is 1"
+                      "", 0.3),
+            mock.call("Ignoring recovery of HA_Enabled instance '1' as it is "
+                      "in 'error' state.", 0.4),
+            mock.call("Total HA Enabled instances count: '0'", 0.6),
+            mock.call("Skipped host 'fake-host' recovery as no instances needs"
+                      " to be evacuated", 1.0)
+        ])
 
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_host_failure_flow_all_instances_active_resized_instance(
-            self, _mock_novaclient, mock_unlock, mock_lock,
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
             mock_enable_disable):
         _mock_novaclient.return_value = self.fake_client
 
@@ -300,16 +431,33 @@ class HostFailureTestCase(test.TestCase):
         self.fake_client.servers.create(id="2", host=self.instance_host,
                                         vm_state='resized',
                                         ha_enabled=True)
+        instance_uuid_list = []
+        for instance in self.fake_client.servers.list():
+            instance_uuid_list.append(instance.id)
+
         instance_list = {
-            "instance_list": self.fake_client.servers.list()
+            "instance_list": instance_uuid_list,
         }
 
         # execute EvacuateInstancesTask
-        self._evacuate_instances(instance_list, mock_enable_disable)
+        self._evacuate_instances(instance_list,
+                                 mock_enable_disable)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Start evacuation of instances from failed host "
+                      "'fake-host', instance uuids are : '1,2'"),
+            mock.call("Evacuation of instance started : '1'", 0.5),
+            mock.call("Instance '1' evacuated successfully", 0.7),
+            mock.call("Evacuation of instance started : '2'", 0.5),
+            mock.call("Instance '2' evacuated successfully", 0.7),
+        ])
 
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_host_failure_flow_no_ha_enabled_instances(
-            self, _mock_novaclient, mock_unlock, mock_lock,
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
             mock_enable_disable):
         _mock_novaclient.return_value = self.fake_client
 
@@ -321,22 +469,45 @@ class HostFailureTestCase(test.TestCase):
         self._test_disable_compute_service(mock_enable_disable)
 
         # execute PrepareHAEnabledInstancesTask
-        task = host_failure.PrepareHAEnabledInstancesTask(self.novaclient)
+        task = host_failure.PrepareHAEnabledInstancesTask(self.ctxt,
+                                                          self.novaclient)
         self.assertRaises(exception.SkipHostRecoveryException, task.execute,
-                          self.ctxt, self.instance_host)
+                          self.instance_host)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0),
+            mock.call('Preparing instances for evacuation'),
+            mock.call("Total instances running on failed host 'fake-host' is 2"
+                      "", 0.3),
+            mock.call("Total HA Enabled instances count: '0'", 0.6),
+            mock.call("Skipped host 'fake-host' recovery as no instances needs"
+                      " to be evacuated", 1.0)
+        ])
 
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_host_failure_flow_evacuation_failed(
-            self, _mock_novaclient, mock_unlock, mock_lock,
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
             mock_enable_disable):
+        # overriding 'wait_period_after_power_off' to 2 seconds to reduce the
+        # wait period, default is 180 seconds.
+        self.override_config("wait_period_after_power_off", 2)
         _mock_novaclient.return_value = self.fake_client
 
         # create ha_enabled test data
         server = self.fake_client.servers.create(id="1", vm_state='active',
                                                  host=self.instance_host,
                                                  ha_enabled=True)
+
+        instance_uuid_list = []
+        for instance in self.fake_client.servers.list():
+            instance_uuid_list.append(instance.id)
+
         instance_list = {
-            "instance_list": self.fake_client.servers.list()
+            "instance_list": instance_uuid_list,
         }
 
         def fake_get_server(context, host):
@@ -351,9 +522,23 @@ class HostFailureTestCase(test.TestCase):
                 exception.HostRecoveryFailureException,
                 self._evacuate_instances, instance_list, mock_enable_disable)
 
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Start evacuation of instances from failed host "
+                      "'fake-host', instance uuids are : '1'"),
+            mock.call("Evacuation of instance started : '1'", 0.5),
+            mock.call("Instance '1' evacuated successfully", 0.7),
+            mock.call("Instance '1' is successfully evacuated but failed to "
+                      "stop.", 1.0),
+            mock.call("Failed to evacuate instances '1' from host "
+                      "'fake-host'", 1.0)
+        ])
+
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_host_failure_flow_no_instances_on_host(
-            self, _mock_novaclient, mock_unlock, mock_lock,
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
             mock_enable_disable):
         _mock_novaclient.return_value = self.fake_client
         self.override_config("evacuate_all_instances",
@@ -363,13 +548,31 @@ class HostFailureTestCase(test.TestCase):
         self._test_disable_compute_service(mock_enable_disable)
 
         # execute PrepareHAEnabledInstancesTask
-        task = host_failure.PrepareHAEnabledInstancesTask(self.novaclient)
+        task = host_failure.PrepareHAEnabledInstancesTask(self.ctxt,
+                                                          self.novaclient)
         self.assertRaises(exception.SkipHostRecoveryException, task.execute,
-                          self.ctxt, self.instance_host)
+                          self.instance_host)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0),
+            mock.call('Preparing instances for evacuation'),
+            mock.call("Total instances running on failed host 'fake-host' is 0"
+                      "", 0.3),
+            mock.call("Total HA Enabled instances count: '0'", 0.6),
+            mock.call("Total Non-HA Enabled instances count: '0'", 0.7),
+            mock.call("All instances (HA Enabled/Non-HA Enabled) should be "
+                      "considered for evacuation. Total count is: '0'", 0.8),
+            mock.call("Skipped host 'fake-host' recovery as no instances needs"
+                      " to be evacuated", 1.0)
+        ])
 
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_host_failure_flow_for_task_state_not_none(
-            self, _mock_novaclient, mock_unlock, mock_lock,
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
             mock_enable_disable):
         _mock_novaclient.return_value = self.fake_client
 
@@ -389,8 +592,12 @@ class HostFailureTestCase(test.TestCase):
                                         task_state='fake_task_state',
                                         power_state=None,
                                         ha_enabled=True)
+        instance_uuid_list = []
+        for instance in self.fake_client.servers.list():
+            instance_uuid_list.append(instance.id)
+
         instance_list = {
-            "instance_list": self.fake_client.servers.list()
+            "instance_list": instance_uuid_list,
         }
 
         # execute EvacuateInstancesTask
@@ -405,3 +612,15 @@ class HostFailureTestCase(test.TestCase):
                          self.fake_client.servers.reset_state_calls)
         self.assertEqual(stop_calls,
                          self.fake_client.servers.stop_calls)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Start evacuation of instances from failed host "
+                 "'fake-host', instance uuids are : '1,2,3'"),
+            mock.call("Evacuation of instance started : '1'", 0.5),
+            mock.call("Instance '1' evacuated successfully", 0.7),
+            mock.call("Evacuation of instance started : '2'", 0.5),
+            mock.call("Instance '2' evacuated successfully", 0.7),
+            mock.call("Evacuation of instance started : '3'", 0.5),
+            mock.call("Instance '3' evacuated successfully", 0.7)
+        ])

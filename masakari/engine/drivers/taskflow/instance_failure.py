@@ -19,34 +19,29 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_service import loopingcall
 from oslo_utils import strutils
-import taskflow.engines
 from taskflow.patterns import linear_flow
 
 import masakari.conf
 from masakari.engine.drivers.taskflow import base
 from masakari import exception
-from masakari.i18n import _
 
 
 CONF = masakari.conf.CONF
-
 LOG = logging.getLogger(__name__)
-
 ACTION = "instance:recovery"
-
 TASKFLOW_CONF = cfg.CONF.taskflow_driver_recovery_flows
 
 
 class StopInstanceTask(base.MasakariTask):
-    def __init__(self, novaclient):
+    def __init__(self, context, novaclient):
         requires = ["instance_uuid"]
-        super(StopInstanceTask, self).__init__(addons=[ACTION],
+        super(StopInstanceTask, self).__init__(context,
+                                               novaclient,
                                                requires=requires)
-        self.novaclient = novaclient
 
-    def execute(self, context, instance_uuid):
+    def execute(self, instance_uuid):
         """Stop the instance for recovery."""
-        instance = self.novaclient.get_server(context, instance_uuid)
+        instance = self.novaclient.get_server(self.context, instance_uuid)
 
         # If an instance is not HA_Enabled and "process_all_instances" config
         # option is also disabled, then there is no need to take any recovery
@@ -54,27 +49,35 @@ class StopInstanceTask(base.MasakariTask):
         if not CONF.instance_failure.process_all_instances and not (
                 strutils.bool_from_string(
                     instance.metadata.get('HA_Enabled', False))):
-            LOG.info("Skipping recovery for instance: %s as it is "
-                     "not Ha_Enabled.", instance_uuid)
+            msg = ("Skipping recovery for instance: %(instance_uuid)s as it is"
+                   " not Ha_Enabled") % {'instance_uuid': instance_uuid}
+            LOG.info(msg)
+            self.update_details(msg, 1.0)
             raise exception.SkipInstanceRecoveryException()
 
         vm_state = getattr(instance, 'OS-EXT-STS:vm_state')
         if vm_state in ['paused', 'rescued']:
-            msg = _("Recovery of instance '%(instance_uuid)s' is ignored as"
-                    " it is in '%(vm_state)s' state.") % {
-                'instance_uuid': instance_uuid, 'vm_state': vm_state}
+            msg = ("Recovery of instance '%(instance_uuid)s' is ignored as it "
+                   "is in '%(vm_state)s' state.") % {
+                'instance_uuid': instance_uuid, 'vm_state': vm_state
+            }
             LOG.warning(msg)
+            self.update_details(msg, 1.0)
             raise exception.IgnoreInstanceRecoveryException(msg)
 
         if vm_state != 'stopped':
             if vm_state == 'resized':
                 self.novaclient.reset_instance_state(
-                    context, instance.id, 'active')
+                    self.context, instance.id, 'active')
 
-            self.novaclient.stop_server(context, instance.id)
+            msg = "Stopping instance: %s" % instance_uuid
+            self.update_details(msg)
+
+            self.novaclient.stop_server(self.context, instance.id)
 
         def _wait_for_power_off():
-            new_instance = self.novaclient.get_server(context, instance_uuid)
+            new_instance = self.novaclient.get_server(self.context,
+                                                      instance_uuid)
             vm_state = getattr(new_instance, 'OS-EXT-STS:vm_state')
             if vm_state == 'stopped':
                 raise loopingcall.LoopingCallDone()
@@ -87,48 +90,60 @@ class StopInstanceTask(base.MasakariTask):
             periodic_call.start(interval=CONF.verify_interval)
             etimeout.with_timeout(CONF.wait_period_after_power_off,
                                   periodic_call.wait)
+            msg = "Stopped instance: '%s'" % instance_uuid
+            self.update_details(msg, 1.0)
         except etimeout.Timeout:
-            msg = _("Failed to stop instance %(instance)s") % {
+            msg = "Failed to stop instance %(instance)s" % {
                 'instance': instance.id
             }
-            raise exception.InstanceRecoveryFailureException(message=msg)
+            self.update_details(msg, 1.0)
+            raise exception.InstanceRecoveryFailureException(
+                message=msg)
         finally:
             # stop the periodic call, in case of exceptions or Timeout.
             periodic_call.stop()
 
 
 class StartInstanceTask(base.MasakariTask):
-    def __init__(self, novaclient):
+    def __init__(self, context, novaclient):
         requires = ["instance_uuid"]
-        super(StartInstanceTask, self).__init__(addons=[ACTION],
+        super(StartInstanceTask, self).__init__(context,
+                                                novaclient,
                                                 requires=requires)
-        self.novaclient = novaclient
 
-    def execute(self, context, instance_uuid):
+    def execute(self, instance_uuid):
         """Start the instance."""
-        instance = self.novaclient.get_server(context, instance_uuid)
+        msg = "Starting instance: '%s'" % instance_uuid
+        self.update_details(msg)
+
+        instance = self.novaclient.get_server(self.context, instance_uuid)
         vm_state = getattr(instance, 'OS-EXT-STS:vm_state')
         if vm_state == 'stopped':
-            self.novaclient.start_server(context, instance.id)
+            self.novaclient.start_server(self.context, instance.id)
+            msg = "Instance started: '%s'" % instance_uuid
+            self.update_details(msg, 1.0)
         else:
-            msg = _("Invalid state for Instance %(instance)s. Expected state: "
-                    "'STOPPED', Actual state: '%(actual_state)s'") % {
+            msg = ("Invalid state for Instance %(instance)s. Expected state: "
+                   "'STOPPED', Actual state: '%(actual_state)s'") % {
                 'instance': instance_uuid,
                 'actual_state': vm_state
             }
-            raise exception.InstanceRecoveryFailureException(message=msg)
+            self.update_details(msg, 1.0)
+            raise exception.InstanceRecoveryFailureException(
+                message=msg)
 
 
 class ConfirmInstanceActiveTask(base.MasakariTask):
-    def __init__(self, novaclient):
+    def __init__(self, context, novaclient):
         requires = ["instance_uuid"]
-        super(ConfirmInstanceActiveTask, self).__init__(addons=[ACTION],
+        super(ConfirmInstanceActiveTask, self).__init__(context,
+                                                        novaclient,
                                                         requires=requires)
-        self.novaclient = novaclient
 
-    def execute(self, context, instance_uuid):
+    def execute(self, instance_uuid):
         def _wait_for_active():
-            new_instance = self.novaclient.get_server(context, instance_uuid)
+            new_instance = self.novaclient.get_server(self.context,
+                                                      instance_uuid)
             vm_state = getattr(new_instance, 'OS-EXT-STS:vm_state')
             if vm_state == 'active':
                 raise loopingcall.LoopingCallDone()
@@ -136,21 +151,29 @@ class ConfirmInstanceActiveTask(base.MasakariTask):
         periodic_call = loopingcall.FixedIntervalLoopingCall(
             _wait_for_active)
         try:
+            msg = "Confirming instance '%s' vm_state is ACTIVE" % instance_uuid
+            self.update_details(msg)
+
             # add a timeout to the periodic call.
             periodic_call.start(interval=CONF.verify_interval)
             etimeout.with_timeout(CONF.wait_period_after_power_on,
                                   periodic_call.wait)
+
+            msg = "Confirmed instance '%s' vm_state is ACTIVE" % instance_uuid
+            self.update_details(msg, 1.0)
         except etimeout.Timeout:
-            msg = _("Failed to start instance %(instance)s") % {
+            msg = "Failed to start instance %(instance)s" % {
                 'instance': instance_uuid
             }
-            raise exception.InstanceRecoveryFailureException(message=msg)
+            self.update_details(msg, 1.0)
+            raise exception.InstanceRecoveryFailureException(
+                message=msg)
         finally:
             # stop the periodic call, in case of exceptions or Timeout.
             periodic_call.stop()
 
 
-def get_instance_recovery_flow(novaclient, process_what):
+def get_instance_recovery_flow(context, novaclient, process_what):
     """Constructs and returns the engine entrypoint flow.
 
     This flow will do the following:
@@ -166,17 +189,17 @@ def get_instance_recovery_flow(novaclient, process_what):
     task_dict = TASKFLOW_CONF.instance_failure_recovery_tasks
 
     instance_recovery_workflow_pre = linear_flow.Flow('pre_tasks')
-    for plugin in base.get_recovery_flow(task_dict['pre'],
+    for plugin in base.get_recovery_flow(task_dict['pre'], context=context,
                                          novaclient=novaclient):
         instance_recovery_workflow_pre.add(plugin)
 
     instance_recovery_workflow_main = linear_flow.Flow('main_tasks')
-    for plugin in base.get_recovery_flow(task_dict['main'],
+    for plugin in base.get_recovery_flow(task_dict['main'], context=context,
                                          novaclient=novaclient):
         instance_recovery_workflow_main.add(plugin)
 
     instance_recovery_workflow_post = linear_flow.Flow('post_tasks')
-    for plugin in base.get_recovery_flow(task_dict['post'],
+    for plugin in base.get_recovery_flow(task_dict['post'], context=context,
                                          novaclient=novaclient):
         instance_recovery_workflow_post.add(plugin)
 
@@ -184,4 +207,5 @@ def get_instance_recovery_flow(novaclient, process_what):
     nested_flow.add(instance_recovery_workflow_main)
     nested_flow.add(instance_recovery_workflow_post)
 
-    return taskflow.engines.load(nested_flow, store=process_what)
+    return base.load_taskflow_into_engine(ACTION, nested_flow,
+                                          process_what)

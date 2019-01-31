@@ -219,6 +219,7 @@ Response
   - created_at: created
   - status: notification_status
   - updated_at: updated
+  - recovery_workflow_details: recovery_workflow_details
   - id: notification_id
 
 **Example Show Notification Details**

@@ -12,28 +12,28 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import contextlib
 import os
 
 from oslo_log import log as logging
+from oslo_utils import timeutils
 from stevedore import named
 # For more information please visit: https://wiki.openstack.org/wiki/TaskFlow
+import taskflow.engines
+from taskflow import exceptions
 from taskflow import formatters
 from taskflow.listeners import base
 from taskflow.listeners import logging as logging_listener
+from taskflow.persistence import backends
+from taskflow.persistence import models
 from taskflow import task
 
+import masakari.conf
 from masakari import exception
 
+CONF = masakari.conf.CONF
+PERSISTENCE_BACKEND = CONF.taskflow.connection
 LOG = logging.getLogger(__name__)
-
-
-def _make_task_name(cls, addons=None):
-    """Makes a pretty name for a task class."""
-    base_name = ".".join([cls.__module__, cls.__name__])
-    extra = ''
-    if addons:
-        extra = ';%s' % (", ".join([str(a) for a in addons]))
-    return base_name + extra
 
 
 class MasakariTask(task.Task):
@@ -43,12 +43,23 @@ class MasakariTask(task.Task):
     implement the given task as the task name.
     """
 
-    def __init__(self, addons=None, **kwargs):
-        super(MasakariTask, self).__init__(self.make_name(addons), **kwargs)
+    def __init__(self, context, novaclient, **kwargs):
+        super(MasakariTask, self).__init__(self.__class__.__name__, **kwargs)
+        self.context = context
+        self.novaclient = novaclient
+        self.progress = []
 
-    @classmethod
-    def make_name(cls, addons=None):
-        return _make_task_name(cls, addons)
+    def update_details(self, progress_data, progress=0.0):
+        progress_details = {
+            'timestamp': str(timeutils.utcnow()),
+            'progress': progress,
+            'message': progress_data
+        }
+
+        self.progress.append(progress_details)
+        self._notifier.notify('update_progress', {'progress': progress,
+                                                  "progress_details":
+                                                      self.progress})
 
 
 class SpecialFormatter(formatters.FailureFormatter):
@@ -102,3 +113,22 @@ def get_recovery_flow(task_list, **kwargs):
         name_order=True, invoke_on_load=True, invoke_kwds=kwargs)
     for extension in extensions.extensions:
         yield extension.obj
+
+
+def load_taskflow_into_engine(action, nested_flow,
+                              process_what):
+    book = None
+    backend = None
+    if PERSISTENCE_BACKEND:
+        backend = backends.fetch(PERSISTENCE_BACKEND)
+        with contextlib.closing(backend.get_connection()) as conn:
+            try:
+                book = conn.get_logbook(process_what['notification_uuid'])
+            except exceptions.NotFound:
+                pass
+            if book is None:
+                book = models.LogBook(action,
+                                      process_what['notification_uuid'])
+
+    return taskflow.engines.load(nested_flow, store=process_what,
+                                 backend=backend, book=book)

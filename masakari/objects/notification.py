@@ -27,11 +27,17 @@ from masakari.objects import fields
 LOG = logging.getLogger(__name__)
 
 
+NOTIFICATION_OPTIONAL_FIELDS = ['recovery_workflow_details']
+
+
 @base.MasakariObjectRegistry.register
 class Notification(base.MasakariPersistentObject, base.MasakariObject,
                    base.MasakariObjectDictCompat):
 
-    VERSION = '1.0'
+    # Version 1.0: Initial version
+    # Version 1.1: Added recovery_workflow_details field.
+    #              Note: This field shouldn't be persisted.
+    VERSION = '1.1'
 
     fields = {
         'id': fields.IntegerField(),
@@ -41,12 +47,19 @@ class Notification(base.MasakariPersistentObject, base.MasakariObject,
         'type': fields.NotificationTypeField(),
         'payload': fields.DictOfStringsField(),
         'status': fields.NotificationStatusField(),
+        # NOTE(ShilpaSD): This field shouldn't be stored in db.
+        # The recovery workflow details read from the 'notification_driver'
+        # will be set to this field.
+        'recovery_workflow_details': fields.ListOfObjectsField(
+            'NotificationProgressDetails', default=[])
         }
 
     @staticmethod
     def _from_db_object(context, notification, db_notification):
 
         for key in notification.fields:
+            if key in NOTIFICATION_OPTIONAL_FIELDS:
+                continue
             if key != 'payload':
                 setattr(notification, key, db_notification.get(key))
             else:
@@ -73,6 +86,9 @@ class Notification(base.MasakariPersistentObject, base.MasakariObject,
             raise exception.ObjectActionError(action='create',
                                               reason='already created')
         updates = self.masakari_obj_get_changes()
+        # NOTE(ShilpaSD): This field doesn't exist in the Notification
+        # db model so don't save it.
+        updates.pop('recovery_workflow_details', None)
 
         if 'notification_uuid' not in updates:
             updates['notification_uuid'] = uuidutils.generate_uuid()
@@ -99,6 +115,9 @@ class Notification(base.MasakariPersistentObject, base.MasakariObject,
         updates = self.masakari_obj_get_changes()
 
         updates.pop('id', None)
+        # NOTE(ShilpaSD): This field doesn't exist in the Notification
+        # db model so don't save it.
+        updates.pop('recovery_workflow_details', None)
 
         db_notification = db.notification_update(self._context,
                                                  self.notification_uuid,
@@ -152,3 +171,23 @@ def notification_sample(sample):
         cls.sample = sample
         return cls
     return wrap
+
+
+@base.MasakariObjectRegistry.register
+class NotificationProgressDetails(base.MasakariObject,
+                                  base.MasakariObjectDictCompat):
+
+    VERSION = '1.0'
+
+    fields = {
+        'name': fields.StringField(),
+        'progress': fields.FloatField(),
+        'progress_details': fields.ListOfDictOfNullableStringsField(
+            default=[]),
+        'state': fields.StringField()
+    }
+
+    @classmethod
+    def create(cls, name, progress, progress_details, state,):
+        return cls(name=name, progress=progress,
+                   progress_details=progress_details, state=state)

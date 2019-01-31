@@ -1,4 +1,4 @@
-# Copyright 2018 NTT DATA.
+# Copyright 2019 NTT Data.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,19 +13,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
-from taskflow import task
+import masakari.conf
+from masakari.engine import driver
 
-LOG = logging.getLogger(__name__)
+CONF = masakari.conf.CONF
+NOTIFICATION_DRIVER = CONF.notification_driver
+PERSISTENCE_BACKEND = CONF.taskflow.connection
 
 
-class Noop(task.Task):
+def upgrade(migrate_engine):
+    """Upgrade the engine with persistence tables. """
 
-    def __init__(self, context, novaclient):
-        self.context = context
-        self.novaclient = novaclient
-        super(Noop, self).__init__()
+    # Get the taskflow driver configured, default is 'taskflow_driver',
+    # to load persistence tables to store progress details.
+    taskflow_driver = driver.load_masakari_driver(NOTIFICATION_DRIVER)
 
-    def execute(self, **kwargs):
-        LOG.info("Custom task executed successfully..!!")
-        return
+    if PERSISTENCE_BACKEND:
+        taskflow_driver.upgrade_backend(PERSISTENCE_BACKEND)

@@ -16,6 +16,7 @@ import mock
 from oslo_utils import importutils
 from oslo_utils import timeutils
 
+from masakari.compute import nova
 import masakari.conf
 from masakari import context
 from masakari.engine import utils as engine_utils
@@ -760,6 +761,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
     def test_host_failure_custom_flow_for_auto_recovery(
             self, _mock_log, _mock_task1, _mock_task2, _mock_task3,
             _mock_novaclient, _mock_notification_get):
+        # For testing purpose setting BACKEND as memory
+        masakari.engine.drivers.taskflow.base.PERSISTENCE_BACKEND = 'memory://'
         self.override_config(
             "host_auto_failure_recovery_tasks",
             {'pre': ['disable_compute_service_task', 'no_op'],
@@ -778,6 +781,72 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         _mock_log.info.assert_called_with(expected_msg_format)
 
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch.object(nova.API, "enable_disable_service")
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
+                'PrepareHAEnabledInstancesTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
+                'EvacuateInstancesTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.LOG')
+    def test_host_failure_flow_for_auto_recovery(self, _mock_log,
+                                                 _mock_notify,
+                                                 _mock_novaclient,
+                                                 _mock_enable_disable,
+                                                 _mock_task2, _mock_task3,
+                                                 _mock_notification_get):
+        self.novaclient = nova.API()
+        self.fake_client = fakes.FakeNovaClient()
+        self.override_config("wait_period_after_evacuation", 2)
+        self.override_config("wait_period_after_service_update", 2)
+        self.override_config("evacuate_all_instances",
+                             True, "host_failure")
+
+        _mock_novaclient.return_value = self.fake_client
+
+        # create test data
+        self.fake_client.servers.create(id="1", host="fake-host",
+                                        ha_enabled=True)
+        self.fake_client.servers.create(id="2", host="fake-host")
+
+        instance_uuid_list = []
+        for instance in self.fake_client.servers.list():
+            instance_uuid_list.append(instance.id)
+
+        instance_list = {
+            "instance_list": ','.join(instance_uuid_list),
+        }
+        _mock_task2.return_value = instance_list
+
+        # For testing purpose setting BACKEND as memory
+        masakari.engine.drivers.taskflow.base.PERSISTENCE_BACKEND = 'memory://'
+
+        self.engine.driver.execute_host_failure(
+            self.context, "fake-host",
+            fields.FailoverSegmentRecoveryMethod.AUTO,
+            uuidsentinel.fake_notification)
+
+        # make sure instance is active and has different host
+        for server in instance_uuid_list:
+            instance = self.novaclient.get_server(self.context, server)
+
+            if CONF.host_failure.ignore_instances_in_error_state and getattr(
+                    instance, 'OS-EXT-STS:vm_state') == 'error':
+                self.assertEqual(
+                    "fake-host", getattr(
+                        instance, 'OS-EXT-SRV-ATTR:hypervisor_hostname'))
+            else:
+                self.assertNotEqual(
+                    "fake-host", getattr(
+                        instance, 'OS-EXT-SRV-ATTR:hypervisor_hostname'))
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0)
+        ])
+
+    @mock.patch('masakari.compute.nova.novaclient')
     @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
                 'DisableComputeServiceTask.execute')
     @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
@@ -785,9 +854,13 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
     @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
                 'EvacuateInstancesTask.execute')
     @mock.patch('masakari.engine.drivers.taskflow.no_op.LOG')
-    def test_host_failure_custom_flow_for_rh_recovery(
-            self, _mock_log, _mock_task1, _mock_task2, _mock_task3,
+    def test_host_failure_custom_flow_for_rh_recovery(self, _mock_log,
+                                                      _mock_task1,
+                                                      _mock_task2,
+                                                      _mock_task3,
             _mock_novaclient, _mock_notification_get):
+        # For testing purpose setting BACKEND as memory
+        masakari.engine.drivers.taskflow.base.PERSISTENCE_BACKEND = 'memory://'
         self.override_config(
             "host_rh_failure_recovery_tasks",
             {'pre': ['disable_compute_service_task'],
@@ -807,6 +880,65 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         _mock_log.info.assert_called_with(expected_msg_format)
 
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch.object(nova.API, "enable_disable_service")
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
+                'PrepareHAEnabledInstancesTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
+                'EvacuateInstancesTask.execute')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.LOG')
+    def test_host_failure_flow_for_rh_recovery(self, _mock_log, _mock_notify,
+                                               _mock_novaclient,
+                                               _mock_enable_disable,
+                                               _mock_task2, _mock_task3,
+                                               _mock_notification_get):
+        self.novaclient = nova.API()
+        self.fake_client = fakes.FakeNovaClient()
+        self.override_config("wait_period_after_evacuation", 2)
+        self.override_config("wait_period_after_service_update", 2)
+        self.override_config("evacuate_all_instances",
+                             True, "host_failure")
+
+        _mock_novaclient.return_value = self.fake_client
+
+        # create test data
+        self.fake_client.servers.create(id="1", host="fake-host",
+                                        ha_enabled=True)
+        self.fake_client.servers.create(id="2", host="fake-host")
+
+        instance_uuid_list = []
+        for instance in self.fake_client.servers.list():
+            instance_uuid_list.append(instance.id)
+
+        instance_list = {
+            "instance_list": ','.join(instance_uuid_list),
+        }
+        _mock_task2.return_value = instance_list
+
+        # For testing purpose setting BACKEND as memory
+        masakari.engine.drivers.taskflow.base.PERSISTENCE_BACKEND = 'memory://'
+
+        self.engine.driver.execute_host_failure(
+            self.context, "fake-host",
+            fields.FailoverSegmentRecoveryMethod.RESERVED_HOST,
+            uuidsentinel.fake_notification,
+            reserved_host_list=['host-1', 'host-2'])
+
+        # make sure instance is active and has different host
+        for server in instance_uuid_list:
+            instance = self.novaclient.get_server(self.context, server)
+            self.assertNotEqual(
+                "fake-host", getattr(
+                    instance, 'OS-EXT-SRV-ATTR:hypervisor_hostname'))
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0)
+        ])
+
+    @mock.patch('masakari.compute.nova.novaclient')
     @mock.patch('masakari.engine.drivers.taskflow.instance_failure.'
                 'StopInstanceTask.execute')
     @mock.patch('masakari.engine.drivers.taskflow.instance_failure.'
@@ -817,6 +949,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
     def test_instance_failure_custom_flow_recovery(
             self, _mock_log, _mock_task1, _mock_task2, _mock_task3,
             _mock_novaclient, _mock_notification_get):
+        # For testing purpose setting BACKEND as memory
+        masakari.engine.drivers.taskflow.base.PERSISTENCE_BACKEND = 'memory://'
         self.override_config(
             "instance_failure_recovery_tasks",
             {'pre': ['stop_instance_task', 'no_op'],
@@ -834,6 +968,49 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         _mock_log.info.assert_called_with(expected_msg_format)
 
     @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    @mock.patch('masakari.engine.drivers.taskflow.instance_failure.LOG')
+    def test_instance_failure_flow_recovery(self, _mock_log, _mock_notify,
+                                            _mock_novaclient,
+                                            _mock_notification_get):
+        self.novaclient = nova.API()
+        self.fake_client = fakes.FakeNovaClient()
+        self.override_config('wait_period_after_power_off', 2)
+        self.override_config('wait_period_after_power_on', 2)
+        instance_id = uuidsentinel.fake_ins
+
+        _mock_novaclient.return_value = self.fake_client
+
+        # create test data
+        self.fake_client.servers.create(instance_id,
+                                        host="fake-host",
+                                        ha_enabled=True)
+
+        # For testing purpose setting BACKEND as memory
+        masakari.engine.drivers.taskflow.base.PERSISTENCE_BACKEND = 'memory://'
+
+        self.engine.driver.execute_instance_failure(
+            self.context, instance_id,
+            uuidsentinel.fake_notification)
+
+        # verify instance is in active state
+        instance = self.novaclient.get_server(self.context, instance_id)
+        self.assertEqual('active',
+                         getattr(instance, 'OS-EXT-STS:vm_state'))
+
+        _mock_notify.assert_has_calls([
+            mock.call('Stopping instance: ' + instance_id),
+            mock.call("Stopped instance: '" + instance_id + "'", 1.0),
+            mock.call("Starting instance: '" + instance_id + "'"),
+            mock.call("Instance started: '" + instance_id + "'", 1.0),
+            mock.call("Confirming instance '" + instance_id +
+                      "' vm_state is ACTIVE"),
+            mock.call("Confirmed instance '" + instance_id +
+                      "' vm_state is ACTIVE", 1.0)
+        ])
+
+    @mock.patch('masakari.compute.nova.novaclient')
     @mock.patch('masakari.engine.drivers.taskflow.process_failure.'
                 'DisableComputeNodeTask.execute')
     @mock.patch('masakari.engine.drivers.taskflow.process_failure.'
@@ -842,6 +1019,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
     def test_process_failure_custom_flow_recovery(
             self, _mock_log, _mock_task1, _mock_task2, _mock_novaclient,
             _mock_notification_get):
+        # For testing purpose setting BACKEND as memory
+        masakari.engine.drivers.taskflow.base.PERSISTENCE_BACKEND = 'memory://'
         self.override_config(
             "process_failure_recovery_tasks",
             {'pre': ['disable_compute_node_task', 'no_op'],
@@ -853,8 +1032,69 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
 
         self.engine.driver.execute_process_failure(
             self.context, 'nova-compute', 'fake_host',
-            uuidsentinel.fake_notification)
+            uuidsentinel.fake_notification, )
+
         _mock_log.info.assert_any_call(expected_msg_format)
         # Ensure custom_task added to the 'process_failure_recovery_tasks'
         # is executed.
         _mock_log.info.assert_called_with(expected_msg_format)
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    @mock.patch('masakari.engine.drivers.taskflow.process_failure.LOG')
+    def test_process_failure_flow_recovery(self, _mock_log, _mock_notify,
+                                           _mock_novaclient,
+                                           _mock_notification_get):
+        self.novaclient = nova.API()
+        self.fake_client = fakes.FakeNovaClient()
+        _mock_novaclient.return_value = self.fake_client
+
+        # create test data
+        self.fake_client.services.create("1", host="fake-host",
+                                         binary="nova-compute",
+                                         status="enabled")
+
+        # For testing purpose setting BACKEND as memory
+        masakari.engine.drivers.taskflow.base.PERSISTENCE_BACKEND = 'memory://'
+
+        self.engine.driver.execute_process_failure(
+            self.context, "nova-compute", "fake-host",
+            uuidsentinel.fake_notification)
+
+        # verify service is disabled
+        self.assertTrue(self.novaclient.is_service_down(self.context,
+                                                        "fake-host",
+                                                        "nova-compute"))
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0),
+            mock.call("Confirming compute service is disabled on host: "
+                      "'fake-host'"),
+            mock.call("Confirmed compute service is disabled on host: "
+                      "'fake-host'", 1.0)
+        ])
+
+    @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch('masakari.engine.drivers.taskflow.driver.TaskFlowDriver.'
+                'get_notification_recovery_workflow_details')
+    def test_get_notification_recovery_workflow_details(self,
+                                                        mock_progress_details,
+                                                        mock_save,
+                                                        mock_notification_get):
+        notification = fakes.create_fake_notification(
+            type="VM", id=1, payload={
+                'event': 'fake_event', 'instance_uuid': uuidsentinel.fake_ins,
+                'vir_domain_event': 'fake_vir_domain_event'
+            },
+            source_host_uuid=uuidsentinel.fake_host,
+            generated_time=NOW, status="new",
+            notification_uuid=uuidsentinel.fake_notification,)
+
+        mock_notification_get.return_value = notification
+        self.engine.driver.get_notification_recovery_workflow_details(
+            self.context, notification)
+
+        mock_progress_details.assert_called_once_with(
+            self.context, notification)

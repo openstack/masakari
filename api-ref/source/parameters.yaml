@@ -295,6 +295,14 @@ on_maintenance:
   in: body
   required: false
   type: boolean
+recovery_workflow_details:
+  description: |
+    Recovery workflow details of the notification. This is a list of dictionary.
+
+    ``New in version 1.1``
+  in: body
+  required: true
+  type: array
 reserved:
   description: |
     A boolean indicates whether this host is reserved or not, if it is

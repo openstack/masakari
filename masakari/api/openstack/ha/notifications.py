@@ -17,6 +17,7 @@ from oslo_utils import timeutils
 from six.moves import http_client as http
 from webob import exc
 
+from masakari.api import api_version_request
 from masakari.api.openstack import common
 from masakari.api.openstack import extensions
 from masakari.api.openstack.ha.schemas import notifications as schema
@@ -123,7 +124,12 @@ class NotificationsController(wsgi.Controller):
         context.can(notifications_policies.NOTIFICATIONS % 'detail')
 
         try:
-            notification = self.api.get_notification(context, id)
+            if api_version_request.is_supported(req, min_version='1.1'):
+                notification = (
+                    self.api.get_notification_recovery_workflow_details(
+                        context, id))
+            else:
+                notification = self.api.get_notification(context, id)
         except exception.NotificationNotFound as err:
             raise exc.HTTPNotFound(explanation=err.format_message())
         return {'notification': notification}

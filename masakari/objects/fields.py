@@ -28,6 +28,8 @@ ObjectField = fields.ObjectField
 BaseEnumField = fields.BaseEnumField
 ListOfObjectsField = fields.ListOfObjectsField
 ListOfStringsField = fields.ListOfStringsField
+FloatField = fields.FloatField
+ListOfDictOfNullableStringsField = fields.ListOfDictOfNullableStringsField
 
 
 Field = fields.Field

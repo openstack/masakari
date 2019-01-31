@@ -33,6 +33,11 @@ customized_recovery_flow_group = cfg.OptGroup(
     help="Configuration options for customizing various failure recovery"
          "workflow tasks.")
 
+taskflow_group = cfg.OptGroup(
+    'taskflow',
+    title='Taskflow driver options',
+    help="Configuration options for taskflow driver")
+
 
 host_failure_opts = [
     cfg.BoolOpt('evacuate_all_instances',
@@ -75,6 +80,13 @@ instance failure recovery actions for an instance irrespective of whether
 that particular instance contains metadata key 'HA_Enabled=True' or not.
 When set to False, it will only execute instance failure recovery actions
 for an instance which contain metadata key 'HA_Enabled=True'."""),
+]
+
+taskflow_options = [
+    cfg.StrOpt('connection',
+               help="""
+The SQLAlchemy connection string to use to connect to the taskflow database.
+"""),
 ]
 
 taskflow_driver_recovery_flows = [
@@ -188,16 +200,19 @@ def register_opts(conf):
     conf.register_group(instance_recovery_group)
     conf.register_group(host_recovery_group)
     conf.register_group(customized_recovery_flow_group)
+    conf.register_group(taskflow_group)
     conf.register_opts(instance_failure_options, group=instance_recovery_group)
     conf.register_opts(host_failure_opts, group=host_recovery_group)
     conf.register_opts(taskflow_driver_recovery_flows,
                        group=customized_recovery_flow_group)
+    conf.register_opts(taskflow_options, group=taskflow_group)
 
 
 def list_opts():
     return {
         instance_recovery_group.name: instance_failure_options,
         host_recovery_group.name: host_failure_opts,
+        taskflow_group.name: taskflow_options
     }
 
 

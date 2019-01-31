@@ -1,19 +1,48 @@
 {
     "notification": {
-        "notification_uuid": "9e66b95d-45da-4695-bfb6-ace68b35d955",
-        "status": "new",
-        "source_host_uuid": "083a8474-22c0-407f-b89b-c569134c3bfd",
+        "notification_uuid": "07a331b8-df15-4582-b121-73ed3541a408",
+        "status": "finished",
+        "source_host_uuid": "b5bc49be-ea6f-472d-9240-968f75d7a16a",
         "deleted": false,
-        "created_at": "2017-04-24T06:37:37.396994",
-        "updated_at": null,
-        "id": 4,
-        "generated_time": "2017-04-24T08:34:46.000000",
-        "deleted_at": null,
-        "type": "COMPUTE_HOST",
+        "created_at": "2019-02-28T07:19:49.000000",
+        "updated_at": "2019-02-28T07:19:59.000000",
         "payload": {
-            "host_status": "UNKNOWN",
-            "event": "STOPPED",
-            "cluster_status": "OFFLINE"
-        }
+            "instance_uuid": "b9837317-a5b8-44f4-93b4-45500c562bb8",
+            "vir_domain_event": "STOPPED_FAILED",
+            "event": "LIFECYCLE"
+        },
+        "recovery_workflow_details": [
+            {
+                "progress": 1.0,
+                "state": "SUCCESS",
+                "name": "StopInstanceTask",
+                "progress_details": [
+                    {"timestamp": "2019-03-07 13:54:28.842031", "message": "Stopping instance: df528f02-2415-4a40-bad8-453ad6a519f7", "progress": "0.0"},
+                    {"timestamp": "2019-03-07 13:54:34.442617", "message": "Stopped instance: 'df528f02-2415-4a40-bad8-453ad6a519f7'", "progress": "1.0"}
+                ]
+            },
+            {
+                "progress": 1.0,
+                "state": "SUCCESS",
+                "name": "StartInstanceTask",
+                "progress_details": [
+                    {"timestamp": "2019-03-07 13:54:34.531755", "message": "Starting instance: 'df528f02-2415-4a40-bad8-453ad6a519f7'", "progress": "0.0"},
+                    {"timestamp": "2019-03-07 13:54:35.930430", "message": "Instance started: 'df528f02-2415-4a40-bad8-453ad6a519f7'", "progress": "1.0"}
+                ]
+            },
+            {
+                "progress": 1.0,
+                "state": "SUCCESS",
+                "name": "ConfirmInstanceActiveTask",
+                "progress_details": [
+                    {"timestamp": "2019-03-07 13:54:36.019208", "message": "Confirming instance 'df528f02-2415-4a40-bad8-453ad6a519f7' vm_state is ACTIVE", "progress": "0.0"},
+                    {"timestamp": "2019-03-07 13:54:38.569373", "message": "Confirmed instance 'df528f02-2415-4a40-bad8-453ad6a519f7' vm_state is ACTIVE", "progress": "1.0"}
+                ]
+            }
+        ],
+        "generated_time": "2017-06-13T15:34:55.000000",
+        "deleted_at": null,
+        "type": "VM",
+        "id": 13
     }
 }

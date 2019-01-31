@@ -24,10 +24,14 @@ import sqlalchemy
 from sqlalchemy.engine import reflection
 import sqlalchemy.exc
 
+import masakari.conf
 from masakari.db.sqlalchemy import migrate_repo
 from masakari.db.sqlalchemy import migration as sa_migration
 from masakari.db.sqlalchemy import models
 from masakari.tests import fixtures as masakari_fixtures
+
+
+CONF = masakari.conf.CONF
 
 
 class MasakariMigrationsCheckers(test_migrations.WalkVersionsMixin):
@@ -176,9 +180,46 @@ class MasakariMigrationsCheckers(test_migrations.WalkVersionsMixin):
         for table in [failover_segments, hosts]:
             self.assertTrue(table.c.created_at.nullable)
 
+    def _check_006(self, engine, data):
+        self.assertColumnExists(engine, 'logbooks', 'created_at')
+        self.assertColumnExists(engine, 'logbooks', 'updated_at')
+        self.assertColumnExists(engine, 'logbooks', 'meta')
+        self.assertColumnExists(engine, 'logbooks', 'name')
+        self.assertColumnExists(engine, 'logbooks', 'uuid')
+
+        self.assertColumnExists(engine, 'flowdetails', 'created_at')
+        self.assertColumnExists(engine, 'flowdetails', 'updated_at')
+        self.assertColumnExists(engine, 'flowdetails', 'parent_uuid')
+        self.assertColumnExists(engine, 'flowdetails', 'meta')
+        self.assertColumnExists(engine, 'flowdetails', 'name')
+        self.assertColumnExists(engine, 'flowdetails', 'state')
+        self.assertColumnExists(engine, 'flowdetails', 'uuid')
+
+        self.assertColumnExists(engine, 'atomdetails', 'created_at')
+        self.assertColumnExists(engine, 'atomdetails', 'updated_at')
+        self.assertColumnExists(engine, 'atomdetails', 'parent_uuid')
+        self.assertColumnExists(engine, 'atomdetails', 'meta')
+        self.assertColumnExists(engine, 'atomdetails', 'name')
+        self.assertColumnExists(engine, 'atomdetails', 'results')
+        self.assertColumnExists(engine, 'atomdetails', 'version')
+        self.assertColumnExists(engine, 'atomdetails', 'state')
+        self.assertColumnExists(engine, 'atomdetails', 'uuid')
+        self.assertColumnExists(engine, 'atomdetails', 'failure')
+        self.assertColumnExists(engine, 'atomdetails', 'atom_type')
+        self.assertColumnExists(engine, 'atomdetails', 'intention')
+        self.assertColumnExists(engine, 'atomdetails', 'revert_results')
+        self.assertColumnExists(engine, 'atomdetails', 'revert_failure')
+
 
 class TestMasakariMigrationsSQLite(MasakariMigrationsCheckers,
                                    test_base.DbTestCase):
+
+    def _check_006(self, engine, data):
+        # NOTE(ShilpaSD): DB script '006_add_persistence_tables.py' adds db
+        # tables required for taskflow which doesn't support Sqlite using
+        # alembic migration.
+        pass
+
     pass
 
 

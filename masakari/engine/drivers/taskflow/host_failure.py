@@ -22,57 +22,55 @@ from oslo_log import log as logging
 from oslo_service import loopingcall
 from oslo_utils import excutils
 from oslo_utils import strutils
-import taskflow.engines
 from taskflow.patterns import linear_flow
 from taskflow import retry
 
 import masakari.conf
 from masakari.engine.drivers.taskflow import base
 from masakari import exception
-from masakari.i18n import _
 from masakari import utils
 
 
 CONF = masakari.conf.CONF
-
 LOG = logging.getLogger(__name__)
-
 ACTION = 'instance:evacuate'
-
 # Instance power_state
 SHUTDOWN = 4
-
 TASKFLOW_CONF = cfg.CONF.taskflow_driver_recovery_flows
 
 
 class DisableComputeServiceTask(base.MasakariTask):
-    def __init__(self, novaclient):
+    def __init__(self, context, novaclient):
         requires = ["host_name"]
-        super(DisableComputeServiceTask, self).__init__(addons=[ACTION],
-                                                        requires=requires)
-        self.novaclient = novaclient
+        super(DisableComputeServiceTask, self).__init__(context,
+                                                        novaclient,
+                                                        requires=requires
+                                                        )
 
-    def execute(self, context, host_name):
-        self.novaclient.enable_disable_service(context, host_name)
-
+    def execute(self, host_name):
+        msg = "Disabling compute service on host: '%s'" % host_name
+        self.update_details(msg)
+        self.novaclient.enable_disable_service(self.context, host_name)
         # Sleep until nova-compute service is marked as disabled.
-        msg = ("Sleeping %(wait)s sec before starting recovery "
+        log_msg = ("Sleeping %(wait)s sec before starting recovery "
                "thread until nova recognizes the node down.")
-        LOG.info(msg, {'wait': CONF.wait_period_after_service_update})
+        LOG.info(log_msg, {'wait': CONF.wait_period_after_service_update})
         eventlet.sleep(CONF.wait_period_after_service_update)
+        msg = "Disabled compute service on host: '%s'" % host_name
+        self.update_details(msg, 1.0)
 
 
 class PrepareHAEnabledInstancesTask(base.MasakariTask):
     """Get all HA_Enabled instances."""
     default_provides = set(["instance_list"])
 
-    def __init__(self, novaclient):
+    def __init__(self, context, novaclient):
         requires = ["host_name"]
-        super(PrepareHAEnabledInstancesTask, self).__init__(addons=[ACTION],
+        super(PrepareHAEnabledInstancesTask, self).__init__(context,
+                                                            novaclient,
                                                             requires=requires)
-        self.novaclient = novaclient
 
-    def execute(self, context, host_name):
+    def execute(self, host_name):
         def _filter_instances(instance_list):
             ha_enabled_instances = []
             non_ha_enabled_instances = []
@@ -84,8 +82,10 @@ class PrepareHAEnabledInstancesTask(base.MasakariTask):
                         getattr(instance, "OS-EXT-STS:vm_state") == "error"):
                     if is_instance_ha_enabled:
                         msg = ("Ignoring recovery of HA_Enabled instance "
-                               "'%(instance_id)s' as it is in 'error' state.")
-                        LOG.info(msg, {'instance_id': instance.id})
+                               "'%(instance_id)s' as it is in 'error' state."
+                               ) % {'instance_id': instance.id}
+                        LOG.info(msg)
+                        self.update_details(msg, 0.4)
                     continue
 
                 if is_instance_ha_enabled:
@@ -93,19 +93,47 @@ class PrepareHAEnabledInstancesTask(base.MasakariTask):
                 else:
                     non_ha_enabled_instances.append(instance)
 
+            msg = "Total HA Enabled instances count: '%d'" % len(
+                ha_enabled_instances)
+            self.update_details(msg, 0.6)
+
             if CONF.host_failure.evacuate_all_instances:
+                msg = ("Total Non-HA Enabled instances count: '%d'" % len(
+                    non_ha_enabled_instances))
+                self.update_details(msg, 0.7)
+
                 ha_enabled_instances.extend(non_ha_enabled_instances)
+
+                msg = ("All instances (HA Enabled/Non-HA Enabled) should be "
+                       "considered for evacuation. Total count is: '%d'") % (
+                    len(ha_enabled_instances))
+                self.update_details(msg, 0.8)
 
             return ha_enabled_instances
 
-        instance_list = self.novaclient.get_servers(context, host_name)
+        msg = "Preparing instances for evacuation"
+        self.update_details(msg)
+
+        instance_list = self.novaclient.get_servers(self.context, host_name)
+        msg = ("Total instances running on failed host '%(host_name)s' is "
+               "%(instance_list)d") % {'host_name': host_name,
+                                       'instance_list': len(instance_list)}
+        self.update_details(msg, 0.3)
 
         instance_list = _filter_instances(instance_list)
 
         if not instance_list:
-            msg = _('No instances to evacuate on host: %s.') % host_name
+            msg = ("Skipped host '%s' recovery as no instances needs to be "
+                   "evacuated" % host_name)
+            self.update_details(msg, 1.0)
             LOG.info(msg)
             raise exception.SkipHostRecoveryException(message=msg)
+
+        # List of instance UUID
+        instance_list = [instance.id for instance in instance_list]
+
+        msg = "Instances to be evacuated are: '%s'" % ','.join(instance_list)
+        self.update_details(msg, 1.0)
 
         return {
             "instance_list": instance_list,
@@ -114,11 +142,11 @@ class PrepareHAEnabledInstancesTask(base.MasakariTask):
 
 class EvacuateInstancesTask(base.MasakariTask):
 
-    def __init__(self, novaclient):
+    def __init__(self, context, novaclient):
         requires = ["host_name", "instance_list"]
-        super(EvacuateInstancesTask, self).__init__(addons=[ACTION],
+        super(EvacuateInstancesTask, self).__init__(context,
+                                                    novaclient,
                                                     requires=requires)
-        self.novaclient = novaclient
 
     def _get_state_and_host_of_instance(self, context, instance):
         new_instance = self.novaclient.get_server(context, instance.id)
@@ -131,7 +159,7 @@ class EvacuateInstancesTask(base.MasakariTask):
 
     def _stop_after_evacuation(self, context, instance):
         def _wait_for_stop_confirmation():
-            old_vm_state, new_vm_state, _ = (
+            old_vm_state, new_vm_state, instance_host = (
                 self._get_state_and_host_of_instance(context, instance))
 
             if new_vm_state == 'stopped':
@@ -149,9 +177,10 @@ class EvacuateInstancesTask(base.MasakariTask):
                 periodic_call_stopped.wait)
         except etimeout.Timeout:
             with excutils.save_and_reraise_exception():
-                msg = ("Instance '%s' is successfully evacuated but "
-                       "failed to stop.")
-                LOG.warning(msg, instance.id)
+                msg = ("Instance '%(uuid)s' is successfully evacuated but "
+                       "failed to stop.") % {'uuid': instance.id}
+                LOG.warning(msg)
+                self.update_details(msg, 1.0)
         finally:
             periodic_call_stopped.stop()
 
@@ -171,7 +200,6 @@ class EvacuateInstancesTask(base.MasakariTask):
         def _wait_for_evacuation_confirmation():
             old_vm_state, new_vm_state, instance_host = (
                 self._get_state_and_host_of_instance(context, instance))
-
             if instance_host != host_name:
                 if ((old_vm_state == 'error' and
                     new_vm_state == 'active') or
@@ -220,7 +248,7 @@ class EvacuateInstancesTask(base.MasakariTask):
 
                 if vm_state != 'active':
                     if stop_instance:
-                        self._stop_after_evacuation(context, instance)
+                        self._stop_after_evacuation(self.context, instance)
                         # If the instance was in 'error' state before failure
                         # it should be set to 'error' after recovery.
                         if vm_state == 'error':
@@ -242,11 +270,18 @@ class EvacuateInstancesTask(base.MasakariTask):
                 # Unlock the server after evacuation and confirmation
                 self.novaclient.unlock_server(context, instance.id)
 
-    def execute(self, context, host_name, instance_list, reserved_host=None):
+    def execute(self, host_name, instance_list, reserved_host=None):
+        msg = ("Start evacuation of instances from failed host '%(host_name)s'"
+               ", instance uuids are : '%(instance_list)s'") % {
+            'host_name': host_name, 'instance_list': ','.join(instance_list)}
+        self.update_details(msg)
+
         def _do_evacuate(context, host_name, instance_list,
                          reserved_host=None):
             failed_evacuation_instances = []
             if reserved_host:
+                msg = "Enabling reserved host: '%s'" % reserved_host.name
+                self.update_details(msg, 0.1)
                 if CONF.host_failure.add_reserved_host_to_aggregate:
                     # Assign reserved_host to an aggregate to which the failed
                     # compute host belongs to.
@@ -254,15 +289,27 @@ class EvacuateInstancesTask(base.MasakariTask):
                     for aggregate in aggregates:
                         if host_name in aggregate.hosts:
                             try:
+                                msg = ("Add host %(reserved_host)s to "
+                                       "aggregate %(aggregate)s") % {
+                                    'reserved_host': reserved_host.name,
+                                    'aggregate': aggregate.name}
+                                self.update_details(msg, 0.2)
+
                                 self.novaclient.add_host_to_aggregate(
                                     context, reserved_host.name, aggregate)
+                                msg = ("Added host %(reserved_host)s to "
+                                       "aggregate %(aggregate)s") % {
+                                    'reserved_host': reserved_host.name,
+                                    'aggregate': aggregate.name}
+                                self.update_details(msg, 0.3)
                             except exception.Conflict:
                                 msg = ("Host '%(reserved_host)s' already has "
                                        "been added to aggregate "
-                                       "'%(aggregate)s'.")
-                                LOG.info(msg,
-                                         {'reserved_host': reserved_host.name,
-                                          'aggregate': aggregate.name})
+                                       "'%(aggregate)s'.") % {
+                                    'reserved_host': reserved_host.name,
+                                    'aggregate': aggregate.name}
+                                self.update_details(msg, 1.0)
+                                LOG.info(msg)
 
                             # A failed compute host can be associated with
                             # multiple aggregates but operators will not
@@ -280,38 +327,52 @@ class EvacuateInstancesTask(base.MasakariTask):
 
             thread_pool = greenpool.GreenPool(
                 CONF.host_failure_recovery_threads)
-            for instance in instance_list:
+
+            for instance_id in instance_list:
+                msg = "Evacuation of instance started : '%s'" % instance_id
+                self.update_details(msg, 0.5)
+                instance = self.novaclient.get_server(self.context,
+                                                      instance_id)
                 thread_pool.spawn_n(self._evacuate_and_confirm, context,
                                     instance, host_name,
                                     failed_evacuation_instances, reserved_host)
+
+                if not (instance_id in failed_evacuation_instances):
+                    msg = ("Instance '%s' evacuated successfully" %
+                           instance_id)
+                    self.update_details(msg, 0.7)
+
             thread_pool.waitall()
 
             if failed_evacuation_instances:
-                msg = _("Failed to evacuate instances %(instances)s from "
-                        "host %(host_name)s.") % {
-                    'instances': failed_evacuation_instances,
-                    'host_name': host_name
-                }
-                raise exception.HostRecoveryFailureException(message=msg)
+                msg = ("Failed to evacuate instances "
+                       "'%(failed_evacuation_instances)s' from host "
+                       "'%(host_name)s'") % {
+                    'failed_evacuation_instances':
+                        ','.join(failed_evacuation_instances),
+                    'host_name': host_name}
+                self.update_details(msg, 1.0)
+                raise exception.HostRecoveryFailureException(
+                    message=msg)
 
         lock_name = reserved_host.name if reserved_host else None
 
         @utils.synchronized(lock_name)
         def do_evacuate_with_reserved_host(context, host_name, instance_list,
                                            reserved_host):
-            _do_evacuate(context, host_name, instance_list,
+            _do_evacuate(self.context, host_name, instance_list,
                          reserved_host=reserved_host)
 
         if lock_name:
-            do_evacuate_with_reserved_host(context, host_name, instance_list,
-                                           reserved_host)
+            do_evacuate_with_reserved_host(self.context, host_name,
+                                           instance_list, reserved_host)
         else:
             # No need to acquire lock on reserved_host when recovery_method is
             # 'auto' as the selection of compute host will be decided by nova.
-            _do_evacuate(context, host_name, instance_list)
+            _do_evacuate(self.context, host_name, instance_list)
 
 
-def get_auto_flow(novaclient, process_what):
+def get_auto_flow(context, novaclient, process_what):
     """Constructs and returns the engine entrypoint flow.
 
     This flow will do the following:
@@ -328,17 +389,17 @@ def get_auto_flow(novaclient, process_what):
     task_dict = TASKFLOW_CONF.host_auto_failure_recovery_tasks
 
     auto_evacuate_flow_pre = linear_flow.Flow('pre_tasks')
-    for plugin in base.get_recovery_flow(task_dict['pre'],
+    for plugin in base.get_recovery_flow(task_dict['pre'], context=context,
                                          novaclient=novaclient):
         auto_evacuate_flow_pre.add(plugin)
 
     auto_evacuate_flow_main = linear_flow.Flow('main_tasks')
-    for plugin in base.get_recovery_flow(task_dict['main'],
+    for plugin in base.get_recovery_flow(task_dict['main'], context=context,
                                          novaclient=novaclient):
         auto_evacuate_flow_main.add(plugin)
 
     auto_evacuate_flow_post = linear_flow.Flow('post_tasks')
-    for plugin in base.get_recovery_flow(task_dict['post'],
+    for plugin in base.get_recovery_flow(task_dict['post'], context=context,
                                          novaclient=novaclient):
         auto_evacuate_flow_post.add(plugin)
 
@@ -346,10 +407,11 @@ def get_auto_flow(novaclient, process_what):
     nested_flow.add(auto_evacuate_flow_main)
     nested_flow.add(auto_evacuate_flow_post)
 
-    return taskflow.engines.load(nested_flow, store=process_what)
+    return base.load_taskflow_into_engine(ACTION, nested_flow,
+                                          process_what)
 
 
-def get_rh_flow(novaclient, process_what):
+def get_rh_flow(context, novaclient, process_what):
     """Constructs and returns the engine entrypoint flow.
 
     This flow will do the following:
@@ -365,7 +427,7 @@ def get_rh_flow(novaclient, process_what):
     task_dict = TASKFLOW_CONF.host_rh_failure_recovery_tasks
 
     rh_evacuate_flow_pre = linear_flow.Flow('pre_tasks')
-    for plugin in base.get_recovery_flow(task_dict['pre'],
+    for plugin in base.get_recovery_flow(task_dict['pre'], context=context,
                                          novaclient=novaclient):
         rh_evacuate_flow_pre.add(plugin)
 
@@ -373,12 +435,12 @@ def get_rh_flow(novaclient, process_what):
         "retry_%s" % flow_name, retry=retry.ParameterizedForEach(
             rebind=['reserved_host_list'], provides='reserved_host'))
 
-    for plugin in base.get_recovery_flow(task_dict['main'],
+    for plugin in base.get_recovery_flow(task_dict['main'], context=context,
                                          novaclient=novaclient):
         rh_evacuate_flow_main.add(plugin)
 
     rh_evacuate_flow_post = linear_flow.Flow('post_tasks')
-    for plugin in base.get_recovery_flow(task_dict['post'],
+    for plugin in base.get_recovery_flow(task_dict['post'], context=context,
                                          novaclient=novaclient):
         rh_evacuate_flow_post.add(plugin)
 
@@ -386,4 +448,5 @@ def get_rh_flow(novaclient, process_what):
     nested_flow.add(rh_evacuate_flow_main)
     nested_flow.add(rh_evacuate_flow_post)
 
-    return taskflow.engines.load(nested_flow, store=process_what)
+    return base.load_taskflow_into_engine(ACTION, nested_flow,
+                                          process_what)

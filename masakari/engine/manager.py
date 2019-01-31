@@ -31,8 +31,10 @@ from oslo_utils import timeutils
 import masakari.conf
 from masakari.engine import driver
 from masakari.engine import instance_events as virt_events
+from masakari.engine import rpcapi
 from masakari.engine import utils as engine_utils
 from masakari import exception
+from masakari.i18n import _
 from masakari import manager
 from masakari import objects
 from masakari.objects import fields
@@ -45,8 +47,8 @@ LOG = logging.getLogger(__name__)
 
 class MasakariManager(manager.Manager):
     """Manages the running notifications"""
-
-    target = messaging.Target(version='1.0')
+    RPC_API_VERSION = rpcapi.EngineAPI.RPC_API_VERSION
+    target = messaging.Target(version=RPC_API_VERSION)
 
     def __init__(self, masakari_driver=None, *args, **kwargs):
         """Load configuration options"""
@@ -332,3 +334,23 @@ class MasakariManager(manager.Manager):
                     "status: %(status)s.",
                     {'notification_uuid': notification.notification_uuid,
                      'status': notification_status})
+
+    def get_notification_recovery_workflow_details(self, context,
+                                                   notification):
+        """Retrieve recovery workflow details of the notification"""
+        try:
+            host_obj = objects.Host.get_by_uuid(
+                context, notification.source_host_uuid)
+            recovery_method = host_obj.failover_segment.recovery_method
+
+            progress_details = (self.driver.
+                                get_notification_recovery_workflow_details(
+                                    context, recovery_method, notification))
+            notification['recovery_workflow_details'] = progress_details
+        except Exception:
+            msg = (_('Failed to fetch notification recovery workflow details '
+                     'for %s'), notification.notification_uuid)
+            LOG.exception(msg)
+            raise exception.MasakariException(msg)
+
+        return notification

@@ -374,3 +374,15 @@ class NotificationAPI(object):
             raise exception.NotificationNotFound(id=notification_uuid)
 
         return notification
+
+    def get_notification_recovery_workflow_details(self, context,
+                                                   notification_uuid):
+        """Get recovery workflow details details of the notification"""
+        notification = self.get_notification(context, notification_uuid)
+
+        LOG.debug("Fetching recovery workflow details of a notification %s ",
+                  notification_uuid)
+        notification = (self.engine_rpcapi.
+                        get_notification_recovery_workflow_details(
+                            context, notification))
+        return notification

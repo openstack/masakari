@@ -18,11 +18,16 @@ Driver TaskFlowDriver:
 
     Execute notification workflows using taskflow.
 """
+from collections import OrderedDict
+import contextlib
 
 from oslo_log import log as logging
 from oslo_utils import excutils
+from taskflow import exceptions
+from taskflow.persistence import backends
 
 from masakari.compute import nova
+import masakari.conf
 from masakari.engine import driver
 from masakari.engine.drivers.taskflow import base
 from masakari.engine.drivers.taskflow import host_failure
@@ -30,9 +35,13 @@ from masakari.engine.drivers.taskflow import instance_failure
 from masakari.engine.drivers.taskflow import process_failure
 from masakari import exception
 from masakari.i18n import _
+from masakari import objects
 from masakari.objects import fields
 
 
+CONF = masakari.conf.CONF
+TASKFLOW_CONF = CONF.taskflow_driver_recovery_flows
+PERSISTENCE_BACKEND = CONF.taskflow.connection
 LOG = logging.getLogger(__name__)
 
 
@@ -40,8 +49,9 @@ class TaskFlowDriver(driver.NotificationDriver):
     def __init__(self):
         super(TaskFlowDriver, self).__init__()
 
-    def _execute_auto_workflow(self, novaclient, process_what):
-        flow_engine = host_failure.get_auto_flow(novaclient, process_what)
+    def _execute_auto_workflow(self, context, novaclient, process_what):
+        flow_engine = host_failure.get_auto_flow(context, novaclient,
+                                                 process_what)
 
         # Attaching this listener will capture all of the notifications
         # that taskflow sends out and redirect them to a more useful
@@ -49,7 +59,7 @@ class TaskFlowDriver(driver.NotificationDriver):
         with base.DynamicLogListener(flow_engine, logger=LOG):
             flow_engine.run()
 
-    def _execute_rh_workflow(self, novaclient, process_what,
+    def _execute_rh_workflow(self, context, novaclient, process_what,
                              reserved_host_list):
         if not reserved_host_list:
             msg = _('No reserved_hosts available for evacuation.')
@@ -57,7 +67,8 @@ class TaskFlowDriver(driver.NotificationDriver):
             raise exception.ReservedHostsUnavailable(message=msg)
 
         process_what['reserved_host_list'] = reserved_host_list
-        flow_engine = host_failure.get_rh_flow(novaclient, process_what)
+        flow_engine = host_failure.get_rh_flow(context, novaclient,
+                                               process_what)
 
         with base.DynamicLogListener(flow_engine, logger=LOG):
             try:
@@ -65,10 +76,10 @@ class TaskFlowDriver(driver.NotificationDriver):
             except exception.LockAlreadyAcquired as ex:
                 raise exception.HostRecoveryFailureException(ex.message)
 
-    def _execute_auto_priority_workflow(self, novaclient, process_what,
-                                        reserved_host_list):
+    def _execute_auto_priority_workflow(self, context, novaclient,
+                                        process_what, reserved_host_list):
         try:
-            self._execute_auto_workflow(novaclient, process_what)
+            self._execute_auto_workflow(context, novaclient, process_what)
         except Exception as ex:
             with excutils.save_and_reraise_exception(reraise=False) as ctxt:
                 if isinstance(ex, exception.SkipHostRecoveryException):
@@ -87,13 +98,13 @@ class TaskFlowDriver(driver.NotificationDriver):
                     'reserved_host':
                         fields.FailoverSegmentRecoveryMethod.RESERVED_HOST
                 })
-                self._execute_rh_workflow(novaclient, process_what,
+                self._execute_rh_workflow(context, novaclient, process_what,
                                           reserved_host_list)
 
-    def _execute_rh_priority_workflow(self, novaclient, process_what,
+    def _execute_rh_priority_workflow(self, context, novaclient, process_what,
                                       reserved_host_list):
         try:
-            self._execute_rh_workflow(novaclient, process_what,
+            self._execute_rh_workflow(context, novaclient, process_what,
                                       reserved_host_list)
         except Exception as ex:
             with excutils.save_and_reraise_exception(reraise=False) as ctxt:
@@ -113,30 +124,32 @@ class TaskFlowDriver(driver.NotificationDriver):
                         fields.FailoverSegmentRecoveryMethod.RESERVED_HOST,
                     'auto': fields.FailoverSegmentRecoveryMethod.AUTO
                 })
-                self._execute_auto_workflow(novaclient, process_what)
+                self._execute_auto_workflow(context, novaclient, process_what)
 
     def execute_host_failure(self, context, host_name, recovery_method,
                              notification_uuid, reserved_host_list=None):
         novaclient = nova.API()
         # get flow for host failure
         process_what = {
-            'context': context,
-            'host_name': host_name
+            'host_name': host_name,
+            'notification_uuid': notification_uuid
         }
 
         try:
             if recovery_method == fields.FailoverSegmentRecoveryMethod.AUTO:
-                self._execute_auto_workflow(novaclient, process_what)
+                self._execute_auto_workflow(context, novaclient, process_what)
             elif recovery_method == (
                     fields.FailoverSegmentRecoveryMethod.RESERVED_HOST):
-                self._execute_rh_workflow(novaclient, process_what,
+                self._execute_rh_workflow(context, novaclient, process_what,
                                           reserved_host_list)
             elif recovery_method == (
                     fields.FailoverSegmentRecoveryMethod.AUTO_PRIORITY):
-                self._execute_auto_priority_workflow(novaclient, process_what,
-                                                    reserved_host_list)
+                self._execute_auto_priority_workflow(context, novaclient,
+                                                     process_what,
+                                                     reserved_host_list)
             else:
-                self._execute_rh_priority_workflow(novaclient, process_what,
+                self._execute_rh_priority_workflow(context, novaclient,
+                                                   process_what,
                                                    reserved_host_list)
         except Exception as exc:
             with excutils.save_and_reraise_exception(reraise=False) as ctxt:
@@ -154,13 +167,13 @@ class TaskFlowDriver(driver.NotificationDriver):
         novaclient = nova.API()
         # get flow for instance failure
         process_what = {
-            'context': context,
-            'instance_uuid': instance_uuid
+            'instance_uuid': instance_uuid,
+            'notification_uuid': notification_uuid
         }
 
         try:
             flow_engine = instance_failure.get_instance_recovery_flow(
-                novaclient, process_what)
+                context, novaclient, process_what)
         except Exception:
             msg = (_('Failed to create instance failure flow.'),
                    notification_uuid)
@@ -178,9 +191,9 @@ class TaskFlowDriver(driver.NotificationDriver):
         novaclient = nova.API()
         # get flow for process failure
         process_what = {
-            'context': context,
             'process_name': process_name,
-            'host_name': host_name
+            'host_name': host_name,
+            'notification_uuid': notification_uuid
         }
 
         # TODO(abhishekk) We need to create a map for process_name and
@@ -194,7 +207,7 @@ class TaskFlowDriver(driver.NotificationDriver):
             raise exception.SkipProcessRecoveryException()
 
         try:
-            flow_engine = recovery_flow(novaclient, process_what)
+            flow_engine = recovery_flow(context, novaclient, process_what)
         except Exception:
             msg = (_('Failed to create process failure flow.'),
                    notification_uuid)
@@ -206,3 +219,90 @@ class TaskFlowDriver(driver.NotificationDriver):
         # masakari's debugging (or error reporting) usage.
         with base.DynamicLogListener(flow_engine, logger=LOG):
             flow_engine.run()
+
+    @contextlib.contextmanager
+    def upgrade_backend(self, persistence_backend):
+        try:
+            backend = backends.fetch(persistence_backend)
+            with contextlib.closing(backend.get_connection()) as conn:
+                conn.upgrade()
+        except exceptions.NotFound as e:
+            raise e
+
+    def _get_taskflow_sequence(self, context, recovery_method, notification):
+        # Get the taskflow sequence based on the recovery method.
+
+        novaclient = nova.API()
+        task_list = []
+
+        # Get linear task flow based on notification type
+        if notification.type == fields.NotificationType.VM:
+            tasks = TASKFLOW_CONF.instance_failure_recovery_tasks
+        elif notification.type == fields.NotificationType.PROCESS:
+            tasks = TASKFLOW_CONF.process_failure_recovery_tasks
+        elif notification.type == fields.NotificationType.COMPUTE_HOST:
+            if recovery_method == fields.FailoverSegmentRecoveryMethod.AUTO:
+                tasks = TASKFLOW_CONF.host_auto_failure_recovery_tasks
+            elif recovery_method == (
+                    fields.FailoverSegmentRecoveryMethod.RESERVED_HOST):
+                tasks = TASKFLOW_CONF.host_rh_failure_recovery_tasks
+
+        for plugin in base.get_recovery_flow(tasks['pre'],
+                                             context=context,
+                                             novaclient=novaclient):
+            task_list.append(plugin.name)
+
+        for plugin in base.get_recovery_flow(tasks['main'],
+                                             context=context,
+                                             novaclient=novaclient):
+            task_list.append(plugin.name)
+
+        for plugin in base.get_recovery_flow(tasks['post'],
+                                             context=context,
+                                             novaclient=novaclient):
+            task_list.append(plugin.name)
+
+        return task_list
+
+    def get_notification_recovery_workflow_details(self, context,
+                                                   recovery_method,
+                                                   notification):
+        """Retrieve progress details in notification"""
+
+        # Note<ShilpaSD>: Taskflow doesn't support to return task details in
+        # the same sequence in which all tasks are executed. Reported this
+        # issue in LP #1815738. To resolve this issue load the tasks based on
+        # the recovery method and later sort it based on this task list so
+        # progress_details can be returned in the expected order.
+        task_list = self._get_taskflow_sequence(context, recovery_method,
+                                                notification)
+
+        backend = backends.fetch(PERSISTENCE_BACKEND)
+        with contextlib.closing(backend.get_connection()) as conn:
+            progress_details = []
+            flow_details = conn.get_flows_for_book(
+                notification.notification_uuid)
+            for flow in flow_details:
+                od = OrderedDict()
+                atom_details = list(conn.get_atoms_for_flow(flow.uuid))
+
+                for task in task_list:
+                    for atom in atom_details:
+                        if task == atom.name:
+                            od[atom.name] = atom
+
+                for key, value in od.items():
+                    # Add progress_details only if tasks are executed and meta
+                    # is available in which progress_details are stored.
+                    if value.meta:
+                        progress_details_obj = (
+                            objects.NotificationProgressDetails.create(
+                                value.name,
+                                value.meta['progress'],
+                                value.meta['progress_details']['details']
+                                ['progress_details'],
+                                value.state))
+
+                        progress_details.append(progress_details_obj)
+
+        return progress_details

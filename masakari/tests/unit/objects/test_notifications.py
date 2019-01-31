@@ -28,6 +28,7 @@ from masakari.tests.unit.objects import test_objects
 from masakari.tests import uuidsentinel
 
 NOW = timeutils.utcnow().replace(microsecond=0)
+OPTIONAL = ['recovery_workflow_details']
 
 
 def _fake_db_notification(**kwargs):
@@ -86,7 +87,8 @@ class TestNotificationObject(test_objects._LocalTest):
             if db_exception:
                 self.assertIsNone(obj)
 
-            self.compare_obj(obj, fake_object_notification)
+            self.compare_obj(obj, fake_object_notification,
+                             allow_missing=OPTIONAL)
 
     def test_get_by_id(self):
         self._test_query('notification_get_by_id', 'get_by_id', 123)
@@ -116,7 +118,8 @@ class TestNotificationObject(test_objects._LocalTest):
         notification_obj = self._notification_create_attributes()
         notification_obj.create()
 
-        self.compare_obj(notification_obj, fake_object_notification)
+        self.compare_obj(notification_obj, fake_object_notification,
+                         allow_missing=OPTIONAL)
         mock_db_create.assert_called_once_with(self.context, {
             'source_host_uuid': uuidsentinel.fake_host,
             'notification_uuid': uuidsentinel.fake_notification,
@@ -169,7 +172,8 @@ class TestNotificationObject(test_objects._LocalTest):
 
         notification_obj.create()
 
-        self.compare_obj(notification_obj, fake_object_notification)
+        self.compare_obj(notification_obj, fake_object_notification,
+                         allow_missing=OPTIONAL)
         mock_db_create.assert_called_once_with(self.context, {
             'source_host_uuid': uuidsentinel.fake_host,
             'notification_uuid': uuidsentinel.fake_notification,
@@ -247,7 +251,8 @@ class TestNotificationObject(test_objects._LocalTest):
         notification_obj.id = 123
         notification_obj.save()
 
-        self.compare_obj(notification_obj, fake_object_notification)
+        self.compare_obj(notification_obj, fake_object_notification,
+                         allow_missing=OPTIONAL)
         (mock_notification_update.
          assert_called_once_with(self.context, uuidsentinel.fake_notification,
                                  {'source_host_uuid': uuidsentinel.fake_host,

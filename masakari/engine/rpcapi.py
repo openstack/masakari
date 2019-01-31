@@ -30,9 +30,11 @@ class EngineAPI(rpc.RPCAPI):
     .. code-block:: none
 
         1.0 - Initial version.
+        1.1 - Added get_notification_recovery_workflow_details method to
+              retrieve progress details from notification driver.
     """
 
-    RPC_API_VERSION = '1.0'
+    RPC_API_VERSION = '1.1'
     TOPIC = CONF.masakari_topic
     BINARY = 'masakari-engine'
 
@@ -47,3 +49,11 @@ class EngineAPI(rpc.RPCAPI):
         version = '1.0'
         cctxt = self.client.prepare(version=version)
         cctxt.cast(context, 'process_notification', notification=notification)
+
+    def get_notification_recovery_workflow_details(self, context,
+                                                   notification):
+        version = '1.1'
+        cctxt = self.client.prepare(version=version)
+        return cctxt.call(context,
+                          'get_notification_recovery_workflow_details',
+                          notification=notification)

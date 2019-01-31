@@ -15,6 +15,8 @@
 
 """Tests for the notifications api."""
 
+import copy
+
 import ddt
 import mock
 from oslo_serialization import jsonutils
@@ -35,10 +37,15 @@ from masakari.tests.unit.objects import test_objects
 from masakari.tests import uuidsentinel
 
 NOW = timeutils.utcnow().replace(microsecond=0)
+OPTIONAL = ['recovery_workflow_details']
 
 
 def _make_notification_obj(notification_dict):
     return notification_obj.Notification(**notification_dict)
+
+
+def _make_notification_progress_details_obj(progress_details):
+    return notification_obj.NotificationProgressDetails(**progress_details)
 
 
 def _make_notifications_list(notifications_list):
@@ -60,6 +67,22 @@ NOTIFICATION_DATA = {"type": "VM", "id": 1,
                      }
 
 NOTIFICATION = _make_notification_obj(NOTIFICATION_DATA)
+
+RECOVERY_DETAILS = {"progress": 1.0,
+                    "state": "SUCCESS",
+                    "name": "StopInstanceTask",
+                    "progress_details": [
+                        {"timestamp": "2019-03-07 13:54:28",
+                         "message": "Stopping instance",
+                         "progress": "0.0"},
+                    ]}
+
+NOTI_DATA_WITH_DETAILS = copy.deepcopy(NOTIFICATION_DATA)
+
+NOTIFICATION_WITH_PROGRESS_DETAILS = _make_notification_obj(
+    NOTI_DATA_WITH_DETAILS)
+RECOVERY_OBJ = _make_notification_progress_details_obj(RECOVERY_DETAILS)
+NOTIFICATION_WITH_PROGRESS_DETAILS.recovery_workflow_details = [RECOVERY_OBJ]
 
 NOTIFICATION_LIST = [
     {"type": "VM", "id": 1, "payload": {'event': 'STOPPED',
@@ -165,7 +188,8 @@ class NotificationTestCase(test.TestCase):
                 "type": "VM",
                 "generated_time": "2016-09-13T09:11:21.656788"}})
         result = result['notification']
-        test_objects.compare_obj(self, result, NOTIFICATION_DATA)
+        test_objects.compare_obj(self, result, NOTIFICATION_DATA,
+                                 allow_missing=OPTIONAL)
 
     @mock.patch.object(ha_api.NotificationAPI, 'create_notification')
     def test_create_process_notification(self, mock_create):
@@ -180,7 +204,8 @@ class NotificationTestCase(test.TestCase):
                 "type": "PROCESS",
                 "generated_time": "2016-09-13T09:11:21.656788"}})
         result = result['notification']
-        test_objects.compare_obj(self, result, NOTIFICATION_DATA)
+        test_objects.compare_obj(self, result, NOTIFICATION_DATA,
+                                 allow_missing=OPTIONAL)
 
     @mock.patch('masakari.rpc.get_client')
     @mock.patch.object(ha_api.NotificationAPI, 'create_notification')
@@ -446,3 +471,30 @@ class NotificationCasePolicyNotAuthorized(test.NoDBTestCase):
                                 self.controller.index,
                                 self.req)
         self._check_rule(exc, rule_name)
+
+
+class NotificationV1_1_TestCase(NotificationTestCase):
+    """Test Case for notifications api for 1.1 API"""
+    api_version = '1.1'
+
+    @mock.patch.object(engine_rpcapi, 'EngineAPI')
+    def setUp(self, mock_rpc):
+        super(NotificationV1_1_TestCase, self).setUp()
+        self.controller = notifications.NotificationsController()
+        self.req = fakes.HTTPRequest.blank('/v1/notifications',
+                                           use_admin_context=True,
+                                           version=self.api_version)
+        self.context = self.req.environ['masakari.context']
+
+    @mock.patch.object(ha_api.NotificationAPI,
+                       'get_notification_recovery_workflow_details')
+    def test_show(self, mock_get_notification_recovery_workflow_details):
+        (mock_get_notification_recovery_workflow_details
+         .return_value) = NOTIFICATION_WITH_PROGRESS_DETAILS
+
+        result = self.controller.show(self.req, uuidsentinel.fake_notification)
+        result = result['notification']
+        self.assertItemsEqual([RECOVERY_OBJ],
+                              result.recovery_workflow_details)
+        self._assert_notification_data(NOTIFICATION_WITH_PROGRESS_DETAILS,
+                                       _make_notification_obj(result))
