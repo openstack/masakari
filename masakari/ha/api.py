@@ -123,6 +123,10 @@ class FailoverSegmentAPI(object):
 class HostAPI(object):
     """The Host API to manage hosts"""
 
+    def _is_valid_host_name(self, context, name):
+        novaclient = nova.API()
+        novaclient.hypervisor_search(context, name)
+
     def get_host(self, context, segment_uuid, host_uuid):
         """Get a host by id"""
         objects.FailoverSegment.get_by_uuid(context, segment_uuid)
@@ -167,8 +171,8 @@ class HostAPI(object):
         host.reserved = strutils.bool_from_string(
             host_data.get('reserved', False), strict=True)
 
-        novaclient = nova.API()
-        novaclient.hypervisor_search(context, host.name)
+        self._is_valid_host_name(context, host.name)
+
         host.create()
         return host
 
@@ -183,6 +187,9 @@ class HostAPI(object):
                     "it is in-use to process notifications.") % host.uuid
             LOG.error(msg)
             raise exception.HostInUse(msg)
+
+        if 'name' in host_data:
+            self._is_valid_host_name(context, host_data.get('name'))
 
         if 'on_maintenance' in host_data:
             host_data['on_maintenance'] = strutils.bool_from_string(

@@ -107,7 +107,7 @@ class HostsController(wsgi.Controller):
         host_data = body.get('host')
         try:
             host = self.api.create_host(context, segment_id, host_data)
-        except exception.HostNotFoundByName as e:
+        except exception.HypervisorNotFoundByName as e:
             raise exc.HTTPBadRequest(explanation=e.message)
         except exception.FailoverSegmentNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
@@ -129,8 +129,8 @@ class HostsController(wsgi.Controller):
             raise exc.HTTPNotFound(explanation=e.format_message())
         return {'host': host}
 
-    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND,
-                                 http.CONFLICT))
+    @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN,
+                                 http.NOT_FOUND, http.CONFLICT))
     @validation.schema(schema.update)
     def update(self, req, segment_id, id, body):
         """Updates the existing host."""
@@ -139,6 +139,8 @@ class HostsController(wsgi.Controller):
         host_data = body.get('host')
         try:
             host = self.api.update_host(context, segment_id, id, host_data)
+        except exception.HypervisorNotFoundByName as e:
+            raise exc.HTTPBadRequest(explanation=e.message)
         except exception.HostNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
         except exception.FailoverSegmentNotFound as e:

@@ -256,6 +256,8 @@ Response Codes
   notification table i.e. any host from the failover segment has
   notification status as new/error/running.
 
+  BadRequest (400) is returned if host doesn't exists in nova.
+
 Request
 -------
 

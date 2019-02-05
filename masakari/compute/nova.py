@@ -245,16 +245,18 @@ class API(object):
         return nova.servers.unlock(uuid)
 
     @translate_nova_exception
-    def hypervisor_search(self, context, host_name):
+    def hypervisor_search(self, context, hypervisor_name):
         """Search hypervisor with case sensitive hostname."""
         nova = novaclient(context)
         msg = ("Call hypervisor search command to get list of matching "
-               "host name '%(host_name)s'")
-        LOG.info(msg, {'host_name': host_name})
+               "hypervisor name '%(hypervisor_name)s'")
+        LOG.info(msg, {'hypervisor_name': hypervisor_name})
         try:
-            hypervisors_list = nova.hypervisors.search(host_name)
-            if host_name not in [host.hypervisor_hostname for host in
+            hypervisors_list = nova.hypervisors.search(hypervisor_name)
+            if hypervisor_name not in [host.hypervisor_hostname for host in
                             hypervisors_list]:
-                raise exception.HostNotFoundByName(host_name=host_name)
+                raise exception.HypervisorNotFoundByName(
+                    hypervisor_name=hypervisor_name)
         except nova_exception.NotFound:
-            raise exception.HostNotFoundByName(host_name=host_name)
+            raise exception.HypervisorNotFoundByName(
+                hypervisor_name=hypervisor_name)

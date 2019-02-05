@@ -308,7 +308,7 @@ class NovaApiTestCase(test.TestCase):
         mock_novaclient.return_value.hypervisors.search.side_effect = (
             nova_exception.NotFound(http.NOT_FOUND))
 
-        self.assertRaises(exception.HostNotFoundByName,
+        self.assertRaises(exception.HypervisorNotFoundByName,
                           self.api.hypervisor_search, context, 'abc')
 
     @mock.patch('masakari.compute.nova.novaclient')
@@ -325,5 +325,5 @@ class NovaApiTestCase(test.TestCase):
                  hypervisor_hostname="XYZ", )
         ]
         mock_novaclient.hypervisors.search.return_value = test_hypers
-        self.assertRaises(exception.HostNotFoundByName,
+        self.assertRaises(exception.HypervisorNotFoundByName,
                           self.api.hypervisor_search, context, 'xyz')
