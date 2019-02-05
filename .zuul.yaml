@@ -5,3 +5,12 @@
       - openstack-python35-jobs-nonvoting
       - release-notes-jobs
       - publish-openstack-sphinx-docs
+
+- project:
+    masakari-systemfault-integration-ci:
+      jobs:
+        - masakari-build-test
+
+- job:
+    name: masakari-build-test
+    parent: base
