@@ -112,6 +112,8 @@ Response Codes
   A conflict(409) is returned if notification with same payload is exists or
   host for which notification is generated is under maintenance.
 
+  BadRequest (400) is returned if notification payload is incorrect.
+
 Request
 -------
 

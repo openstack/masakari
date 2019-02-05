@@ -23,6 +23,7 @@ import re
 import jsonschema
 from jsonschema import exceptions as jsonschema_exc
 from oslo_utils import timeutils
+from oslo_utils import uuidutils
 import six
 
 from masakari.api.validation import parameter_types
@@ -93,6 +94,11 @@ def _validate_datetime_format(instance):
         return False
     else:
         return True
+
+
+@jsonschema.FormatChecker.cls_checks('uuid')
+def _validate_uuid_format(instance):
+    return uuidutils.is_uuid_like(instance)
 
 
 @jsonschema.FormatChecker.cls_checks('name', exception.InvalidName)

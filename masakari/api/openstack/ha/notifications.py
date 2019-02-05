@@ -20,11 +20,13 @@ from webob import exc
 from masakari.api.openstack import common
 from masakari.api.openstack import extensions
 from masakari.api.openstack.ha.schemas import notifications as schema
+from masakari.api.openstack.ha.schemas import payload as payload_schema
 from masakari.api.openstack import wsgi
 from masakari.api import validation
 from masakari import exception
 from masakari.ha import api as notification_api
 from masakari.i18n import _
+from masakari.objects import fields
 from masakari.policies import notifications as notifications_policies
 
 ALIAS = 'notifications'
@@ -36,6 +38,18 @@ class NotificationsController(wsgi.Controller):
     def __init__(self):
         self.api = notification_api.NotificationAPI()
 
+    @validation.schema(payload_schema.create_process_payload)
+    def _validate_process_payload(self, req, body):
+        pass
+
+    @validation.schema(payload_schema.create_vm_payload)
+    def _validate_vm_payload(self, req, body):
+        pass
+
+    @validation.schema(payload_schema.create_compute_host_payload)
+    def _validate_comp_host_payload(self, req, body):
+        pass
+
     @wsgi.response(http.ACCEPTED)
     @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN,
                                  http.CONFLICT))
@@ -46,6 +60,17 @@ class NotificationsController(wsgi.Controller):
         context.can(notifications_policies.NOTIFICATIONS % 'create')
 
         notification_data = body['notification']
+        if notification_data['type'] == fields.NotificationType.PROCESS:
+            self._validate_process_payload(req,
+                                           body=notification_data['payload'])
+
+        if notification_data['type'] == fields.NotificationType.VM:
+            self._validate_vm_payload(req, body=notification_data['payload'])
+
+        if notification_data['type'] == fields.NotificationType.COMPUTE_HOST:
+            self._validate_comp_host_payload(req,
+                                             body=notification_data['payload'])
+
         try:
             notification = self.api.create_notification(
                 context, notification_data)
