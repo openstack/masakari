@@ -11,3 +11,12 @@
     gate:
       jobs:
         - openstack-tox-lower-constraints
+
+- project:
+    masakari-systemfault-integration-ci:
+      jobs:
+        - masakari-build-test
+
+- job:
+    name: masakari-build-test
+    parent: base
