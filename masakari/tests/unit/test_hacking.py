@@ -12,11 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import sys
 import textwrap
 
 import ddt
 import mock
 import pep8
+import testtools
 
 from masakari.hacking import checks
 from masakari import test
@@ -362,6 +364,11 @@ class HackingTestCase(test.NoDBTestCase):
                                 filename="masakari/cmd/serialproxy.py",
                                 expected_errors=errors)
 
+    # TODO(neha-alhat): Remove when
+    # https://bugs.launchpad.net/masakari/+bug/1804062 is resolved.
+    @testtools.skipIf(
+        sys.version_info[0:3] >= (3, 6, 7),
+        'tokenize has backwards incompatible behavior from 3.6.7')
     def test_check_doubled_words(self):
         errors = [(1, 0, "M325")]
 
