@@ -16,6 +16,7 @@
 import inspect
 
 import mock
+import six
 from six.moves import http_client as http
 import testscenarios
 import webob
@@ -866,7 +867,7 @@ class ResourceTest(MicroversionedTest):
         except wsgi.Fault as fault:
             self.assertEqual(http.BAD_REQUEST, fault.status_int)
 
-    def test_resource_headers_are_utf8(self):
+    def test_resource_headers_py2_are_utf8(self):
         resp = webob.Response(status_int=http.ACCEPTED)
         resp.headers['x-header1'] = 1
         resp.headers['x-header2'] = u'header2'
@@ -879,12 +880,18 @@ class ResourceTest(MicroversionedTest):
         req = webob.Request.blank('/tests')
         app = fakes.TestRouter(Controller())
         response = req.get_response(app)
-        for val in response.headers.values():
-            # All headers must be utf8
-            self.assertThat(val, matchers.EncodedByUTF8())
-        self.assertEqual(b'1', response.headers['x-header1'])
-        self.assertEqual(b'header2', response.headers['x-header2'])
-        self.assertEqual(b'header3', response.headers['x-header3'])
+
+        if six.PY2:
+            for val in response.headers.values():
+                # All headers must be utf8
+                self.assertThat(val, matchers.EncodedByUTF8())
+            self.assertEqual(b'1', response.headers['x-header1'])
+            self.assertEqual(b'header2', response.headers['x-header2'])
+            self.assertEqual(b'header3', response.headers['x-header3'])
+        else:
+            self.assertEqual('1', response.headers['x-header1'])
+            self.assertEqual(u'header2', response.headers['x-header2'])
+            self.assertEqual(u'header3', response.headers['x-header3'])
 
     def test_resource_valid_utf8_body(self):
         class Controller(object):
