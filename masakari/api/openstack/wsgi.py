@@ -306,15 +306,25 @@ class ResponseObject(object):
             body = serializer.serialize(self.obj)
         response = webob.Response(body=body)
         if response.headers.get('Content-Length'):
-            # NOTE: we need to encode 'Content-Length' header,
-            # since webob.Response auto sets it if "body" attr is presented.
-            # https://github.com/Pylons/webob/blob/1.5.0b0/webob/response.py#L147
-            response.headers['Content-Length'] = utils.utf8(
-                response.headers['Content-Length'])
+            if six.PY3:
+                response.headers['Content-Length'] = (str(
+                    response.headers['Content-Length']))
+            else:
+                # NOTE: we need to encode 'Content-Length' header, since
+                # webob.Response auto sets it if "body" attr is presented.
+                # github.com/Pylons/webob/blob/1.5.0b0/webob/response.py#L147
+                response.headers['Content-Length'] = utils.utf8(
+                    response.headers['Content-Length'])
         response.status_int = self.code
         for hdr, value in self._headers.items():
-            response.headers[hdr] = utils.utf8(value)
-        response.headers['Content-Type'] = utils.utf8(content_type)
+            if six.PY3:
+                response.headers[hdr] = str(value)
+            else:
+                response.headers[hdr] = utils.utf8(value)
+        if six.PY3:
+            response.headers['Content-Type'] = str(content_type)
+        else:
+            response.headers['Content-Type'] = utils.utf8(content_type)
         return response
 
     @property
@@ -689,8 +699,11 @@ class Resource(wsgi.Application):
 
         if hasattr(response, 'headers'):
             for hdr, val in list(response.headers.items()):
-                # Headers must be utf-8 strings
-                response.headers[hdr] = utils.utf8(val)
+                if six.PY3:
+                    response.headers[hdr] = str(val)
+                else:
+                    # Headers must be utf-8 strings
+                    response.headers[hdr] = utils.utf8(val)
 
             if not request.api_version_request.is_null():
                 response.headers[API_VERSION_REQUEST_HEADER] = \
