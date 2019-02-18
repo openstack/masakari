@@ -55,10 +55,13 @@
           horizon: false
           swift: false
           q-svc: true
+          masakari-monitors: true
         tox_install_siblings: false
         tox_envlist: functional
     group-vars:
       subnode:
+        devstack_plugins:
+          masakari: https://git.openstack.org/openstack/masakari
         devstack_services:
           q-agt: true
           n-api: false
@@ -70,6 +73,9 @@
           n-sch: false
           horizon: false
           tls-proxy: false
+          masakari-monitors: true
+          masakari-api: false
+          masakari-engine: false
 
 
 - project:

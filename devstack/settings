@@ -7,6 +7,9 @@ MASAKARI_REPO=${GIT_BASE}/openstack/masakari.git}
 MASAKARI_BRANCH=${MASAKARI_BRANCH:-master}
 MASAKARI_DASHBOARD_REPO=${MASAKARI_DASHBOARD_REPO:-${GIT_BASE}/openstack/masakari-dashboard.git}
 MASAKARI_DASHBOARD_BRANCH=${MASAKARI_DASHBOARD_BRANCH:-master}
+MASAKARI_MONITORS_DIR=${MASAKARI_MONITORS_DIR:-${DEST}/masakari-monitors}
+MASAKARI_MONITORS_REPO=${MASAKARI_MONITORS_REPO:-${GIT_BASE}/openstack/masakari-monitors.git}
+MASAKARI_MONITORS_BRANCH=${MASAKARI_MONITORS_BRANCH:-master}
 
 # Set up configuration directory and files
 MASAKARI_CONF_DIR=${MASAKARI_CONF_DIR:-/etc/masakari}
@@ -14,6 +17,8 @@ MASAKARI_DASHBOARD_DIR=$DEST/masakari-dashboard
 MASAKARI_CONF=${MASAKARI_CONF:-${MASAKARI_CONF_DIR}/masakari.conf}
 MASAKARI_API_PASTE_INI=${MASAKARI_API_PASTE_INI:-${MASAKARI_CONF_DIR}/api-paste.ini}
 MASAKARI_POLICY_JSON=${MASAKARI_POLICY_JSON:-${MASAKARI_CONF_DIR}/policy.json}
+MASAKARI_MONITORS_CONF_DIR=${MASAKARI_MONITORS_CONF_DIR:-/etc/masakarimonitors}
+MASAKARI_MONITORS_CONF=${MASAKARI_MONITORS_CONF:-${MASAKARI_MONITORS_CONF_DIR}/masakarimonitors.conf}
 
 MASAKARI_LOCAL_CONF_DIR=${MASAKARI_LOCAL_CONF_DIR:-${MASAKARI_DIR}/etc/masakari}
 MASAKARI_LOCAL_API_PASTE_INI=${MASAKARI_LOCAL_API_PASTE_INI:-${MASAKARI_LOCAL_CONF_DIR}/api-paste.ini}
@@ -23,9 +28,14 @@ MASAKARI_AUTH_CACHE_DIR=${MASAKARI_AUTH_CACHE_DIR:-/var/cache/masakari}
 MASAKARI_SERVICE_HOST=${MASAKARI_SERVICE_HOST:-$SERVICE_HOST}
 MASAKARI_SERVICE_PROTOCOL=${MASAKARI_SERVICE_PROTOCOL:-http}
 
+# set environment variables
+USERNAME="masakari"
+SERVICE_DOMAIN_ID="default"
+
 # Support entry points installation of console scripts
 if [[ -d $MASAKARI_DIR/bin ]]; then
     MASAKARI_BIN_DIR=$MASAKARI_DIR/bin
+    MASAKARI_MONITORS_BIN_DIR=$MASAKARI_MONITORS_DIR/bin
 else
     MASAKARI_BIN_DIR=$(get_python_exec_prefix)
 fi
@@ -39,4 +49,5 @@ MASAKARI_UWSGI=$MASAKARI_BIN_DIR/masakari-wsgi
 MASAKARI_UWSGI_CONF=$MASAKARI_CONF_DIR/masakari-api-uwsgi.ini
 
 enable_service masakari masakari-api masakari-engine
-
+enable_service masakari-monitors masakari-processmonitor masakari-instancemonitor masakari-hostmonitor
+enable_service masakari-introspectiveinstancemonitor

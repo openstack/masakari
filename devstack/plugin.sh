@@ -10,12 +10,22 @@
 
 # ``stack.sh`` calls the entry points in this order:
 #
-# install_masakari
-# configure_masakari
-# init_masakari
-# start_masakari
-# stop_masakari
-# cleanup_masakari
+# masakari-api
+# install - install_masakari
+# post-config - configure_masakari
+# extra - init_masakari start_masakari
+# unstack - stop_masakari cleanup_masakari
+#
+# masakari-engine
+# install - install_masakari
+# post-config - configure_masakari
+# extra - init_masakari start_masakari
+# unstack - stop_masakari cleanup_masakari
+#
+# masakari-monitors
+# post-config - configure_masakarimonitors
+# extra - run_masakarimonitors
+# unstack - stop_masakari_monitors cleanup_masakari_monitors
 
 # Save trace setting
 XTRACE=$(set +o | grep xtrace)
@@ -52,7 +62,7 @@ function setup_masakari_logging {
 function create_masakari_accounts {
     if [[ "$ENABLED_SERVICES" =~ "masakari" ]]; then
 
-        create_service_user "masakari" "admin"
+        create_service_user "$USERNAME" "admin"
 
         local masakari_service=$(get_or_create_service "masakari" \
             "instance-ha" "OpenStack High Availability")
@@ -85,6 +95,13 @@ function cleanup_masakari {
     if [ "$MASAKARI_USE_MOD_WSGI" == "True" ]; then
         remove_uwsgi_config "$MASAKARI_UWSGI_CONF" "$MASAKARI_UWSGI"
     fi
+}
+
+# cleanup_masakari_monitors() - Remove residual data files, anything left over from previous
+# runs that a clean run would need to clean up
+function cleanup_masakari_monitors {
+# Clean up dirs
+    rm -fr $MASAKARI_MONITORS_CONF_DIR/*
 }
 
 # iniset_conditional() - Sets the value in the inifile, but only if it's
@@ -149,6 +166,54 @@ function configure_masakari {
     fi
 }
 
+# configure_masakarimonitors() - Set config files, create data dirs, etc
+function configure_masakarimonitors {
+    git_clone $MASAKARI_MONITORS_REPO $MASAKARI_MONITORS_DIR $MASAKARI_MONITORS_BRANCH
+
+    # Create masakarimonitors conf dir and cache dirs if they don't exist
+    sudo install -d -o $STACK_USER ${MASAKARI_MONITORS_CONF_DIR}
+    setup_develop $MASAKARI_MONITORS_DIR
+
+    # (Re)create masakarimonitors conf files
+    rm -f $MASAKARI_MONITORS_CONF
+
+    # (Re)create masakarimonitors api conf file if needed
+    oslo-config-generator --namespace masakarimonitors.conf \
+                      --namespace oslo.log \
+                      --namespace oslo.middleware \
+                      > $MASAKARI_MONITORS_CONF
+
+    iniset $MASAKARI_MONITORS_CONF api auth_url "${KEYSTONE_AUTH_PROTOCOL}://${KEYSTONE_AUTH_HOST}/identity"
+    iniset $MASAKARI_MONITORS_CONF api password "$SERVICE_PASSWORD"
+    iniset $MASAKARI_MONITORS_CONF api project_name "$SERVICE_PROJECT_NAME"
+    iniset $MASAKARI_MONITORS_CONF api username "$USERNAME"
+    iniset $MASAKARI_MONITORS_CONF api user_domain_id "$SERVICE_DOMAIN_ID"
+    iniset $MASAKARI_MONITORS_CONF api project_domain_id "$SERVICE_DOMAIN_ID"
+    iniset $MASAKARI_MONITORS_CONF api region "$REGION_NAME"
+
+    iniset $MASAKARI_MONITORS_CONF process process_list_path "/etc/masakarimonitors/process_list.yaml"
+
+    cp $DEST/masakari-monitors/etc/masakarimonitors/process_list.yaml.sample \
+       $DEST/masakari-monitors/etc/masakarimonitors/process_list.yaml
+    cp $DEST/masakari-monitors/etc/masakarimonitors/process_list.yaml \
+       $MASAKARI_MONITORS_CONF_DIR
+
+    cp $DEST/masakari-monitors/etc/masakarimonitors/processmonitor.conf.sample \
+       $DEST/masakari-monitors/etc/masakarimonitors/processmonitor.conf
+    cp $DEST/masakari-monitors/etc/masakarimonitors/processmonitor.conf $MASAKARI_MONITORS_CONF_DIR
+
+    sed -i 's/start nova-compute/start devstack@n-cpu/g' $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
+    sed -i 's/restart nova-compute/restart devstack@n-cpu/g' $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
+    sed -i 's/start masakari-instancemonitor/start devstack@masakari-instancemonitor/g' \
+    $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
+    sed -i 's/restart masakari-instancemonitor/restart devstack@masakari-instancemonitor/g' \
+    $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
+
+    # NOTE(neha-alhat): remove monitoring of host-monitor process as
+    # devstack support for host-monitor is not added yet.
+    sed -i '43,52d' $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
+}
+
 # install_masakari() - Collect source and prepare
 function install_masakari {
     setup_develop $MASAKARI_DIR
@@ -193,23 +258,28 @@ function start_masakari {
             run_process "masakari-api" "$MASAKARI_BIN_DIR/uwsgi --procname-prefix masakari-api --ini $MASAKARI_UWSGI_CONF"
             masakari_url=$MASAKARI_SERVICE_PROTOCOL://$MASAKARI_SERVICE_HOST/instance-ha/v1
         fi
+
+        echo "Waiting for Masakari API to start..."
+        if ! wait_for_service $SERVICE_TIMEOUT $masakari_url; then
+            die $LINENO "masakari-api did not start"
+        fi
     fi
 
-    echo "Waiting for Masakari API to start..."
-    if ! wait_for_service $SERVICE_TIMEOUT $masakari_url; then
-        die $LINENO "masakari-api did not start"
+    if [[ "$ENABLED_SERVICES" =~ "masakari-engine" ]]; then
+        run_process masakari-engine "$MASAKARI_BIN_DIR/masakari-engine --config-file=$MASAKARI_CONF --debug"
     fi
-
-    run_process masakari-engine "$MASAKARI_BIN_DIR/masakari-engine --config-file=$MASAKARI_CONF --debug"
 }
 
 #install masakari-dashboard
 function install_masakaridashboard {
     git_clone $MASAKARI_DASHBOARD_REPO $MASAKARI_DASHBOARD_DIR $MASAKARI_DASHBOARD_BRANCH
     setup_develop $MASAKARI_DASHBOARD_DIR
-    ln -fs $MASAKARI_DASHBOARD_DIR/masakaridashboard/local/enabled/_50_masakaridashboard.py $HORIZON_DIR/openstack_dashboard/local/enabled
-    ln -fs $MASAKARI_DASHBOARD_DIR/masakaridashboard/local/local_settings.d/_50_masakari.py $HORIZON_DIR/openstack_dashboard/local/local_settings.d
-    ln -fs $MASAKARI_DASHBOARD_DIR/masakaridashboard/conf/masakari_policy.json $HORIZON_DIR/openstack_dashboard/conf
+    ln -fs $MASAKARI_DASHBOARD_DIR/masakaridashboard/local/enabled/_50_masakaridashboard.py \
+    $HORIZON_DIR/openstack_dashboard/local/enabled
+    ln -fs $MASAKARI_DASHBOARD_DIR/masakaridashboard/local/local_settings.d/_50_masakari.py \
+    $HORIZON_DIR/openstack_dashboard/local/local_settings.d
+    ln -fs $MASAKARI_DASHBOARD_DIR/masakaridashboard/conf/masakari_policy.json \
+    $HORIZON_DIR/openstack_dashboard/conf
 }
 
 #uninstall masakari-dashboard
@@ -229,26 +299,47 @@ function stop_masakari {
     done
 }
 
+#run masakari-monitors
+function run_masakarimonitors {
+    run_process masakari-processmonitor "$MASAKARI_BIN_DIR/masakari-processmonitor"
+    run_process masakari-instancemonitor "$MASAKARI_BIN_DIR/masakari-instancemonitor"
+    run_process masakari-introspectiveinstancemonitor "$MASAKARI_BIN_DIR/masakari-introspectiveinstancemonitor"
+}
+
+# stop_masakari_monitors() - Stop running processes
+function stop_masakari_monitors {
+    # Kill the masakari-monitors services
+    local serv
+    for serv in masakari-processmonitor masakari-instancemonitor masakari-introspectiveinstancemonitor; do
+        stop_process $serv
+    done
+}
+
 # Dispatcher for masakari plugin
 if is_service_enabled masakari; then
     if [[ "$1" == "stack" && "$2" == "install" ]]; then
         echo_summary "Installing Masakari"
-        install_masakari
+        if [[ "$ENABLED_SERVICES" =~ "masakari-api" ]]; then
+            install_masakari
+        fi
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
         echo_summary "Configuring Masakari"
-        configure_masakari
+        if [[ "$ENABLED_SERVICES" =~ "masakari-api" ]]; then
+            configure_masakari
 
-        if is_service_enabled key; then
+            if is_service_enabled key; then
             create_masakari_accounts
+            fi
         fi
 
     elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
-        # Initialize masakari
-        init_masakari
+        # Initialize and Start the masakari API and masakari taskmgr components
+        if [[ "$ENABLED_SERVICES" =~ "masakari-api" ]]; then
+            init_masakari
+            echo_summary "Starting Masakari"
+            start_masakari
+        fi
 
-        # Start the masakari API and masakari taskmgr components
-        echo_summary "Starting Masakari"
-        start_masakari
         if is_service_enabled horizon; then
             # install masakari-dashboard
             echo_summary "Installing masakari-dashboard"
@@ -261,8 +352,33 @@ if is_service_enabled masakari; then
             echo_summary "Uninstall masakari-dashboard"
             uninstall_masakaridashboard
         fi
-        stop_masakari
-        cleanup_masakari
+        if [[ "$ENABLED_SERVICES" =~ "masakari-api" ]]; then
+            stop_masakari
+            cleanup_masakari
+        fi
+    fi
+fi
+
+if is_service_enabled masakari-monitors; then
+    if [[ "$1" == "stack" && "$2" == "post-config" ]]; then
+        if is_service_enabled n-cpu; then
+            # Configure masakari-monitors
+            echo_summary "Configure masakari-monitors"
+            configure_masakarimonitors
+        fi
+    elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
+        if is_service_enabled n-cpu; then
+            # Run masakari-monitors
+            echo_summary "Running masakari-monitors"
+            run_masakarimonitors
+        fi
+    fi
+    if [[ "$1" == "unstack" ]]; then
+        if is_service_enabled n-cpu; then
+            echo_summary "Uninstall masakari-monitors"
+            stop_masakari_monitors
+            cleanup_masakari_monitors
+        fi
     fi
 fi
 
