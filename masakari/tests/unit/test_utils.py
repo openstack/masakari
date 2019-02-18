@@ -58,8 +58,8 @@ class MonkeyPatchTestCase(test.NoDBTestCase):
         self.example_package = 'masakari.tests.unit.monkey_patch_example.'
         self.flags(
             monkey_patch=True,
-            monkey_patch_modules=[self.example_package + 'example_a' + ':'
-            + self.example_package + 'example_decorator'])
+            monkey_patch_modules=[self.example_package + 'example_a' + ':' +
+            self.example_package + 'example_decorator'])
 
     def test_monkey_patch(self):
         utils.monkey_patch()

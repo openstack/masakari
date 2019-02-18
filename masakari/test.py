@@ -20,9 +20,8 @@ inline callbacks.
 
 """
 import contextlib
-
 import eventlet
-eventlet.monkey_patch(os=False)
+eventlet.monkey_patch(os=False)  # noqa
 
 import fixtures
 import mock
