@@ -30,13 +30,13 @@ class TestHosts(base.BaseFunctionalTest):
                           "configured in nova")
 
         # Create segment
-        self.segment = self.conn.ha.create_segment(
+        self.segment = self.admin_conn.ha.create_segment(
             name=self.getUniqueString(),
             recovery_method=fields.FailoverSegmentRecoveryMethod.AUTO,
             service_type='COMPUTE')
 
         # Delete segment which deletes host/s associated with it
-        self.addCleanup(self.conn.ha.delete_segment, self.segment.uuid)
+        self.addCleanup(self.admin_conn.ha.delete_segment, self.segment.uuid)
 
     def test_create_get(self):
         # This test is for testing hosts create/get
@@ -48,11 +48,11 @@ class TestHosts(base.BaseFunctionalTest):
                      'reserved': False,
                      'control_attributes': 'SSH'}
 
-        host = self.conn.ha.create_host(self.segment.uuid, **host_data)
+        host = self.admin_conn.ha.create_host(self.segment.uuid, **host_data)
 
         self.assertDictContainsSubset(host_data, host)
 
-        result = self.conn.ha.get_host(host.uuid, self.segment.uuid)
+        result = self.admin_conn.ha.get_host(host.uuid, self.segment.uuid)
 
         self.assertEqual('COMPUTE', result.type)
         self.assertEqual(False, result.on_maintenance)
@@ -64,19 +64,20 @@ class TestHosts(base.BaseFunctionalTest):
 
         expected_hosts = []
         for host in self.hypervisors:
-            host_obj = self.conn.ha.create_host(segment_id=self.segment.uuid,
-                                                name=host.hypervisor_hostname,
-                                                type='COMPUTE',
-                                                on_maintenance=False,
-                                                reserved=False,
-                                                control_attributes='SSH')
+            host_obj = self.admin_conn.ha.create_host(
+                segment_id=self.segment.uuid,
+                name=host.hypervisor_hostname,
+                type='COMPUTE',
+                on_maintenance=False,
+                reserved=False,
+                control_attributes='SSH')
 
             # Deleting 'segment_id' as in GET list call of host 'segment_id'
             # is not there in response
             del host_obj['segment_id']
             expected_hosts.append(host_obj)
 
-        hosts = self.conn.ha.hosts(self.segment.uuid)
+        hosts = self.admin_conn.ha.hosts(self.segment.uuid)
         self.assertItemsEqual(expected_hosts, hosts)
 
     @ddt.data(
@@ -106,8 +107,8 @@ class TestHosts(base.BaseFunctionalTest):
                        'reserved': True,
                        'control_attributes': 'TCP'}
 
-        self.conn.ha.create_host(self.segment.uuid, **host_data_1)
-        self.conn.ha.create_host(self.segment.uuid, **host_data_2)
+        self.admin_conn.ha.create_host(self.segment.uuid, **host_data_1)
+        self.admin_conn.ha.create_host(self.segment.uuid, **host_data_2)
 
         expected_host_data = {'on_maintenance': on_maintenance,
                               'type': host_type,
@@ -116,7 +117,7 @@ class TestHosts(base.BaseFunctionalTest):
                               }
 
         # Returns list of hosts based on filters
-        for host in self.conn.ha.hosts(self.segment.uuid,
+        for host in self.admin_conn.ha.hosts(self.segment.uuid,
                                        on_maintenance=on_maintenance,
                                        type=host_type,
                                        reserved=reserved):
@@ -127,20 +128,20 @@ class TestHosts(base.BaseFunctionalTest):
         # This test is for updating created host and deletion of same
         host_name = self.hypervisors[0]['hypervisor_hostname']
 
-        host = self.conn.ha.create_host(segment_id=self.segment.uuid,
+        host = self.admin_conn.ha.create_host(segment_id=self.segment.uuid,
                                         name=host_name,
                                         on_maintenance='False',
                                         reserved='False',
                                         type='COMPUTE',
                                         control_attributes='SSH')
 
-        self.conn.ha.update_host(host['uuid'],
+        self.admin_conn.ha.update_host(host['uuid'],
                                  segment_id=self.segment.uuid,
                                  on_maintenance='True',
                                  control_attributes='TCP',
                                  reserved='True')
 
-        result = self.conn.ha.get_host(host.uuid,
+        result = self.admin_conn.ha.get_host(host.uuid,
                                        host.failover_segment_id)
         # Confirm host update
         self.assertEqual(True, result.on_maintenance)
@@ -153,16 +154,16 @@ class TestHosts(base.BaseFunctionalTest):
             self.skipTest("Skipped as there is only one hypervisor "
                           "configured in nova")
 
-        host = self.conn.ha.create_host(segment_id=self.segment.uuid,
+        host = self.admin_conn.ha.create_host(segment_id=self.segment.uuid,
                             name=self.hypervisors[0]['hypervisor_hostname'],
                             type='COMPUTE',
                             control_attributes='SSH')
 
         # Update host name
-        updated_host = self.conn.ha.update_host(host['uuid'],
+        updated_host = self.admin_conn.ha.update_host(host['uuid'],
                 segment_id=self.segment.uuid,
                 name=self.hypervisors[1]['hypervisor_hostname'])
 
-        result = self.conn.ha.get_host(host.uuid,
+        result = self.admin_conn.ha.get_host(host.uuid,
                                        host.failover_segment_id)
         self.assertEqual(result.name, updated_host.name)

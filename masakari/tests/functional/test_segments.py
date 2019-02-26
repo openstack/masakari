@@ -25,19 +25,19 @@ class TestSegments(base.BaseFunctionalTest):
         segment_data = {'name': self.getUniqueString(),
                 'recovery_method': fields.FailoverSegmentRecoveryMethod.AUTO,
                 'service_type': 'COMPUTE'}
-        segment = self.conn.ha.create_segment(**segment_data)
+        segment = self.admin_conn.ha.create_segment(**segment_data)
 
         self.assertDictContainsSubset(segment_data, segment)
 
-        result = self.conn.ha.get_segment(segment.uuid)
+        result = self.admin_conn.ha.get_segment(segment.uuid)
 
         self.assertEqual(segment.name, result.name)
         self.assertEqual(segment.recovery_method, result.recovery_method)
         self.assertEqual(segment.service_type, result.service_type)
 
-        self.conn.ha.delete_segment(segment.uuid)
+        self.admin_conn.ha.delete_segment(segment.uuid)
         self.assertRaises(exceptions.ResourceNotFound,
-                          self.conn.ha.get_segment, segment.uuid)
+                          self.admin_conn.ha.get_segment, segment.uuid)
 
     def test_create_delete_with_host(self):
         # This test is for deleting a segment with hosts
@@ -45,7 +45,7 @@ class TestSegments(base.BaseFunctionalTest):
             self.skipTest("Skipped as there are no hypervisors "
                           "configured in nova")
 
-        segment = self.conn.ha.create_segment(
+        segment = self.admin_conn.ha.create_segment(
             name=self.getUniqueString(),
             recovery_method=fields.FailoverSegmentRecoveryMethod.AUTO,
             service_type='COMPUTE')
@@ -53,20 +53,20 @@ class TestSegments(base.BaseFunctionalTest):
         # Create valid host
         host_name = self.hypervisors[0]['hypervisor_hostname']
 
-        host = self.conn.ha.create_host(segment_id=segment.uuid,
+        host = self.admin_conn.ha.create_host(segment_id=segment.uuid,
                                         name=host_name,
                                         type='COMPUTE',
                                         control_attributes='SSH')
 
-        result = self.conn.ha.get_segment(segment.uuid)
+        result = self.admin_conn.ha.get_segment(segment.uuid)
         self.assertEqual(segment.name, result.name)
 
         # Delete segment, which should delete hosts as well
-        self.conn.ha.delete_segment(segment['uuid'])
+        self.admin_conn.ha.delete_segment(segment['uuid'])
         self.assertRaises(exceptions.ResourceNotFound,
-                          self.conn.ha.get_segment, segment.uuid)
+                          self.admin_conn.ha.get_segment, segment.uuid)
         self.assertRaises(exceptions.ResourceNotFound,
-                          self.conn.ha.get_host, host.uuid, segment.uuid)
+                          self.admin_conn.ha.get_host, host.uuid, segment.uuid)
 
     def test_list(self):
         # This test is for listing segments using filters
@@ -80,14 +80,14 @@ class TestSegments(base.BaseFunctionalTest):
                   'service_type': 'COMPUTE'}
 
         # Create segments
-        segment_1 = self.conn.ha.create_segment(**segment_data_1)
-        segment_2 = self.conn.ha.create_segment(**segment_data_2)
+        segment_1 = self.admin_conn.ha.create_segment(**segment_data_1)
+        segment_2 = self.admin_conn.ha.create_segment(**segment_data_2)
 
         # Delete segments
-        self.addCleanup(self.conn.ha.delete_segment, segment_1.uuid)
-        self.addCleanup(self.conn.ha.delete_segment, segment_2.uuid)
+        self.addCleanup(self.admin_conn.ha.delete_segment, segment_1.uuid)
+        self.addCleanup(self.admin_conn.ha.delete_segment, segment_2.uuid)
 
-        segments = self.conn.ha.segments()
+        segments = self.admin_conn.ha.segments()
         self.assertItemsEqual([segment_1, segment_2], segments)
 
     def test_list_with_filter(self):
@@ -102,19 +102,19 @@ class TestSegments(base.BaseFunctionalTest):
                   'service_type': 'COMPUTE'}
 
         # Create segments
-        segment_1 = self.conn.ha.create_segment(**segment_data_1)
-        segment_2 = self.conn.ha.create_segment(**segment_data_2)
+        segment_1 = self.admin_conn.ha.create_segment(**segment_data_1)
+        segment_2 = self.admin_conn.ha.create_segment(**segment_data_2)
 
         # Delete segments
-        self.addCleanup(self.conn.ha.delete_segment, segment_1.uuid)
-        self.addCleanup(self.conn.ha.delete_segment, segment_2.uuid)
+        self.addCleanup(self.admin_conn.ha.delete_segment, segment_1.uuid)
+        self.addCleanup(self.admin_conn.ha.delete_segment, segment_2.uuid)
 
-        for seg_object in self.conn.ha.segments(
+        for seg_object in self.admin_conn.ha.segments(
                 recovery_method=fields.FailoverSegmentRecoveryMethod.AUTO):
 
             self.assertDictContainsSubset(segment_data_1, seg_object)
 
-        for seg_object in self.conn.ha.segments(
+        for seg_object in self.admin_conn.ha.segments(
                 recovery_method=fields.FailoverSegmentRecoveryMethod.
                 RESERVED_HOST):
 
@@ -126,27 +126,27 @@ class TestSegments(base.BaseFunctionalTest):
             self.skipTest("Skipped as there are no hypervisors "
                           "configured in nova")
 
-        segment = self.conn.ha.create_segment(
+        segment = self.admin_conn.ha.create_segment(
             name=self.getUniqueString(),
             recovery_method=fields.FailoverSegmentRecoveryMethod.AUTO,
             service_type='COMPUTE')
 
         # Delete segment
-        self.addCleanup(self.conn.ha.delete_segment, segment.uuid)
+        self.addCleanup(self.admin_conn.ha.delete_segment, segment.uuid)
 
         # Create valid host
         host_name = self.hypervisors[0]['hypervisor_hostname']
 
-        self.conn.ha.create_host(segment_id=segment.uuid, name=host_name,
+        self.admin_conn.ha.create_host(segment_id=segment.uuid, name=host_name,
                                 type='COMPUTE', control_attributes='SSH')
 
         # Update segment
-        segment_1 = self.conn.ha.update_segment(segment.uuid,
+        segment_1 = self.admin_conn.ha.update_segment(segment.uuid,
             name=self.getUniqueString(),
             recovery_method=fields.FailoverSegmentRecoveryMethod.RESERVED_HOST,
             service_type='CONTROLLER')
 
-        result = self.conn.ha.get_segment(segment.uuid)
+        result = self.admin_conn.ha.get_segment(segment.uuid)
         self.assertEqual(segment_1.name, result.name)
         self.assertEqual(segment_1.recovery_method, result.recovery_method)
         self.assertEqual(segment_1.service_type, result.service_type)

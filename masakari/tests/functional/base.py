@@ -29,12 +29,11 @@ from masakari.tests import base
 #: will determine where the functional tests will be run and what resource
 #: defaults will be used to run the functional tests.
 TEST_CLOUD_NAME = os.getenv('OS_CLOUD', 'devstack-admin')
-TEST_CLOUD_REGION = openstack.config.get_cloud_region(cloud=TEST_CLOUD_NAME)
 
 
 class BaseFunctionalTest(base.TestCase):
 
-    def setUp(self):
+    def setUp(self, ha_api_version="1.0"):
         super(BaseFunctionalTest, self).setUp()
         _log_stream = sys.stdout
 
@@ -52,7 +51,15 @@ class BaseFunctionalTest(base.TestCase):
         logger.addHandler(handler)
         logger.propagate = False
 
-        self.conn = connection.Connection(config=TEST_CLOUD_REGION)
+        config = openstack.config.get_cloud_region(cloud=TEST_CLOUD_NAME)
+        self.admin_conn = connection.Connection(region_name=config.region_name,
+                                           auth=config.auth,
+                                           ha_api_version=ha_api_version)
+
+        devstack_user = os.getenv('OS_CLOUD', 'devstack')
+        devstack_region = openstack.config.get_cloud_region(
+            cloud=devstack_user)
+        self.conn = connection.Connection(config=devstack_region)
 
         self.hypervisors = self._hypervisors()
 
