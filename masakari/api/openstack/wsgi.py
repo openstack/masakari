@@ -183,7 +183,7 @@ class Request(wsgi.Request):
     def set_api_version_request(self):
         """Set API version request based on the request header information."""
         hdr_string = microversion_parse.get_version(
-            self.headers, service_type='masakari')
+            self.headers, service_type='instance-ha')
 
         if hdr_string is None:
             self.api_version_request = api_version.APIVersionRequest(
@@ -1059,7 +1059,7 @@ class Fault(webob.exc.HTTPException):
 
         if not req.api_version_request.is_null():
             self.wrapped_exc.headers[API_VERSION_REQUEST_HEADER] = \
-                'masakari ' + req.api_version_request.get_string()
+                'instance-ha ' + req.api_version_request.get_string()
             self.wrapped_exc.headers.add('Vary', API_VERSION_REQUEST_HEADER)
 
         self.wrapped_exc.content_type = 'application/json'

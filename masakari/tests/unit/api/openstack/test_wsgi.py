@@ -37,7 +37,7 @@ class MicroversionedTest(testscenarios.WithScenarios, test.NoDBTestCase):
     header_name = 'OpenStack-API-Version'
 
     def _make_microversion_header(self, value):
-        return {self.header_name: value}
+        return {self.header_name: 'instance-ha %s' % value}
 
 
 class RequestTest(MicroversionedTest):
@@ -137,6 +137,12 @@ class RequestTest(MicroversionedTest):
         request.set_api_version_request()
         self.assertEqual(api_version.APIVersionRequest("1.0"),
                          request.api_version_request)
+
+    def test_api_version_request_header_invalid(self):
+        request = wsgi.Request.blank('/')
+        request.headers = self._make_microversion_header('1.1.1')
+        self.assertRaises(exception.InvalidAPIVersionString,
+                          request.set_api_version_request)
 
 
 class ActionDispatcherTest(test.NoDBTestCase):
