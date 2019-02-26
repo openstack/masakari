@@ -18,9 +18,9 @@ from oslo_log import log as logging
 import paste.urlmap
 import six
 
-if six.PY2:
+if six.PY2:  # noqa
     import urllib2
-else:
+else:  # noqa
     from urllib import request as urllib2
 
 from masakari.api.openstack import wsgi
@@ -165,8 +165,8 @@ class URLMap(paste.urlmap.URLMap):
         for (domain, app_url), app in self.applications:
             if domain and domain != host and domain != host + ':' + port:
                 continue
-            if (path_info == app_url
-                    or path_info.startswith(app_url + '/')):
+            if (path_info == app_url or
+                    path_info.startswith(app_url + '/')):
                 return app, app_url
 
         return None, None

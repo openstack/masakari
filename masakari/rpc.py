@@ -12,6 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import oslo_messaging as messaging
+from oslo_messaging.rpc import dispatcher
+
+import masakari.context
+import masakari.exception
+from masakari.objects import base
+
+
 __all__ = [
     'init',
     'cleanup',
@@ -23,13 +31,6 @@ __all__ = [
     'get_client',
     'get_server',
 ]
-
-import oslo_messaging as messaging
-from oslo_messaging.rpc import dispatcher
-
-import masakari.context
-import masakari.exception
-from masakari.objects import base
 
 TRANSPORT = None
 
