@@ -56,8 +56,19 @@ class HostFailureTestCase(test.TestCase):
     def _verify_instance_evacuated(self, old_instance_list):
         for server in old_instance_list:
             instance = self.novaclient.get_server(self.ctxt, server.id)
-            self.assertIn(getattr(instance, 'OS-EXT-STS:vm_state'),
-                          ['active', 'stopped', 'error'])
+
+            if getattr(server, 'OS-EXT-STS:vm_state') in \
+                ['active', 'stopped', 'error']:
+                self.assertEqual(getattr(server, 'OS-EXT-STS:vm_state'),
+                                 getattr(instance, 'OS-EXT-STS:vm_state'))
+            else:
+                if getattr(server, 'OS-EXT-STS:vm_state') == 'resized' and \
+                    getattr(server, 'OS-EXT-STS:power_state') != 4:
+                    self.assertEqual('active',
+                                     getattr(instance, 'OS-EXT-STS:vm_state'))
+                else:
+                    self.assertEqual('stopped',
+                                     getattr(instance, 'OS-EXT-STS:vm_state'))
 
             if CONF.host_failure.ignore_instances_in_error_state and getattr(
                     server, 'OS-EXT-STS:vm_state') == 'error':
@@ -356,12 +367,10 @@ class HostFailureTestCase(test.TestCase):
         self.assertRaises(exception.SkipHostRecoveryException, task.execute,
                           self.ctxt, self.instance_host)
 
-    @mock.patch.object(nova.API, 'stop_server')
-    @mock.patch.object(nova.API, 'reset_instance_state')
     @mock.patch('masakari.compute.nova.novaclient')
     def test_host_failure_flow_for_task_state_not_none(
-            self, _mock_novaclient, mock_reset, mock_stop, mock_unlock,
-            mock_lock, mock_enable_disable):
+            self, _mock_novaclient, mock_unlock, mock_lock,
+            mock_enable_disable):
         _mock_novaclient.return_value = self.fake_client
 
         # create ha_enabled test data
@@ -387,13 +396,12 @@ class HostFailureTestCase(test.TestCase):
         # execute EvacuateInstancesTask
         self._evacuate_instances(instance_list, mock_enable_disable)
 
-        reset_calls = [mock.call(self.ctxt, "1"),
-                       mock.call(self.ctxt, "2"),
-                       mock.call(self.ctxt, "3"),
-                       mock.call(self.ctxt, "3")]
-        mock_reset.assert_has_calls(reset_calls)
-        self.assertEqual(4, mock_reset.call_count)
-        stop_calls = [mock.call(self.ctxt, "2"),
-                      mock.call(self.ctxt, "3")]
-        mock_stop.assert_has_calls(stop_calls)
-        self.assertEqual(2, mock_stop.call_count)
+        reset_calls = [('1', 'active'),
+                       ('2', 'stopped'),
+                       ('3', 'error'),
+                       ('3', 'stopped')]
+        stop_calls = ['2', '3']
+        self.assertEqual(reset_calls,
+                         self.fake_client.servers.reset_state_calls)
+        self.assertEqual(stop_calls,
+                         self.fake_client.servers.stop_calls)
