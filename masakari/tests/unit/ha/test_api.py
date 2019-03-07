@@ -19,11 +19,14 @@ import copy
 import mock
 from oslo_utils import timeutils
 
+from masakari.api import utils as api_utils
 from masakari.compute import nova as nova_obj
 from masakari.engine import rpcapi as engine_rpcapi
 from masakari import exception
 from masakari.ha import api as ha_api
+from masakari import objects
 from masakari.objects import base as obj_base
+from masakari.objects import fields
 from masakari.objects import host as host_obj
 from masakari.objects import notification as notification_obj
 from masakari.objects import segment as segment_obj
@@ -61,6 +64,12 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
             service_type="COMPUTE", recovery_method="auto",
             uuid=uuidsentinel.fake_segment
         )
+        self.exception_in_use = exception.FailoverSegmentInUse(
+            uuid=self.failover_segment.uuid)
+
+    def _fake_notification_workflow(self, exc=None):
+        if exc:
+            return exc
 
     def _assert_segment_data(self, expected, actual):
         self.assertTrue(obj_base.obj_equal_prims(expected, actual),
@@ -125,6 +134,30 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
         self._assert_segment_data(
             self.failover_segment, _make_segment_obj(result))
 
+    @mock.patch.object(segment_obj.FailoverSegment, 'create')
+    @mock.patch.object(api_utils, 'notify_about_segment_api')
+    def test_segment_create_exception(self, mock_notify_about_segment_api,
+                              mock_segment_create):
+        segment_data = {"name": "segment1",
+                        "service_type": "COMPUTE",
+                        "recovery_method": "auto",
+                        "description": "something"}
+        e = exception.InvalidInput(reason="TEST")
+        mock_segment_create.side_effect = e
+        mock_notify_about_segment_api.return_value = mock.Mock()
+
+        self.assertRaises(exception.InvalidInput,
+                          self.segment_api.create_segment, self.context,
+                          segment_data)
+        action = fields.EventNotificationAction.SEGMENT_CREATE
+        phase_error = fields.EventNotificationPhase.ERROR
+        notify_calls = [
+            mock.call(self.context, mock.ANY, action=action,
+                      phase=phase_error,
+                      exception=e,
+                      tb=mock.ANY)]
+        mock_notify_about_segment_api.assert_has_calls(notify_calls)
+
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_get_segment(self, mock_get_segment):
 
@@ -159,18 +192,91 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
 
     @mock.patch.object(segment_obj.FailoverSegment,
                        'is_under_recovery')
+    @mock.patch.object(segment_obj.FailoverSegment, 'update')
+    @mock.patch.object(api_utils, 'notify_about_segment_api')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_segment_update_exception(self, mock_get,
+                                      mock_notify_about_segment_api,
+                                      mock_segment_update,
+                                      mock_is_under_recovery):
+        mock_get.return_value = self.failover_segment
+        segment_data = {"name": "segment1",
+                        "service_type": "COMPUTE",
+                        "recovery_method": "auto",
+                        "description": "something"}
+        e = exception.InvalidInput(reason="TEST")
+        mock_segment_update.side_effect = e
+        mock_is_under_recovery.return_value = False
+        mock_notify_about_segment_api.return_value = mock.Mock()
+
+        self.assertRaises(exception.InvalidInput,
+                          self.segment_api.update_segment, self.context,
+                          uuidsentinel.fake_segment, segment_data)
+        action = fields.EventNotificationAction.SEGMENT_UPDATE
+        phase_error = fields.EventNotificationPhase.ERROR
+        notify_calls = [
+            mock.call(self.context, mock.ANY, action=action,
+                      phase=phase_error,
+                      exception=e,
+                      tb=mock.ANY)]
+        mock_notify_about_segment_api.assert_has_calls(notify_calls)
+
+    @mock.patch.object(exception, 'FailoverSegmentInUse')
+    @mock.patch.object(segment_obj.FailoverSegment,
+                       'is_under_recovery')
     @mock.patch.object(segment_obj, 'FailoverSegment')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_update_segment_under_recovery(self, mock_get, mock_segment_obj,
-                    mock_is_under_recovery):
+                    mock_is_under_recovery, mock_FailoverSegmentInUse):
         segment_data = {"name": "segment1"}
         mock_get.return_value = self.failover_segment
         mock_segment_obj.return_value = self.failover_segment
         mock_is_under_recovery.return_value = True
-        self.assertRaises(exception.FailoverSegmentInUse,
+        mock_FailoverSegmentInUse.return_value = self.exception_in_use
+        self.assertRaises(type(self.exception_in_use),
                           self.segment_api.update_segment,
                           self.context, uuidsentinel.fake_segment,
                           segment_data)
+
+    @mock.patch.object(segment_obj.FailoverSegment, 'destroy')
+    @mock.patch.object(segment_obj.FailoverSegment,
+                       'is_under_recovery')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_segment_delete(self, mock_get, mock_is_under_recovery,
+                    mock_segment_destroy):
+        mock_get.return_value = self.failover_segment
+        mock_is_under_recovery.return_value = False
+        self.segment_api.delete_segment(self.context,
+                                        uuidsentinel.fake_segment)
+        mock_segment_destroy.assert_called_once()
+
+    @mock.patch.object(segment_obj.FailoverSegment,
+                       'is_under_recovery')
+    @mock.patch.object(segment_obj.FailoverSegment, 'destroy')
+    @mock.patch.object(api_utils, 'notify_about_segment_api')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_segment_delete_exception(self, mock_get,
+                                      mock_notify_about_segment_api,
+                                      mock_segment_destroy,
+                                      mock_is_under_recovery):
+        mock_get.return_value = self.failover_segment
+        mock_is_under_recovery.return_value = False
+        e = exception.InvalidInput(reason="TEST")
+        mock_segment_destroy.side_effect = e
+        mock_notify_about_segment_api.return_value = mock.Mock()
+
+        self.assertRaises(exception.InvalidInput,
+                          self.segment_api.delete_segment, self.context,
+                          uuidsentinel.fake_segment)
+
+        action = fields.EventNotificationAction.SEGMENT_DELETE
+        phase_error = fields.EventNotificationPhase.ERROR
+        notify_calls = [
+            mock.call(self.context, mock.ANY, action=action,
+                      phase=phase_error,
+                      exception=e,
+                      tb=mock.ANY)]
+        mock_notify_about_segment_api.assert_has_calls(notify_calls)
 
 
 class HostAPITestCase(test.NoDBTestCase):
@@ -194,6 +300,8 @@ class HostAPITestCase(test.NoDBTestCase):
             uuid=uuidsentinel.fake_host_1,
             failover_segment_id=uuidsentinel.fake_segment1
         )
+        self.exception_in_use = exception.HostInUse(
+            uuid=self.host.uuid)
 
     def _assert_host_data(self, expected, actual):
         self.assertTrue(obj_base.obj_equal_prims(expected, actual),
@@ -294,6 +402,41 @@ class HostAPITestCase(test.NoDBTestCase):
                           self.host_api.create_host,
                           self.context, uuidsentinel.fake_segment1, host_data)
 
+    @mock.patch.object(host_obj, 'Host')
+    @mock.patch.object(host_obj.Host, 'create')
+    @mock.patch.object(nova_obj.API, 'hypervisor_search')
+    @mock.patch.object(api_utils, 'notify_about_host_api')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_host_create_exception(self, mock_get,
+                                   mock_notify_about_host_api,
+                                   mock_hypervisor_search, mock_host_obj,
+                                   mock_host_create):
+        mock_get.return_value = self.failover_segment
+        host_data = {
+            "name": "host-1", "type": "fake-type",
+            "reserved": False,
+            "on_maintenance": False,
+            "control_attributes": "fake-control_attributes"
+        }
+
+        e = exception.InvalidInput(reason="TEST")
+        mock_host_obj.side_effect = e
+        mock_notify_about_host_api.return_value = mock.Mock()
+
+        self.assertRaises(exception.InvalidInput,
+                          self.host_api.create_host, self.context,
+                          uuidsentinel.fake_segment1, host_data)
+        action = fields.EventNotificationAction.HOST_CREATE
+        phase_error = fields.EventNotificationPhase.ERROR
+        notify_calls = [
+            mock.call(self.context, mock.ANY, action=action,
+                      phase=phase_error,
+                      exception=e,
+                      tb=mock.ANY)]
+        mock_notify_about_host_api.assert_has_calls(notify_calls)
+        mock_hypervisor_search.assert_called_once()
+
+    @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch('oslo_utils.uuidutils.generate_uuid')
     @mock.patch('masakari.db.host_create')
     @mock.patch.object(host_obj.Host, '_from_db_object')
@@ -303,7 +446,8 @@ class HostAPITestCase(test.NoDBTestCase):
                                                mock_hypervisor_search,
                                                mock__from_db_object,
                                                mock_host_create,
-                                               mock_generate_uuid):
+                                               mock_generate_uuid,
+                                               mock_notify_about_host_api):
         host_data = {
             "name": "host-1", "type": "fake-type",
             "reserved": 'On',
@@ -322,10 +466,19 @@ class HostAPITestCase(test.NoDBTestCase):
         mock_host_create.create = mock.Mock()
         mock_get_segment.return_value = self.failover_segment
         mock_generate_uuid.return_value = uuidsentinel.fake_uuid
-        self.host_api.create_host(self.context,
-                                  uuidsentinel.fake_segment1,
-                                  host_data)
+        result = self.host_api.create_host(self.context,
+                                           uuidsentinel.fake_segment1,
+                                           host_data)
         mock_host_create.assert_called_with(self.context, expected_data)
+        action = fields.EventNotificationAction.HOST_CREATE
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, result, action=action,
+                      phase=phase_start),
+            mock.call(self.context, result, action=action,
+                      phase=phase_end)]
+        mock_notify_about_host_api.assert_has_calls(notify_calls)
 
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
@@ -373,8 +526,8 @@ class HostAPITestCase(test.NoDBTestCase):
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_update_with_non_existing_host(self, mock_segment_get, mock_get,
-                    mock_hypervisor_search,
-                    mock_is_under_recovery):
+                                           mock_hypervisor_search,
+                                           mock_is_under_recovery):
         mock_segment_get.return_value = self.failover_segment
         host_data = {"name": "host-2"}
         mock_get.return_value = self.host
@@ -389,21 +542,57 @@ class HostAPITestCase(test.NoDBTestCase):
 
     @mock.patch.object(segment_obj.FailoverSegment,
                        'is_under_recovery')
+    @mock.patch.object(nova_obj.API, 'hypervisor_search')
+    @mock.patch.object(host_obj.Host, 'save')
+    @mock.patch.object(api_utils, 'notify_about_host_api')
+    @mock.patch.object(host_obj.Host, 'get_by_uuid')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_host_update_exception(self, mock_segment_get, mock_get,
+                                   mock_notify_about_host_api,
+                                   mock_host_obj, mock_hypervisor_search,
+                                   mock_is_under_recovery):
+        mock_segment_get.return_value = self.failover_segment
+        host_data = {"name": "host_1"}
+        mock_get.return_value = self.host
+        e = exception.InvalidInput(reason="TEST")
+        mock_host_obj.side_effect = e
+        mock_is_under_recovery.return_value = False
+        mock_notify_about_host_api.return_value = mock.Mock()
+
+        self.assertRaises(exception.InvalidInput,
+                          self.host_api.update_host, self.context,
+                          uuidsentinel.fake_segment,
+                          uuidsentinel.fake_host_1,
+                          host_data)
+        action = fields.EventNotificationAction.HOST_UPDATE
+        phase_error = fields.EventNotificationPhase.ERROR
+        notify_calls = [
+            mock.call(self.context, mock.ANY, action=action,
+                      phase=phase_error,
+                      exception=e,
+                      tb=mock.ANY)]
+        mock_notify_about_host_api.assert_has_calls(notify_calls)
+
+    @mock.patch.object(exception, 'HostInUse')
+    @mock.patch.object(segment_obj.FailoverSegment,
+                       'is_under_recovery')
     @mock.patch.object(host_obj, 'Host')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_update_host_under_recovery(self, mock_segment_get, mock_get,
-                    mock_host_obj,
-                    mock_is_under_recovery):
+        mock_host_obj, mock_is_under_recovery, mock_HostInUse):
         mock_segment_get.return_value = self.failover_segment
         host_data = {"name": "host_1"}
         mock_get.return_value = self.host
         mock_host_obj.return_value = self.host
         mock_is_under_recovery.return_value = True
-        self.assertRaises(exception.HostInUse, self.host_api.update_host,
+        mock_HostInUse.return_value = self.exception_in_use
+        self.assertRaises(type(self.exception_in_use),
+                          self.host_api.update_host,
                           self.context, uuidsentinel.fake_segment,
                           uuidsentinel.fake_host_1, host_data)
 
+    @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(segment_obj.FailoverSegment,
                        'is_under_recovery')
     @mock.patch.object(host_obj.Host, '_from_db_object')
@@ -412,7 +601,8 @@ class HostAPITestCase(test.NoDBTestCase):
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_update_convert_boolean_attributes(
         self, mock_segment, mock_host_update, mock_host_object,
-            mock__from_db_object, mock_is_under_recovery):
+            mock__from_db_object, mock_is_under_recovery,
+            mock_notify_about_host_api):
         host_data = {
             "reserved": 'Off',
             "on_maintenance": 'True',
@@ -430,26 +620,83 @@ class HostAPITestCase(test.NoDBTestCase):
         mock_host_object.return_value = self.host
         self.host._context = self.context
         mock_is_under_recovery.return_value = False
-        self.host_api.update_host(self.context,
-                                  uuidsentinel.fake_segment1,
-                                  uuidsentinel.fake_host_1,
-                                  host_data)
+        result = self.host_api.update_host(self.context,
+                                           uuidsentinel.fake_segment1,
+                                           uuidsentinel.fake_host_1,
+                                           host_data)
         mock_host_update.assert_called_with(self.context,
                                             uuidsentinel.fake_host_1,
                                             expected_data)
+        action = fields.EventNotificationAction.HOST_UPDATE
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, result, action=action,
+                      phase=phase_start),
+            mock.call(self.context, result, action=action,
+                      phase=phase_end)]
+        mock_notify_about_host_api.assert_has_calls(notify_calls)
 
+    @mock.patch.object(segment_obj.FailoverSegment,
+                       'is_under_recovery')
+    @mock.patch.object(host_obj.Host, 'destroy')
+    @mock.patch.object(host_obj.Host, 'get_by_uuid')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_delete_host(self, mock_segment_get, mock_get,
+                         mock_segment_destroy, mock_is_under_recovery):
+        mock_segment_get.return_value = self.failover_segment
+        mock_get.return_value = self.host
+        mock_is_under_recovery.return_value = False
+
+        self.host_api.delete_host(self.context,
+                                  uuidsentinel.fake_segment,
+                                  uuidsentinel.fake_host_1)
+        mock_segment_destroy.assert_called_once()
+
+    @mock.patch.object(segment_obj.FailoverSegment,
+                       'is_under_recovery')
+    @mock.patch.object(host_obj.Host, 'destroy')
+    @mock.patch.object(api_utils, 'notify_about_host_api')
+    @mock.patch.object(host_obj.Host, 'get_by_uuid')
+    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
+    def test_host_delete_exception(self, mock_segment_get, mock_get,
+                                   mock_notify_about_host_api,
+                                   mock_host_destroy, mock_is_under_recovery):
+        mock_segment_get.return_value = self.failover_segment
+        mock_get.return_value = self.host
+        mock_is_under_recovery.return_value = False
+        e = exception.InvalidInput(reason="TEST")
+        mock_host_destroy.side_effect = e
+        mock_notify_about_host_api.return_value = mock.Mock()
+
+        self.assertRaises(exception.InvalidInput,
+                          self.host_api.delete_host, self.context,
+                          uuidsentinel.fake_segment,
+                          uuidsentinel.fake_host_1)
+
+        action = fields.EventNotificationAction.HOST_DELETE
+        phase_error = fields.EventNotificationPhase.ERROR
+        notify_calls = [
+            mock.call(self.context, mock.ANY, action=action,
+                      phase=phase_error,
+                      exception=e,
+                      tb=mock.ANY)]
+        mock_notify_about_host_api.assert_has_calls(notify_calls)
+
+    @mock.patch.object(exception, 'HostInUse')
     @mock.patch.object(segment_obj.FailoverSegment,
                        'is_under_recovery')
     @mock.patch.object(host_obj, 'Host')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_delete_host_under_recovery(self, mock_segment_get, mock_get,
-                    mock_host_obj,
-                    mock_is_under_recovery):
+        mock_host_obj, mock_is_under_recovery, mock_HostInUse):
         mock_segment_get.return_value = self.failover_segment
         mock_get.return_value = self.host
         mock_is_under_recovery.return_value = True
-        self.assertRaises(exception.HostInUse, self.host_api.delete_host,
+        mock_HostInUse.return_value = self.exception_in_use
+        self.assertRaises(type(self.exception_in_use),
+                          self.host_api.delete_host,
                           self.context, uuidsentinel.fake_segment,
                           uuidsentinel.fake_host_1)
 
@@ -479,6 +726,8 @@ class NotificationAPITestCase(test.NoDBTestCase):
             status="running",
             notification_uuid=uuidsentinel.fake_notification
         )
+        self.exception_duplicate = exception.DuplicateNotification(
+            host='host_1', type='COMPUTE_HOST')
 
     def _assert_notification_data(self, expected, actual):
         self.assertTrue(obj_base.obj_equal_prims(expected, actual),
@@ -516,6 +765,48 @@ class NotificationAPITestCase(test.NoDBTestCase):
         self._assert_notification_data(
             self.notification, _make_notification_obj(result))
 
+    @mock.patch.object(api_utils, 'notify_about_notification_api')
+    @mock.patch.object(notification_obj.NotificationList, 'get_all')
+    @mock.patch.object(notification_obj.Notification, 'create')
+    @mock.patch.object(host_obj.Host, 'get_by_name')
+    def test_create_notification_exception(self, mock_host_obj,
+                                           mock_notification_obj, mock_get_all,
+                                           mock_notify_about_notification_api):
+        fake_notification = fakes_data.create_fake_notification(
+            type="COMPUTE_HOST", id=2, payload={
+                'event': 'STARTED', 'host_status': 'NORMAL',
+                'cluster_status': 'ONLINE'
+            },
+            source_host_uuid=uuidsentinel.fake_host, generated_time=NOW,
+            status="running",
+            notification_uuid=uuidsentinel.fake_notification_2
+        )
+        fake_notification_list = [self.notification, fake_notification]
+        mock_get_all.return_value = fake_notification_list
+        notification_data = {"hostname": "fake_host",
+                             "payload": {"event": "STARTED",
+                                         "host_status": "NORMAL",
+                                         "cluster_status": "OFFLINE"},
+                             "type": "VM",
+                             "generated_time": "2016-10-13T09:11:21.656788"}
+        mock_host_obj.return_value = self.host
+        e = exception.InvalidInput(reason="TEST")
+        mock_notification_obj.side_effect = e
+        mock_notify_about_notification_api.return_value = mock.Mock()
+
+        self.assertRaises(exception.InvalidInput,
+                          self.notification_api.create_notification,
+                          self.context, notification_data)
+
+        action = fields.EventNotificationAction.NOTIFICATION_CREATE
+        phase_error = fields.EventNotificationPhase.ERROR
+        notify_calls = [
+            mock.call(self.context, mock.ANY, action=action,
+                      phase=phase_error,
+                      exception=e,
+                      tb=mock.ANY)]
+        mock_notify_about_notification_api.assert_has_calls(notify_calls)
+
     @mock.patch.object(host_obj.Host, 'get_by_name')
     def test_create_host_on_maintenance(self, mock_host):
         self.host.on_maintenance = True
@@ -531,8 +822,11 @@ class NotificationAPITestCase(test.NoDBTestCase):
                           self.notification_api.create_notification,
                           self.context, notification_data)
 
+    @mock.patch.object(exception, 'DuplicateNotification')
+    @mock.patch.object(objects, 'Notification')
     @mock.patch.object(host_obj.Host, 'get_by_name')
-    def test_create_duplicate_notification(self, mock_host):
+    def test_create_duplicate_notification(self, mock_host,
+        mock_notification_obj, mock_DuplicateNotification):
         mock_host.return_value = self.host
         self.notification_api._is_duplicate_notification = mock.Mock(
             return_value=True)
@@ -542,8 +836,16 @@ class NotificationAPITestCase(test.NoDBTestCase):
                                          'cluster_status': 'ONLINE'},
                              "type": "COMPUTE_HOST",
                              "generated_time": str(NOW)}
+        self.notification.type = notification_data.get('type')
+        self.notification.generated_time = notification_data.get(
+            'generated_time')
+        self.notification.source_host_uuid = self.host.uuid
+        self.notification.payload = notification_data.get('payload')
+        self.notification.status = fields.NotificationStatus.NEW
+        mock_notification_obj.return_value = self.notification
+        mock_DuplicateNotification.return_value = self.exception_duplicate
 
-        self.assertRaises(exception.DuplicateNotification,
+        self.assertRaises(type(self.exception_duplicate),
                           self.notification_api.create_notification,
                           self.context, notification_data)
 

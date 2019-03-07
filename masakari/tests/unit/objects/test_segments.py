@@ -18,7 +18,9 @@ import copy
 import mock
 from oslo_utils import timeutils
 
+from masakari.api import utils as api_utils
 from masakari import exception
+from masakari.objects import fields
 from masakari.objects import segment
 from masakari.tests.unit.objects import test_objects
 from masakari.tests import uuidsentinel
@@ -86,8 +88,9 @@ class TestFailoverSegmentObject(test_objects._LocalTest):
 
         return segment_obj
 
+    @mock.patch.object(api_utils, 'notify_about_segment_api')
     @mock.patch('masakari.db.failover_segment_create')
-    def test_create(self, mock_segment_create):
+    def test_create(self, mock_segment_create, mock_notify_about_segment_api):
         mock_segment_create.return_value = fake_segment
 
         segment_obj = self._segment_create_attribute()
@@ -98,9 +101,20 @@ class TestFailoverSegmentObject(test_objects._LocalTest):
             'uuid': uuidsentinel.fake_segment, 'name': 'foo-segment',
             'description': 'keydata', 'service_type': 'fake-user',
             'recovery_method': 'auto'})
+        action = fields.EventNotificationAction.SEGMENT_CREATE
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, segment_obj, action=action,
+                      phase=phase_start),
+            mock.call(self.context, segment_obj, action=action,
+                      phase=phase_end)]
+        mock_notify_about_segment_api.assert_has_calls(notify_calls)
 
+    @mock.patch.object(api_utils, 'notify_about_segment_api')
     @mock.patch('masakari.db.failover_segment_create')
-    def test_recreate_fails(self, mock_segment_create):
+    def test_recreate_fails(self, mock_segment_create,
+                            mock_notify_about_segment_api):
         mock_segment_create.return_value = fake_segment
 
         segment_obj = self._segment_create_attribute()
@@ -111,25 +125,52 @@ class TestFailoverSegmentObject(test_objects._LocalTest):
             'uuid': uuidsentinel.fake_segment, 'name': 'foo-segment',
             'description': 'keydata', 'service_type': 'fake-user',
             'recovery_method': 'auto'})
+        action = fields.EventNotificationAction.SEGMENT_CREATE
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, segment_obj, action=action,
+                      phase=phase_start),
+            mock.call(self.context, segment_obj, action=action,
+                      phase=phase_end)]
+        mock_notify_about_segment_api.assert_has_calls(notify_calls)
 
+    @mock.patch.object(api_utils, 'notify_about_segment_api')
     @mock.patch('masakari.db.failover_segment_delete')
-    def test_destroy(self, mock_segment_destroy):
-
+    def test_destroy(self, mock_segment_destroy,
+                     mock_notify_about_segment_api):
         segment_obj = self._segment_create_attribute()
         segment_obj.id = 123
         segment_obj.destroy()
 
         mock_segment_destroy.assert_called_once_with(
             self.context, uuidsentinel.fake_segment)
+        action = fields.EventNotificationAction.SEGMENT_DELETE
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, segment_obj, action=action,
+                      phase=phase_start),
+            mock.call(self.context, segment_obj, action=action,
+                      phase=phase_end)]
+        mock_notify_about_segment_api.assert_has_calls(notify_calls)
 
+    @mock.patch.object(api_utils, 'notify_about_segment_api')
     @mock.patch('masakari.db.failover_segment_delete')
-    def test_destroy_failover_segment_found(self, mock_segment_destroy):
+    def test_destroy_failover_segment_found(self, mock_segment_destroy,
+                                            mock_notify_about_segment_api):
         mock_segment_destroy.side_effect = exception.FailoverSegmentNotFound(
             id=123)
         segment_obj = self._segment_create_attribute()
         segment_obj.id = 123
         self.assertRaises(exception.FailoverSegmentNotFound,
                           segment_obj.destroy)
+        action = fields.EventNotificationAction.SEGMENT_DELETE
+        phase_start = fields.EventNotificationPhase.START
+        notify_calls = [
+            mock.call(self.context, segment_obj, action=action,
+                      phase=phase_start)]
+        mock_notify_about_segment_api.assert_has_calls(notify_calls)
 
     @mock.patch('masakari.db.failover_segment_get_all_by_filters')
     def test_get_segment_by_recovery_method(self, mock_api_get):
@@ -175,8 +216,9 @@ class TestFailoverSegmentObject(test_objects._LocalTest):
                           segment.FailoverSegmentList.get_all,
                           self.context, limit=5, marker=segment_name)
 
+    @mock.patch.object(api_utils, 'notify_about_segment_api')
     @mock.patch('masakari.db.failover_segment_update')
-    def test_save(self, mock_segment_update):
+    def test_save(self, mock_segment_update, mock_notify_about_segment_api):
 
         mock_segment_update.return_value = fake_segment
 
@@ -188,9 +230,20 @@ class TestFailoverSegmentObject(test_objects._LocalTest):
 
         self.compare_obj(segment_object, fake_segment)
         self.assertTrue(mock_segment_update.called)
+        action = fields.EventNotificationAction.SEGMENT_UPDATE
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, segment_object, action=action,
+                      phase=phase_start),
+            mock.call(self.context, segment_object, action=action,
+                      phase=phase_end)]
+        mock_notify_about_segment_api.assert_has_calls(notify_calls)
 
+    @mock.patch.object(api_utils, 'notify_about_segment_api')
     @mock.patch('masakari.db.failover_segment_update')
-    def test_save_failover_segment_not_found(self, mock_segment_update):
+    def test_save_failover_segment_not_found(self, mock_segment_update,
+                                             mock_notify_about_segment_api):
 
         mock_segment_update.side_effect = (
             exception.FailoverSegmentNotFound(id=uuidsentinel.fake_segment))
@@ -202,9 +255,17 @@ class TestFailoverSegmentObject(test_objects._LocalTest):
 
         self.assertRaises(exception.FailoverSegmentNotFound,
                           segment_object.save)
+        action = fields.EventNotificationAction.SEGMENT_UPDATE
+        phase_start = fields.EventNotificationPhase.START
+        notify_calls = [
+            mock.call(self.context, segment_object, action=action,
+                      phase=phase_start)]
+        mock_notify_about_segment_api.assert_has_calls(notify_calls)
 
+    @mock.patch.object(api_utils, 'notify_about_segment_api')
     @mock.patch('masakari.db.failover_segment_update')
-    def test_save_failover_segment_already_exists(self, mock_segment_update):
+    def test_save_failover_segment_already_exists(self, mock_segment_update,
+                                            mock_notify_about_segment_api):
 
         mock_segment_update.side_effect = (
             exception.FailoverSegmentExists(name="foo-segment"))
@@ -215,3 +276,9 @@ class TestFailoverSegmentObject(test_objects._LocalTest):
         segment_object.uuid = uuidsentinel.fake_segment
 
         self.assertRaises(exception.FailoverSegmentExists, segment_object.save)
+        action = fields.EventNotificationAction.SEGMENT_UPDATE
+        phase_start = fields.EventNotificationPhase.START
+        notify_calls = [
+            mock.call(self.context, segment_object, action=action,
+                      phase=phase_start)]
+        mock_notify_about_segment_api.assert_has_calls(notify_calls)

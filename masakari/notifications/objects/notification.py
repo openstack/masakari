@@ -154,13 +154,10 @@ class NotificationApiPayload(NotificationApiPayloadBase):
 
 @base.notification_sample('create-segment-start.json')
 @base.notification_sample('create-segment-end.json')
-@base.notification_sample('create-segment-error.json')
 @base.notification_sample('update-segment-start.json')
 @base.notification_sample('update-segment-end.json')
-@base.notification_sample('update-segment-error.json')
 @base.notification_sample('delete-segment-start.json')
 @base.notification_sample('delete-segment-end.json')
-@base.notification_sample('delete-segment-error.json')
 @masakari_base.MasakariObjectRegistry.register_notification
 class SegmentApiNotification(base.NotificationBase):
     # Version 1.0: Initial version
@@ -173,13 +170,10 @@ class SegmentApiNotification(base.NotificationBase):
 
 @base.notification_sample('create-host-start.json')
 @base.notification_sample('create-host-end.json')
-@base.notification_sample('create-host-error.json')
 @base.notification_sample('update-host-start.json')
 @base.notification_sample('update-host-end.json')
-@base.notification_sample('update-host-error.json')
 @base.notification_sample('delete-host-start.json')
 @base.notification_sample('delete-host-end.json')
-@base.notification_sample('delete-host-error.json')
 @masakari_base.MasakariObjectRegistry.register_notification
 class HostApiNotification(base.NotificationBase):
     # Version 1.0: Initial version
@@ -192,7 +186,9 @@ class HostApiNotification(base.NotificationBase):
 
 @base.notification_sample('create-notification-start.json')
 @base.notification_sample('create-notification-end.json')
-@base.notification_sample('create-notification-error.json')
+@base.notification_sample('process-notification-start.json')
+@base.notification_sample('process-notification-end.json')
+@base.notification_sample('process-notification-error.json')
 @masakari_base.MasakariObjectRegistry.register_notification
 class NotificationApiNotification(base.NotificationBase):
     # Version 1.0: Initial version

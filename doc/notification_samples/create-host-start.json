@@ -1,0 +1,21 @@
+{
+    "event_type": "host.create.start",
+    "timestamp": "2018-11-27 13:09:30.716747",
+    "payload": {
+        "masakari_object.name": "HostApiPayload",
+        "masakari_object.data": {
+            "reserved": false,
+            "name": "fake-mini",
+            "on_maintenance": false,
+            "control_attributes": "TEST",
+            "fault": null,
+            "type": "COMPUTE",
+            "failover_segment_id": "89597691-bebd-4860-a93e-1b6e9de34b9e"
+        },
+        "masakari_object.version": "1.0",
+        "masakari_object.namespace": "masakari"
+    },
+    "priority": "INFO",
+    "publisher_id": "masakari-api:fake-mini",
+    "message_id": "0ed836cc-353a-40bc-b86b-d89e6632d838"
+}

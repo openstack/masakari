@@ -1,0 +1,18 @@
+---
+features:
+  - |
+    Added support to emit event notifications whenever user interacts with
+    Masakari restFul APIs. The emitted notifications are documented at
+    `sample_payloads`_.
+
+    To enable this feature one should set `driver` config option under the
+    `oslo_messaging_notifications` section as shown below::
+
+      [oslo_messaging_notifications]
+      driver = log
+
+    Note: Possible values are `messaging`, `messagingv2`, `routing`, `log`,
+    `test`, `noop`.
+    Notifications can be completely disabled by setting `driver` value as `noop`
+
+    ..  _`sample_payloads`: https://docs.openstack.org/masakari/latest/#versioned-notifications

@@ -12,17 +12,18 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
 import mock
 from oslo_utils import importutils
 from oslo_utils import timeutils
 
 import masakari.conf
 from masakari import context
+from masakari.engine import utils as engine_utils
 from masakari import exception
 from masakari.objects import fields
 from masakari.objects import host as host_obj
 from masakari.objects import notification as notification_obj
+from masakari import rpc
 from masakari import test
 from masakari.tests.unit import fakes
 from masakari.tests import uuidsentinel
@@ -47,6 +48,7 @@ def _get_vm_type_notification(status="new"):
 class EngineManagerUnitTestCase(test.NoDBTestCase):
     def setUp(self):
         super(EngineManagerUnitTestCase, self).setUp()
+        rpc.init(CONF)
         self.engine = importutils.import_object(CONF.engine_manager)
         self.context = context.RequestContext()
 
@@ -77,8 +79,10 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_instance_failure")
     @mock.patch.object(notification_obj.Notification, "save")
-    def test_process_notification_type_vm_success(self, mock_save,
-                             mock_instance_failure, mock_notification_get):
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
+    def test_process_notification_type_vm_success(self,
+                            mock_notify_about_notification_update, mock_save,
+                            mock_instance_failure, mock_notification_get):
         mock_instance_failure.side_effect = self._fake_notification_workflow()
         notification = _get_vm_type_notification()
         mock_notification_get.return_value = notification
@@ -88,12 +92,25 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_instance_failure.assert_called_once_with(
             self.context, notification.payload.get('instance_uuid'),
             notification.notification_uuid)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_instance_failure")
     @mock.patch.object(notification_obj.Notification, "save")
-    def test_process_notification_type_vm_error(self, mock_save,
-                             mock_instance_failure, mock_notification_get):
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
+    @mock.patch('traceback.format_exc')
+    def test_process_notification_type_vm_error(self, mock_format,
+                            mock_notify_about_notification_update, mock_save,
+                            mock_instance_failure, mock_notification_get):
+        mock_format.return_value = mock.ANY
         mock_instance_failure.side_effect = self._fake_notification_workflow(
             exc=exception.InstanceRecoveryFailureException)
         notification = _get_vm_type_notification()
@@ -104,6 +121,19 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_instance_failure.assert_called_once_with(
             self.context, notification.payload.get('instance_uuid'),
             notification.notification_uuid)
+        e = exception.InstanceRecoveryFailureException('Failed to execute '
+                                                'instance recovery workflow.')
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_error = fields.EventNotificationPhase.ERROR
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_error,
+                      exception=str(e),
+                      tb=mock.ANY)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(notification_obj.Notification, "save")
     def test_process_notification_type_vm_error_event_unmatched(
@@ -125,8 +155,12 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_instance_failure")
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
+    @mock.patch('traceback.format_exc')
     def test_process_notification_type_vm_skip_recovery(
-            self, mock_save, mock_instance_failure, mock_notification_get):
+            self, mock_format, mock_notify_about_notification_update,
+            mock_save, mock_instance_failure, mock_notification_get):
+        mock_format.return_value = mock.ANY
         notification = _get_vm_type_notification()
         mock_notification_get.return_value = notification
         mock_instance_failure.side_effect = self._fake_notification_workflow(
@@ -137,14 +171,25 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_instance_failure.assert_called_once_with(
             self.context, notification.payload.get('instance_uuid'),
             notification.notification_uuid)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
     @mock.patch.object(host_obj.Host, "save")
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_process_failure")
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
     def test_process_notification_type_process_event_stopped(
-            self, mock_notification_save, mock_process_failure,
+            self, mock_notify_about_notification_update,
+            mock_notification_save, mock_process_failure,
             mock_host_save, mock_host_obj, mock_notification_get):
         notification = self._get_process_type_notification()
         mock_notification_get.return_value = notification
@@ -158,15 +203,28 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             self.context, notification.payload.get('process_name'),
             fake_host.name,
             notification.notification_uuid)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
     @mock.patch.object(host_obj.Host, "save")
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_process_failure")
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
+    @mock.patch('traceback.format_exc')
     def test_process_notification_type_process_skip_recovery(
-            self, mock_notification_save, mock_process_failure,
+            self, mock_format, mock_notify_about_notification_update,
+            mock_notification_save, mock_process_failure,
             mock_host_save, mock_host_obj, mock_notification_get):
+        mock_format.return_value = mock.ANY
         notification = self._get_process_type_notification()
         mock_notification_get.return_value = notification
         fake_host = fakes.create_fake_host()
@@ -176,15 +234,28 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         self.engine.process_notification(self.context,
                                          notification=notification)
         self.assertEqual("finished", notification.status)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
     @mock.patch.object(host_obj.Host, "save")
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_process_failure")
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
+    @mock.patch('traceback.format_exc')
     def test_process_notification_type_process_recovery_failure(
-            self, mock_notification_save, mock_process_failure,
+            self, mock_format, mock_notify_about_notification_update,
+            mock_notification_save, mock_process_failure,
             mock_host_save, mock_host_obj, mock_notification_get):
+        mock_format.return_value = mock.ANY
         notification = self._get_process_type_notification()
         mock_notification_get.return_value = notification
         fake_host = fakes.create_fake_host()
@@ -194,15 +265,30 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         self.engine.process_notification(self.context,
                                          notification=notification)
         self.assertEqual("error", notification.status)
+        e = exception.ProcessRecoveryFailureException('Failed to execute '
+                                                'process recovery workflow.')
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_error = fields.EventNotificationPhase.ERROR
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_error,
+                      exception=str(e),
+                      tb=mock.ANY)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
     @mock.patch.object(host_obj.Host, "save")
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_process_failure")
     def test_process_notification_type_process_event_started(
-            self, mock_process_failure, mock_notification_save,
-            mock_host_save, mock_host_obj, mock_notification_get):
+            self, mock_process_failure, mock_notify_about_notification_update,
+            mock_notification_save, mock_host_save, mock_host_obj,
+            mock_notification_get):
         notification = self._get_process_type_notification()
         mock_notification_get.return_value = notification
         notification.payload['event'] = 'started'
@@ -212,13 +298,23 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
                                          notification=notification)
         self.assertEqual("finished", notification.status)
         self.assertFalse(mock_process_failure.called)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_process_failure")
     def test_process_notification_type_process_event_other(
-            self, mock_process_failure, mock_notification_save,
-            mock_notification_get):
+            self, mock_process_failure, mock_notify_about_notification_update,
+            mock_notification_save, mock_notification_get):
         notification = self._get_process_type_notification()
         mock_notification_get.return_value = notification
         notification.payload['event'] = 'other'
@@ -226,6 +322,15 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
                                          notification=notification)
         self.assertEqual("ignored", notification.status)
         self.assertFalse(mock_process_failure.called)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
     @mock.patch.object(host_obj.Host, "save")
@@ -234,8 +339,10 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_host_failure")
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
     def test_process_notification_type_compute_host_event_stopped(
-            self, mock_notification_save, mock_host_failure, mock_get_all,
+            self, mock_notify_about_notification_update,
+            mock_notification_save, mock_host_failure, mock_get_all,
             mock_host_update, mock_host_save, mock_host_obj,
             mock_notification_get):
         notification = self._get_compute_host_type_notification()
@@ -257,16 +364,29 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             self.context,
             fake_host.name, fake_host.failover_segment.recovery_method,
             notification.notification_uuid, reserved_host_list=None)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
     @mock.patch.object(host_obj.Host, "save")
     @mock.patch.object(host_obj.Host, "update")
     @mock.patch.object(host_obj.HostList, "get_all")
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
+    @mock.patch('traceback.format_exc')
     def test_process_notification_host_failure_without_reserved_hosts(
-            self, mock_notification_save, mock_get_all,
+            self, mock_format, mock_notify_about_notification_update,
+            mock_notification_save, mock_get_all,
             mock_host_update, mock_host_save, mock_host_obj,
             mock_notification_get):
+        mock_format.return_value = mock.ANY
         reserved_host_list = []
         mock_get_all.return_value = reserved_host_list
 
@@ -286,6 +406,19 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         }
         mock_host_update.assert_called_once_with(update_data_by_host_failure)
         self.assertEqual("error", notification.status)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_error = fields.EventNotificationPhase.ERROR
+        e = exception.ReservedHostsUnavailable(
+            'No reserved_hosts available for evacuation.')
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_error,
+                      exception=str(e),
+                      tb=mock.ANY)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
     @mock.patch.object(host_obj.Host, "save")
@@ -294,8 +427,10 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_host_failure")
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
     def test_process_notification_host_failure_with_reserved_hosts(
-            self, mock_notification_save, mock_host_failure, mock_get_all,
+            self, mock_notify_about_notification_update,
+            mock_notification_save, mock_host_failure, mock_get_all,
             mock_host_update, mock_host_save, mock_host_obj,
             mock_notification_get):
         fake_host = fakes.create_fake_host()
@@ -325,6 +460,15 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_get_all.assert_called_once_with(self.context, filters={
             'failover_segment_id': fake_host.failover_segment.uuid,
             'reserved': True, 'on_maintenance': False})
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
     @mock.patch.object(host_obj.Host, "save")
@@ -333,8 +477,10 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_host_failure")
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
     def test_process_notification_reserved_host_failure(
-            self, mock_notification_save, mock_host_failure, mock_get_all,
+            self, mock_notify_about_notification_update,
+            mock_notification_save, mock_host_failure, mock_get_all,
             mock_host_update, mock_host_save, mock_host_obj,
             mock_notification_get):
         fake_host = fakes.create_fake_host(reserved=True)
@@ -362,6 +508,15 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             fake_host.name, fake_host.failover_segment.recovery_method,
             notification.notification_uuid,
             reserved_host_list=reserved_host_list)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
     @mock.patch.object(host_obj.Host, "save")
@@ -370,10 +525,14 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_host_failure")
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
+    @mock.patch('traceback.format_exc')
     def test_process_notification_type_compute_host_recovery_exception(
-            self, mock_notification_save, mock_host_failure, mock_get_all,
+            self, mock_format, mock_notify_about_notification_update,
+            mock_notification_save, mock_host_failure, mock_get_all,
             mock_host_update, mock_host_save, mock_host_obj,
             mock_notification_get):
+        mock_format.return_value = mock.ANY
         notification = self._get_compute_host_type_notification()
         mock_notification_get.return_value = notification
         fake_host = fakes.create_fake_host()
@@ -390,13 +549,69 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         }
         mock_host_update.assert_called_once_with(update_data_by_host_failure)
         self.assertEqual("error", notification.status)
+        e = exception.HostRecoveryFailureException('Failed to execute host '
+                                                   'recovery.')
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_error = fields.EventNotificationPhase.ERROR
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_error,
+                      exception=str(e),
+                      tb=mock.ANY)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
+
+    @mock.patch.object(host_obj.Host, "get_by_uuid")
+    @mock.patch.object(host_obj.Host, "save")
+    @mock.patch.object(host_obj.Host, "update")
+    @mock.patch.object(host_obj.HostList, "get_all")
+    @mock.patch("masakari.engine.drivers.taskflow."
+                "TaskFlowDriver.execute_host_failure")
+    @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
+    @mock.patch('traceback.format_exc')
+    def test_process_notification_type_compute_host_skip_host_recovery(
+            self, mock_format, mock_notify_about_notification_update,
+            mock_notification_save, mock_host_failure, mock_get_all,
+            mock_host_update, mock_host_save, mock_host_obj,
+            mock_notification_get):
+        mock_format.return_value = mock.ANY
+        notification = self._get_compute_host_type_notification()
+        mock_notification_get.return_value = notification
+        fake_host = fakes.create_fake_host()
+        mock_get_all.return_value = None
+        fake_host.failover_segment = fakes.create_fake_failover_segment()
+        mock_host_obj.return_value = fake_host
+        # mock_host_failure.side_effect = str(e)
+        mock_host_failure.side_effect = self._fake_notification_workflow(
+            exc=exception.SkipHostRecoveryException)
+        self.engine.process_notification(self.context,
+                                         notification=notification)
+
+        update_data_by_host_failure = {
+            'on_maintenance': True,
+        }
+        mock_host_update.assert_called_once_with(update_data_by_host_failure)
+        self.assertEqual("finished", notification.status)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_host_failure")
     def test_process_notification_type_compute_host_event_started(
-            self, mock_host_failure, mock_notification_save,
-            mock_notification_get):
+            self, mock_host_failure, mock_notify_about_notification_update,
+            mock_notification_save, mock_notification_get):
         notification = self._get_compute_host_type_notification()
         mock_notification_get.return_value = notification
         notification.payload['event'] = 'started'
@@ -404,13 +619,23 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
                                          notification=notification)
         self.assertEqual("finished", notification.status)
         self.assertFalse(mock_host_failure.called)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_host_failure")
     def test_process_notification_type_compute_host_event_other(
-            self, mock_host_failure, mock_notification_save,
-            mock_notification_get):
+            self, mock_host_failure, mock_notify_about_notification_update,
+            mock_notification_save, mock_notification_get):
         notification = self._get_compute_host_type_notification()
         mock_notification_get.return_value = notification
         notification.payload['event'] = 'other'
@@ -418,13 +643,26 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
                                          notification=notification)
         self.assertEqual("ignored", notification.status)
         self.assertFalse(mock_host_failure.called)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch("masakari.compute.nova.API.stop_server")
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
+    @mock.patch('traceback.format_exc')
     @mock.patch("masakari.compute.nova.API.get_server")
     def test_process_notification_type_vm_ignore_instance_in_paused(
-            self, mock_get_server, mock_notification_save, mock_stop_server,
-            mock_notification_get):
+            self, mock_get_server, mock_format,
+            mock_notify_about_notification_update, mock_notification_save,
+            mock_stop_server, mock_notification_get):
+        mock_format.return_value = mock.ANY
         notification = _get_vm_type_notification()
         mock_notification_get.return_value = notification
         mock_get_server.return_value = fakes.FakeNovaClient.Server(
@@ -435,13 +673,32 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
                                          notification=notification)
         self.assertEqual("ignored", notification.status)
         self.assertFalse(mock_stop_server.called)
+        msg = ("Recovery of instance '%(instance_uuid)s' is ignored as it is "
+               "in '%(vm_state)s' state.") % {'instance_uuid':
+                uuidsentinel.fake_ins, 'vm_state': 'paused'}
+        e = exception.IgnoreInstanceRecoveryException(msg)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_error = fields.EventNotificationPhase.ERROR
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_error,
+                      exception=str(e),
+                      tb=mock.ANY)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch("masakari.compute.nova.API.stop_server")
     @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
+    @mock.patch('traceback.format_exc')
     @mock.patch("masakari.compute.nova.API.get_server")
     def test_process_notification_type_vm_ignore_instance_in_rescued(
-            self, mock_get_server, mock_notification_save, mock_stop_server,
-            mock_notification_get):
+            self, mock_get_server, mock_format,
+            mock_notify_about_notification_update, mock_notification_save,
+            mock_stop_server, mock_notification_get):
+        mock_format.return_value = mock.ANY
         notification = _get_vm_type_notification()
         mock_notification_get.return_value = notification
         mock_get_server.return_value = fakes.FakeNovaClient.Server(
@@ -452,6 +709,21 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
                                          notification=notification)
         self.assertEqual("ignored", notification.status)
         self.assertFalse(mock_stop_server.called)
+        msg = ("Recovery of instance '%(instance_uuid)s' is ignored as it is "
+               "in '%(vm_state)s' state.") % {'instance_uuid':
+                uuidsentinel.fake_ins, 'vm_state': 'rescued'}
+        e = exception.IgnoreInstanceRecoveryException(msg)
+        action = fields.EventNotificationAction.NOTIFICATION_PROCESS
+        phase_start = fields.EventNotificationPhase.START
+        phase_error = fields.EventNotificationPhase.ERROR
+        notify_calls = [
+            mock.call(self.context, notification, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification, action=action,
+                      phase=phase_error,
+                      exception=str(e),
+                      tb=mock.ANY)]
+        mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     def test_process_notification_stop_from_recovery_failure(self,
                                                      mock_get_noti):

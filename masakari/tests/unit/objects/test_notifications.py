@@ -19,8 +19,10 @@ import mock
 from oslo_utils import timeutils
 from oslo_utils import uuidutils
 
+from masakari.api import utils as api_utils
 from masakari import db
 from masakari import exception
+from masakari.objects import fields
 from masakari.objects import notification
 from masakari.tests.unit.objects import test_objects
 from masakari.tests import uuidsentinel
@@ -106,8 +108,9 @@ class TestNotificationObject(test_objects._LocalTest):
 
         return notification_obj
 
+    @mock.patch.object(api_utils, 'notify_about_notification_api')
     @mock.patch.object(db, 'notification_create')
-    def test_create(self, mock_db_create):
+    def test_create(self, mock_db_create, mock_notify_about_notification_api):
 
         mock_db_create.return_value = fake_db_notification
         notification_obj = self._notification_create_attributes()
@@ -119,9 +122,20 @@ class TestNotificationObject(test_objects._LocalTest):
             'notification_uuid': uuidsentinel.fake_notification,
             'generated_time': NOW, 'status': 'new',
             'type': 'COMPUTE_HOST', 'payload': '{"fake_key": "fake_value"}'})
+        action = fields.EventNotificationAction.NOTIFICATION_CREATE
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification_obj, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification_obj, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_api.assert_has_calls(notify_calls)
 
+    @mock.patch.object(api_utils, 'notify_about_notification_api')
     @mock.patch.object(db, 'notification_create')
-    def test_recreate_fails(self, mock_notification_create):
+    def test_recreate_fails(self, mock_notification_create,
+                            mock_notify_about_notification_api):
         mock_notification_create.return_value = fake_db_notification
         notification_obj = self._notification_create_attributes()
         notification_obj.create()
@@ -133,11 +147,21 @@ class TestNotificationObject(test_objects._LocalTest):
             'notification_uuid': uuidsentinel.fake_notification,
             'generated_time': NOW, 'status': 'new',
             'type': 'COMPUTE_HOST', 'payload': '{"fake_key": "fake_value"}'})
+        action = fields.EventNotificationAction.NOTIFICATION_CREATE
+        phase_start = fields.EventNotificationPhase.START
+        phase_end = fields.EventNotificationPhase.END
+        notify_calls = [
+            mock.call(self.context, notification_obj, action=action,
+                      phase=phase_start),
+            mock.call(self.context, notification_obj, action=action,
+                      phase=phase_end)]
+        mock_notify_about_notification_api.assert_has_calls(notify_calls)
 
+    @mock.patch.object(api_utils, 'notify_about_notification_api')
     @mock.patch.object(db, 'notification_create')
     @mock.patch.object(uuidutils, 'generate_uuid')
     def test_create_without_passing_uuid_in_updates(self, mock_generate_uuid,
-                                                    mock_db_create):
+                        mock_db_create, mock_notify_about_notification_api):
 
         mock_db_create.return_value = fake_db_notification
         mock_generate_uuid.return_value = uuidsentinel.fake_notification
@@ -152,6 +176,12 @@ class TestNotificationObject(test_objects._LocalTest):
             'generated_time': NOW, 'status': 'new',
             'type': 'COMPUTE_HOST', 'payload': '{"fake_key": "fake_value"}'})
         self.assertTrue(mock_generate_uuid.called)
+        action = fields.EventNotificationAction.NOTIFICATION_CREATE
+        phase_start = fields.EventNotificationPhase.START
+        notify_calls = [
+            mock.call(self.context, notification_obj, action=action,
+                      phase=phase_start)]
+        mock_notify_about_notification_api.assert_has_calls(notify_calls)
 
     @mock.patch.object(db, 'notification_delete')
     def test_destroy(self, mock_notification_delete):
