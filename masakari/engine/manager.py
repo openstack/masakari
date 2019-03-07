@@ -91,6 +91,10 @@ class MasakariManager(manager.Manager):
             except (exception.MasakariException,
                     exception.ProcessRecoveryFailureException) as e:
                 notification_status = fields.NotificationStatus.ERROR
+                LOG.error("Failed to process notification '%(uuid)s'."
+                          " Reason: %(error)s",
+                          {"uuid": notification.notification_uuid,
+                           "error": e.message})
                 exception_info = e
         else:
             LOG.warning("Invalid event: %(event)s received for "
@@ -137,6 +141,10 @@ class MasakariManager(manager.Manager):
         except (exception.MasakariException,
                 exception.InstanceRecoveryFailureException) as e:
             notification_status = fields.NotificationStatus.ERROR
+            LOG.error("Failed to process notification '%(uuid)s'."
+                      " Reason: %(error)s",
+                      {"uuid": notification.notification_uuid,
+                       "error": e.message})
             exception_info = e
 
         if exception_info:
@@ -205,6 +213,10 @@ class MasakariManager(manager.Manager):
                     exception.ReservedHostsUnavailable,
                     exception.MasakariException) as e:
                 notification_status = fields.NotificationStatus.ERROR
+                LOG.error("Failed to process notification '%(uuid)s'."
+                          " Reason: %(error)s",
+                          {"uuid": notification.notification_uuid,
+                           "error": e.message})
                 exception_info = e
         else:
             LOG.warning("Invalid event: %(event)s received for "
