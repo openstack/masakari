@@ -123,6 +123,9 @@ function configure_masakari {
         # Set common configuration values (but only if they're defined)
         iniset $MASAKARI_CONF DEFAULT masakari_api_workers "$API_WORKERS"
         iniset $MASAKARI_CONF database connection `database_connection_url masakari`
+        # Set taskflow connection to store the recovery workflow details in db
+        iniset $MASAKARI_CONF taskflow connection `database_connection_url masakari`
+
         setup_masakari_logging $MASAKARI_CONF
 
         configure_auth_token_middleware $MASAKARI_CONF masakari $MASAKARI_AUTH_CACHE_DIR
