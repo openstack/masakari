@@ -23,7 +23,7 @@ class NotificationVMTestCase(base.NotificationTestBase):
 
     NOTIFICATION_TYPE = "VM"
     NOTIFICATION_WAIT_INTERVAL = 1
-    NOTIFICATION_WAIT_PERIOD = 300
+    NOTIFICATION_WAIT_PERIOD = 600
 
     def setUp(self, ha_api_version="1.0"):
         super(NotificationVMTestCase, self).setUp(ha_api_version)
@@ -74,3 +74,17 @@ class NotificationVMTestCase(base.NotificationTestBase):
         # Test to create notification for VM notification type
 
         self._test_create_notification()
+
+
+class NotificationVMTestCase_V1_1(NotificationVMTestCase):
+
+    def setUp(self):
+        super(NotificationVMTestCase, self).setUp("1.1")
+
+    def test_create_notification(self):
+        notification = self._test_create_notification()
+        self.assertIsNotNone(notification.recovery_workflow_details)
+        recovery_details = notification.recovery_workflow_details
+        # check the status of each task is successful
+        for details in recovery_details:
+            self.assertEqual("SUCCESS", details.state)
