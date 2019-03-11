@@ -349,7 +349,7 @@ class MasakariManager(manager.Manager):
             notification['recovery_workflow_details'] = progress_details
         except Exception:
             msg = (_('Failed to fetch notification recovery workflow details '
-                     'for %s'), notification.notification_uuid)
+                     'for %s') % notification.notification_uuid)
             LOG.exception(msg)
             raise exception.MasakariException(msg)
 

@@ -282,27 +282,29 @@ class TaskFlowDriver(driver.NotificationDriver):
             progress_details = []
             flow_details = conn.get_flows_for_book(
                 notification.notification_uuid)
-            for flow in flow_details:
-                od = OrderedDict()
-                atom_details = list(conn.get_atoms_for_flow(flow.uuid))
+            if flow_details:
+                for flow in flow_details:
+                    od = OrderedDict()
+                    atom_details = list(conn.get_atoms_for_flow(flow.uuid))
 
-                for task in task_list:
-                    for atom in atom_details:
-                        if task == atom.name:
-                            od[atom.name] = atom
+                    for task in task_list:
+                        for atom in atom_details:
+                            if task == atom.name:
+                                od[atom.name] = atom
 
-                for key, value in od.items():
-                    # Add progress_details only if tasks are executed and meta
-                    # is available in which progress_details are stored.
-                    if value.meta:
-                        progress_details_obj = (
-                            objects.NotificationProgressDetails.create(
-                                value.name,
-                                value.meta['progress'],
-                                value.meta['progress_details']['details']
-                                ['progress_details'],
-                                value.state))
+                    for key, value in od.items():
+                        # Add progress_details only if tasks are executed and
+                        # meta is available in which progress_details are
+                        # stored.
+                        if value.meta and value.meta.get('progress_details'):
+                            progress_details_obj = (
+                                objects.NotificationProgressDetails.create(
+                                    value.name,
+                                    value.meta['progress'],
+                                    value.meta['progress_details']['details']
+                                    ['progress_details'],
+                                    value.state))
 
-                        progress_details.append(progress_details_obj)
+                            progress_details.append(progress_details_obj)
 
         return progress_details

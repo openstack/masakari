@@ -188,3 +188,11 @@ def create_fake_failover_segment(name='fake_segment', id=1, description=None,
     return objects.FailoverSegment(
         name=name, id=id, description=description, service_type=service_type,
         recovery_method=recovery_method, uuid=uuid)
+
+
+def create_fake_notification_progress_details(
+        name, uuid, progress, state, progress_details):
+
+    return objects.NotificationProgressDetails(
+        name=name, uuid=uuid, progress=progress, state=state,
+        progress_details=progress_details)
