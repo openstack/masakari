@@ -25,8 +25,8 @@ from masakari.compute import nova
 from masakari import conf
 from masakari import context
 from masakari.engine.drivers.taskflow import host_failure
+from masakari.engine import manager
 from masakari import exception
-from masakari.objects import host as host_obj
 from masakari import test
 from masakari.tests.unit import fakes
 
@@ -112,7 +112,9 @@ class HostFailureTestCase(test.TestCase):
 
     def _evacuate_instances(self, instance_list, mock_enable_disable,
                             reserved_host=None):
-        task = host_failure.EvacuateInstancesTask(self.ctxt, self.novaclient)
+        task = host_failure.EvacuateInstancesTask(
+            self.ctxt, self.novaclient,
+            update_host_method=manager.update_host_method)
         old_instance_list = copy.deepcopy(instance_list['instance_list'])
 
         if reserved_host:
@@ -165,11 +167,12 @@ class HostFailureTestCase(test.TestCase):
                       "considered for evacuation. Total count is: '2'", 0.8),
             mock.call("Instances to be evacuated are: '1,2'", 1.0),
             mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are : '1,2'"),
-            mock.call("Evacuation of instance started : '1'", 0.5),
-            mock.call("Instance '1' evacuated successfully", 0.7),
-            mock.call("Evacuation of instance started : '2'", 0.5),
-            mock.call("Instance '2' evacuated successfully", 0.7),
+                      "'fake-host', instance uuids are: '1,2'"),
+            mock.call("Evacuation of instance started: '1'", 0.5),
+            mock.call("Evacuation of instance started: '2'", 0.5),
+            mock.call("Successfully evacuate instances '1,2' from host "
+                      "'fake-host'", 0.7),
+            mock.call('Evacuation process completed!', 1.0)
         ])
 
     @mock.patch('masakari.compute.nova.novaclient')
@@ -200,10 +203,10 @@ class HostFailureTestCase(test.TestCase):
         instance_list = self._test_instance_list(2)
 
         # execute EvacuateInstancesTask
-        with mock.patch.object(host_obj.Host, "save") as mock_save:
+        with mock.patch.object(manager, "update_host_method") as mock_save:
             self._evacuate_instances(
                 instance_list, mock_enable_disable,
-                reserved_host=reserved_host)
+                reserved_host=reserved_host.name)
             self.assertEqual(1, mock_save.call_count)
             self.assertIn(reserved_host.name,
                           self.fake_client.aggregates.get('1').hosts)
@@ -221,16 +224,17 @@ class HostFailureTestCase(test.TestCase):
                       "considered for evacuation. Total count is: '2'", 0.8),
             mock.call("Instances to be evacuated are: '1,2'", 1.0),
             mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are : '1,2'"),
+                      "'fake-host', instance uuids are: '1,2'"),
             mock.call("Enabling reserved host: 'fake-reserved-host'", 0.1),
             mock.call('Add host fake-reserved-host to aggregate fake_agg',
                       0.2),
             mock.call('Added host fake-reserved-host to aggregate fake_agg',
                       0.3),
-            mock.call("Evacuation of instance started : '1'", 0.5),
-            mock.call("Instance '1' evacuated successfully", 0.7),
-            mock.call("Evacuation of instance started : '2'", 0.5),
-            mock.call("Instance '2' evacuated successfully", 0.7)
+            mock.call("Evacuation of instance started: '1'", 0.5),
+            mock.call("Evacuation of instance started: '2'", 0.5),
+            mock.call("Successfully evacuate instances '1,2' from host "
+                      "'fake-host'", 0.7),
+            mock.call('Evacuation process completed!', 1.0)
         ])
 
     @mock.patch.object(nova.API, 'add_host_to_aggregate')
@@ -266,10 +270,10 @@ class HostFailureTestCase(test.TestCase):
         instance_list = self._test_instance_list(1)
 
         # execute EvacuateInstancesTask
-        with mock.patch.object(host_obj.Host, "save") as mock_save:
+        with mock.patch.object(manager, "update_host_method") as mock_save:
             self._evacuate_instances(
                 instance_list, mock_enable_disable,
-                reserved_host=reserved_host)
+                reserved_host=reserved_host.name)
             self.assertEqual(1, mock_save.call_count)
             self.assertIn(reserved_host.name,
                           self.fake_client.aggregates.get('1').hosts)
@@ -285,14 +289,16 @@ class HostFailureTestCase(test.TestCase):
             mock.call("Total HA Enabled instances count: '1'", 0.6),
             mock.call("Instances to be evacuated are: '1'", 1.0),
             mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are : '1'"),
+                      "'fake-host', instance uuids are: '1'"),
             mock.call("Enabling reserved host: 'fake-reserved-host'", 0.1),
             mock.call('Add host fake-reserved-host to aggregate fake_agg',
                       0.2),
             mock.call("Host 'fake-reserved-host' already has been added to "
                       "aggregate 'fake_agg'.", 1.0),
-            mock.call("Evacuation of instance started : '1'", 0.5),
-            mock.call("Instance '1' evacuated successfully", 0.7)
+            mock.call("Evacuation of instance started: '1'", 0.5),
+            mock.call("Successfully evacuate instances '1' from host "
+                      "'fake-host'", 0.7),
+            mock.call('Evacuation process completed!', 1.0)
         ])
 
     @ddt.data('rescued', 'paused', 'shelved', 'suspended',
@@ -330,11 +336,12 @@ class HostFailureTestCase(test.TestCase):
         # verify progress details
         _mock_notify.assert_has_calls([
             mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are : '1,2'"),
-            mock.call("Evacuation of instance started : '1'", 0.5),
-            mock.call("Instance '1' evacuated successfully", 0.7),
-            mock.call("Evacuation of instance started : '2'", 0.5),
-            mock.call("Instance '2' evacuated successfully", 0.7)
+                      "'fake-host', instance uuids are: '1,2'"),
+            mock.call("Evacuation of instance started: '1'", 0.5),
+            mock.call("Evacuation of instance started: '2'", 0.5),
+            mock.call("Successfully evacuate instances '1,2' from host "
+                      "'fake-host'", 0.7),
+            mock.call('Evacuation process completed!', 1.0)
         ])
 
     @mock.patch('masakari.compute.nova.novaclient')
@@ -376,9 +383,11 @@ class HostFailureTestCase(test.TestCase):
                       "considered for evacuation. Total count is: '1'", 0.8),
             mock.call("Instances to be evacuated are: '2'", 1.0),
             mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are : '2'"),
-            mock.call("Evacuation of instance started : '2'", 0.5),
-            mock.call("Instance '2' evacuated successfully", 0.7)
+                      "'fake-host', instance uuids are: '2'"),
+            mock.call("Evacuation of instance started: '2'", 0.5),
+            mock.call("Successfully evacuate instances '2' from host "
+                      "'fake-host'", 0.7),
+            mock.call('Evacuation process completed!', 1.0)
         ])
 
     @mock.patch('masakari.compute.nova.novaclient')
@@ -414,43 +423,6 @@ class HostFailureTestCase(test.TestCase):
             mock.call("Total HA Enabled instances count: '0'", 0.6),
             mock.call("Skipped host 'fake-host' recovery as no instances needs"
                       " to be evacuated", 1.0)
-        ])
-
-    @mock.patch('masakari.compute.nova.novaclient')
-    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
-                'update_details')
-    def test_host_failure_flow_all_instances_active_resized_instance(
-            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
-            mock_enable_disable):
-        _mock_novaclient.return_value = self.fake_client
-
-        # create ha_enabled test data
-        self.fake_client.servers.create(id="1", host=self.instance_host,
-                                        vm_state='resized',
-                                        ha_enabled=True)
-        self.fake_client.servers.create(id="2", host=self.instance_host,
-                                        vm_state='resized',
-                                        ha_enabled=True)
-        instance_uuid_list = []
-        for instance in self.fake_client.servers.list():
-            instance_uuid_list.append(instance.id)
-
-        instance_list = {
-            "instance_list": instance_uuid_list,
-        }
-
-        # execute EvacuateInstancesTask
-        self._evacuate_instances(instance_list,
-                                 mock_enable_disable)
-
-        # verify progress details
-        _mock_notify.assert_has_calls([
-            mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are : '1,2'"),
-            mock.call("Evacuation of instance started : '1'", 0.5),
-            mock.call("Instance '1' evacuated successfully", 0.7),
-            mock.call("Evacuation of instance started : '2'", 0.5),
-            mock.call("Instance '2' evacuated successfully", 0.7),
         ])
 
     @mock.patch('masakari.compute.nova.novaclient')
@@ -525,13 +497,10 @@ class HostFailureTestCase(test.TestCase):
         # verify progress details
         _mock_notify.assert_has_calls([
             mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are : '1'"),
-            mock.call("Evacuation of instance started : '1'", 0.5),
-            mock.call("Instance '1' evacuated successfully", 0.7),
-            mock.call("Instance '1' is successfully evacuated but failed to "
-                      "stop.", 1.0),
-            mock.call("Failed to evacuate instances '1' from host "
-                      "'fake-host'", 1.0)
+                      "'fake-host', instance uuids are: '1'"),
+            mock.call("Evacuation of instance started: '1'", 0.5),
+            mock.call("Failed to evacuate instances '1' from host 'fake-host'"
+                      "", 0.7)
         ])
 
     @mock.patch('masakari.compute.nova.novaclient')
@@ -616,11 +585,73 @@ class HostFailureTestCase(test.TestCase):
         # verify progress details
         _mock_notify.assert_has_calls([
             mock.call("Start evacuation of instances from failed host "
-                 "'fake-host', instance uuids are : '1,2,3'"),
-            mock.call("Evacuation of instance started : '1'", 0.5),
-            mock.call("Instance '1' evacuated successfully", 0.7),
-            mock.call("Evacuation of instance started : '2'", 0.5),
-            mock.call("Instance '2' evacuated successfully", 0.7),
-            mock.call("Evacuation of instance started : '3'", 0.5),
-            mock.call("Instance '3' evacuated successfully", 0.7)
+                      "'fake-host', instance uuids are: '1,2,3'"),
+            mock.call("Evacuation of instance started: '1'", 0.5),
+            mock.call("Evacuation of instance started: '2'", 0.5),
+            mock.call("Evacuation of instance started: '3'", 0.5),
+            mock.call("Successfully evacuate instances '1,2,3' from host "
+                      "'fake-host'", 0.7),
+            mock.call('Evacuation process completed!', 1.0)
+        ])
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_host_failure_flow_for_RH_recovery(
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
+            mock_enable_disable):
+        _mock_novaclient.return_value = self.fake_client
+        self.override_config("evacuate_all_instances",
+                             True, "host_failure")
+        self.override_config("add_reserved_host_to_aggregate",
+                             True, "host_failure")
+
+        # create test data
+        self.fake_client.servers.create(id="1", host=self.instance_host,
+                                        ha_enabled=True)
+        self.fake_client.servers.create(id="2", host=self.instance_host)
+        reserved_host = fakes.create_fake_host(name="fake-reserved-host",
+                                               reserved=True)
+        self.fake_client.aggregates.create(id="1", name='fake_agg',
+                                           hosts=[self.instance_host])
+
+        # execute DisableComputeServiceTask
+        self._test_disable_compute_service(mock_enable_disable)
+
+        # execute PrepareHAEnabledInstancesTask
+        instance_list = self._test_instance_list(2)
+
+        # execute EvacuateInstancesTask
+        with mock.patch.object(manager, "update_host_method") as mock_save:
+            self._evacuate_instances(
+                instance_list, mock_enable_disable,
+                reserved_host=reserved_host.name)
+            self.assertEqual(1, mock_save.call_count)
+            self.assertIn(reserved_host.name,
+                          self.fake_client.aggregates.get('1').hosts)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0),
+            mock.call('Preparing instances for evacuation'),
+            mock.call("Total instances running on failed host 'fake-host' is 2"
+                      "", 0.3),
+            mock.call("Total HA Enabled instances count: '1'", 0.6),
+            mock.call("Total Non-HA Enabled instances count: '1'", 0.7),
+            mock.call("All instances (HA Enabled/Non-HA Enabled) should be "
+                      "considered for evacuation. Total count is: '2'", 0.8),
+            mock.call("Instances to be evacuated are: '1,2'", 1.0),
+            mock.call("Start evacuation of instances from failed host "
+                      "'fake-host', instance uuids are: '1,2'"),
+            mock.call("Enabling reserved host: 'fake-reserved-host'", 0.1),
+            mock.call('Add host fake-reserved-host to aggregate fake_agg',
+                      0.2),
+            mock.call('Added host fake-reserved-host to aggregate fake_agg',
+                      0.3),
+            mock.call("Evacuation of instance started: '1'", 0.5),
+            mock.call("Evacuation of instance started: '2'", 0.5),
+            mock.call("Successfully evacuate instances '1,2' from host "
+                      "'fake-host'", 0.7),
+            mock.call('Evacuation process completed!', 1.0)
         ])

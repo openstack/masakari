@@ -45,6 +45,12 @@ CONF = masakari.conf.CONF
 LOG = logging.getLogger(__name__)
 
 
+def update_host_method(context, host_name, reserved=False):
+    reserved_host = objects.Host.get_by_name(context, host_name)
+    reserved_host.reserved = reserved
+    reserved_host.save()
+
+
 class MasakariManager(manager.Manager):
     """Manages the running notifications"""
     RPC_API_VERSION = rpcapi.EngineAPI.RPC_API_VERSION
@@ -195,19 +201,24 @@ class MasakariManager(manager.Manager):
             host_obj.save()
 
             reserved_host_list = None
+
             if not recovery_method == (
                     fields.FailoverSegmentRecoveryMethod.AUTO):
-                reserved_host_list = objects.HostList.get_all(
+                reserved_host_object_list = objects.HostList.get_all(
                     context, filters={
                         'failover_segment_id': host_obj.failover_segment_id,
                         'reserved': True,
                         'on_maintenance': False
                         })
+                # Create list of host name from reserved_host_object_list
+                reserved_host_list = [host.name for host in
+                                      reserved_host_object_list]
 
             try:
                 self.driver.execute_host_failure(
                     context, host_name, recovery_method,
                     notification.notification_uuid,
+                    update_host_method=update_host_method,
                     reserved_host_list=reserved_host_list)
             except exception.SkipHostRecoveryException as e:
                 notification_status = fields.NotificationStatus.FINISHED
@@ -355,9 +366,9 @@ class MasakariManager(manager.Manager):
                 context, notification.source_host_uuid)
             recovery_method = host_obj.failover_segment.recovery_method
 
-            progress_details = (self.driver.
-                                get_notification_recovery_workflow_details(
-                                    context, recovery_method, notification))
+            progress_details = (
+                self.driver.get_notification_recovery_workflow_details(
+                    context, recovery_method, notification))
             notification['recovery_workflow_details'] = progress_details
         except Exception:
             msg = (_('Failed to fetch notification recovery workflow details '

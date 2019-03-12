@@ -19,6 +19,7 @@ from oslo_utils import timeutils
 from masakari.compute import nova
 import masakari.conf
 from masakari import context
+from masakari.engine import manager
 from masakari.engine import utils as engine_utils
 from masakari import exception
 from masakari.objects import fields
@@ -200,6 +201,7 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         self.engine.process_notification(self.context,
                                          notification=notification)
         self.assertEqual("finished", notification.status)
+        mock_host_save.assert_called_once()
         mock_process_failure.assert_called_once_with(
             self.context, notification.payload.get('process_name'),
             fake_host.name,
@@ -235,6 +237,7 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         self.engine.process_notification(self.context,
                                          notification=notification)
         self.assertEqual("finished", notification.status)
+        mock_host_save.assert_called_once()
         action = fields.EventNotificationAction.NOTIFICATION_PROCESS
         phase_start = fields.EventNotificationPhase.START
         phase_end = fields.EventNotificationPhase.END
@@ -266,6 +269,7 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         self.engine.process_notification(self.context,
                                          notification=notification)
         self.assertEqual("error", notification.status)
+        mock_host_save.assert_called_once()
         e = exception.ProcessRecoveryFailureException('Failed to execute '
                                                 'process recovery workflow.')
         action = fields.EventNotificationAction.NOTIFICATION_PROCESS
@@ -281,14 +285,13 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_notify_about_notification_update.assert_has_calls(notify_calls)
 
     @mock.patch.object(host_obj.Host, "get_by_uuid")
-    @mock.patch.object(host_obj.Host, "save")
     @mock.patch.object(notification_obj.Notification, "save")
     @mock.patch.object(engine_utils, 'notify_about_notification_update')
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_process_failure")
     def test_process_notification_type_process_event_started(
             self, mock_process_failure, mock_notify_about_notification_update,
-            mock_notification_save, mock_host_save, mock_host_obj,
+            mock_notification_save, mock_host_obj,
             mock_notification_get):
         notification = self._get_process_type_notification()
         mock_notification_get.return_value = notification
@@ -360,11 +363,13 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             'on_maintenance': True,
         }
         mock_host_update.assert_called_once_with(update_data_by_host_failure)
+        mock_host_save.assert_called_once()
         self.assertEqual("finished", notification.status)
         mock_host_failure.assert_called_once_with(
             self.context,
             fake_host.name, fake_host.failover_segment.recovery_method,
-            notification.notification_uuid, reserved_host_list=None)
+            notification.notification_uuid, reserved_host_list=None,
+            update_host_method=manager.update_host_method)
         action = fields.EventNotificationAction.NOTIFICATION_PROCESS
         phase_start = fields.EventNotificationPhase.START
         phase_end = fields.EventNotificationPhase.END
@@ -388,8 +393,6 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             mock_host_update, mock_host_save, mock_host_obj,
             mock_notification_get):
         mock_format.return_value = mock.ANY
-        reserved_host_list = []
-        mock_get_all.return_value = reserved_host_list
 
         fake_host = fakes.create_fake_host()
         fake_host.failover_segment = fakes.create_fake_failover_segment(
@@ -406,6 +409,7 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             'on_maintenance': True,
         }
         mock_host_update.assert_called_once_with(update_data_by_host_failure)
+        mock_host_save.assert_called_once()
         self.assertEqual("error", notification.status)
         action = fields.EventNotificationAction.NOTIFICATION_PROCESS
         phase_start = fields.EventNotificationPhase.START
@@ -437,9 +441,12 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         fake_host = fakes.create_fake_host()
         fake_host.failover_segment = fakes.create_fake_failover_segment(
             recovery_method='reserved_host')
-        reserved_host_list = [fake_host]
-        mock_get_all.return_value = reserved_host_list
+        reserved_host_object_list = [fake_host]
+        mock_get_all.return_value = reserved_host_object_list
         mock_host_obj.return_value = fake_host
+
+        reserved_host_list = [host.name for host in
+                              reserved_host_object_list]
 
         notification = self._get_compute_host_type_notification()
         mock_notification_get.return_value = notification
@@ -452,12 +459,14 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             'on_maintenance': True,
         }
         mock_host_update.assert_called_once_with(update_data_by_host_failure)
+        mock_host_save.assert_called_once()
         self.assertEqual("finished", notification.status)
         mock_host_failure.assert_called_once_with(
             self.context,
             fake_host.name, fake_host.failover_segment.recovery_method,
             notification.notification_uuid,
-            reserved_host_list=reserved_host_list)
+            reserved_host_list=reserved_host_list,
+            update_host_method=manager.update_host_method)
         mock_get_all.assert_called_once_with(self.context, filters={
             'failover_segment_id': fake_host.failover_segment.uuid,
             'reserved': True, 'on_maintenance': False})
@@ -487,13 +496,16 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         fake_host = fakes.create_fake_host(reserved=True)
         fake_host.failover_segment = fakes.create_fake_failover_segment(
             recovery_method='reserved_host')
-        reserved_host_list = [fake_host]
-        mock_get_all.return_value = reserved_host_list
+        reserved_host_object_list = [fake_host]
+        mock_get_all.return_value = reserved_host_object_list
         mock_host_obj.return_value = fake_host
 
         notification = self._get_compute_host_type_notification()
         mock_notification_get.return_value = notification
         mock_host_failure.side_effect = self._fake_notification_workflow()
+
+        reserved_host_list = [host.name for host in
+                              reserved_host_object_list]
 
         self.engine.process_notification(self.context,
                                          notification=notification)
@@ -503,12 +515,14 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             'reserved': False,
         }
         mock_host_update.assert_called_once_with(update_data_by_host_failure)
+        mock_host_save.assert_called_once()
         self.assertEqual("finished", notification.status)
         mock_host_failure.assert_called_once_with(
             self.context,
             fake_host.name, fake_host.failover_segment.recovery_method,
             notification.notification_uuid,
-            reserved_host_list=reserved_host_list)
+            reserved_host_list=reserved_host_list,
+            update_host_method=manager.update_host_method)
         action = fields.EventNotificationAction.NOTIFICATION_PROCESS
         phase_start = fields.EventNotificationPhase.START
         phase_end = fields.EventNotificationPhase.END
@@ -549,6 +563,7 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             'on_maintenance': True,
         }
         mock_host_update.assert_called_once_with(update_data_by_host_failure)
+        mock_host_save.assert_called_once()
         self.assertEqual("error", notification.status)
         e = exception.HostRecoveryFailureException('Failed to execute host '
                                                    'recovery.')
@@ -595,6 +610,7 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             'on_maintenance': True,
         }
         mock_host_update.assert_called_once_with(update_data_by_host_failure)
+        mock_host_save.assert_called_once()
         self.assertEqual("finished", notification.status)
         action = fields.EventNotificationAction.NOTIFICATION_PROCESS
         phase_start = fields.EventNotificationPhase.START
@@ -874,6 +890,7 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             self.context, 'fake_host',
             fields.FailoverSegmentRecoveryMethod.RESERVED_HOST,
             uuidsentinel.fake_notification,
+            update_host_method=manager.update_host_method,
             reserved_host_list=['host-1', 'host-2'])
         # Ensure custom_task added to the 'host_rh_failure_recovery_tasks'
         # is executed.
@@ -923,6 +940,7 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             self.context, "fake-host",
             fields.FailoverSegmentRecoveryMethod.RESERVED_HOST,
             uuidsentinel.fake_notification,
+            update_host_method=manager.update_host_method,
             reserved_host_list=['host-1', 'host-2'])
 
         # make sure instance is active and has different host

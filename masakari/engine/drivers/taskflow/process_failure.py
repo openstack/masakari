@@ -32,11 +32,11 @@ TASKFLOW_CONF = cfg.CONF.taskflow_driver_recovery_flows
 
 
 class DisableComputeNodeTask(base.MasakariTask):
-    def __init__(self, context, novaclient):
-        requires = ["process_name", "host_name"]
+    def __init__(self, context, novaclient, **kwargs):
+        kwargs['requires'] = ["process_name", "host_name"]
         super(DisableComputeNodeTask, self).__init__(context,
                                                      novaclient,
-                                                     requires=requires)
+                                                     **kwargs)
 
     def execute(self, process_name, host_name):
         msg = "Disabling compute service on host: '%s'" % host_name
@@ -56,11 +56,11 @@ class DisableComputeNodeTask(base.MasakariTask):
 
 
 class ConfirmComputeNodeDisabledTask(base.MasakariTask):
-    def __init__(self, context, novaclient):
-        requires = ["process_name", "host_name"]
+    def __init__(self, context, novaclient, **kwargs):
+        kwargs['requires'] = ["process_name", "host_name"]
         super(ConfirmComputeNodeDisabledTask, self).__init__(context,
                                                              novaclient,
-                                                             requires=requires)
+                                                             **kwargs)
 
     def execute(self, process_name, host_name):
         def _wait_for_disable():

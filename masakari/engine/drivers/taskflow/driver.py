@@ -60,14 +60,15 @@ class TaskFlowDriver(driver.NotificationDriver):
             flow_engine.run()
 
     def _execute_rh_workflow(self, context, novaclient, process_what,
-                             reserved_host_list):
-        if not reserved_host_list:
+                             **kwargs):
+        if not kwargs['reserved_host_list']:
             msg = _('No reserved_hosts available for evacuation.')
             raise exception.ReservedHostsUnavailable(message=msg)
 
-        process_what['reserved_host_list'] = reserved_host_list
+        process_what['reserved_host_list'] = kwargs.pop('reserved_host_list')
         flow_engine = host_failure.get_rh_flow(context, novaclient,
-                                               process_what)
+                                               process_what,
+                                               **kwargs)
 
         with base.DynamicLogListener(flow_engine, logger=LOG):
             try:
@@ -76,7 +77,7 @@ class TaskFlowDriver(driver.NotificationDriver):
                 raise exception.HostRecoveryFailureException(ex.message)
 
     def _execute_auto_priority_workflow(self, context, novaclient,
-                                        process_what, reserved_host_list):
+                                        process_what, **kwargs):
         try:
             self._execute_auto_workflow(context, novaclient, process_what)
         except Exception as ex:
@@ -97,14 +98,15 @@ class TaskFlowDriver(driver.NotificationDriver):
                     'reserved_host':
                         fields.FailoverSegmentRecoveryMethod.RESERVED_HOST
                 })
-                self._execute_rh_workflow(context, novaclient, process_what,
-                                          reserved_host_list)
+                self._execute_rh_workflow(context,
+                                          novaclient, process_what,
+                                          **kwargs)
 
     def _execute_rh_priority_workflow(self, context, novaclient, process_what,
-                                      reserved_host_list):
+                                      **kwargs):
         try:
             self._execute_rh_workflow(context, novaclient, process_what,
-                                      reserved_host_list)
+                                      **kwargs)
         except Exception as ex:
             with excutils.save_and_reraise_exception(reraise=False) as ctxt:
                 if isinstance(ex, exception.SkipHostRecoveryException):
@@ -126,7 +128,7 @@ class TaskFlowDriver(driver.NotificationDriver):
                 self._execute_auto_workflow(context, novaclient, process_what)
 
     def execute_host_failure(self, context, host_name, recovery_method,
-                             notification_uuid, reserved_host_list=None):
+                             notification_uuid, **kwargs):
         novaclient = nova.API()
         # get flow for host failure
         process_what = {
@@ -140,16 +142,15 @@ class TaskFlowDriver(driver.NotificationDriver):
             elif recovery_method == (
                     fields.FailoverSegmentRecoveryMethod.RESERVED_HOST):
                 self._execute_rh_workflow(context, novaclient, process_what,
-                                          reserved_host_list)
+                                          **kwargs)
             elif recovery_method == (
                     fields.FailoverSegmentRecoveryMethod.AUTO_PRIORITY):
-                self._execute_auto_priority_workflow(context, novaclient,
-                                                     process_what,
-                                                     reserved_host_list)
+                self._execute_auto_priority_workflow(
+                    context, novaclient,
+                    process_what, **kwargs)
             else:
                 self._execute_rh_priority_workflow(context, novaclient,
-                                                   process_what,
-                                                   reserved_host_list)
+                                                   process_what, **kwargs)
         except Exception as exc:
             with excutils.save_and_reraise_exception(reraise=False) as ctxt:
                 if isinstance(exc, (exception.SkipHostRecoveryException,
@@ -240,25 +241,28 @@ class TaskFlowDriver(driver.NotificationDriver):
         elif notification.type == fields.NotificationType.PROCESS:
             tasks = TASKFLOW_CONF.process_failure_recovery_tasks
         elif notification.type == fields.NotificationType.COMPUTE_HOST:
-            if recovery_method == fields.FailoverSegmentRecoveryMethod.AUTO:
+            if recovery_method in [
+                    fields.FailoverSegmentRecoveryMethod.AUTO,
+                    fields.FailoverSegmentRecoveryMethod.AUTO_PRIORITY]:
                 tasks = TASKFLOW_CONF.host_auto_failure_recovery_tasks
-            elif recovery_method == (
-                    fields.FailoverSegmentRecoveryMethod.RESERVED_HOST):
+            elif recovery_method in [
+                    fields.FailoverSegmentRecoveryMethod.RESERVED_HOST,
+                    fields.FailoverSegmentRecoveryMethod.RH_PRIORITY]:
                 tasks = TASKFLOW_CONF.host_rh_failure_recovery_tasks
 
-        for plugin in base.get_recovery_flow(tasks['pre'],
-                                             context=context,
-                                             novaclient=novaclient):
+        for plugin in base.get_recovery_flow(
+                tasks['pre'], context=context, novaclient=novaclient,
+                update_host_method=None):
             task_list.append(plugin.name)
 
-        for plugin in base.get_recovery_flow(tasks['main'],
-                                             context=context,
-                                             novaclient=novaclient):
+        for plugin in base.get_recovery_flow(
+                tasks['main'], context=context, novaclient=novaclient,
+                update_host_method=None):
             task_list.append(plugin.name)
 
-        for plugin in base.get_recovery_flow(tasks['post'],
-                                             context=context,
-                                             novaclient=novaclient):
+        for plugin in base.get_recovery_flow(
+                tasks['post'], context=context, novaclient=novaclient,
+                update_host_method=None):
             task_list.append(plugin.name)
 
         return task_list
@@ -268,42 +272,63 @@ class TaskFlowDriver(driver.NotificationDriver):
                                                    notification):
         """Retrieve progress details in notification"""
 
-        # Note<ShilpaSD>: Taskflow doesn't support to return task details in
-        # the same sequence in which all tasks are executed. Reported this
-        # issue in LP #1815738. To resolve this issue load the tasks based on
-        # the recovery method and later sort it based on this task list so
-        # progress_details can be returned in the expected order.
-        task_list = self._get_taskflow_sequence(context, recovery_method,
-                                                notification)
-
         backend = backends.fetch(PERSISTENCE_BACKEND)
         with contextlib.closing(backend.get_connection()) as conn:
             progress_details = []
             flow_details = conn.get_flows_for_book(
                 notification.notification_uuid)
-            if flow_details:
-                for flow in flow_details:
-                    od = OrderedDict()
-                    atom_details = list(conn.get_atoms_for_flow(flow.uuid))
+            for flow in flow_details:
+                od = OrderedDict()
+                atom_details = list(conn.get_atoms_for_flow(flow.uuid))
 
-                    for task in task_list:
-                        for atom in atom_details:
-                            if task == atom.name:
-                                od[atom.name] = atom
+                # TODO(ShilpaSD): In case recovery_method is auto_priority/
+                # rh_priority, there is no way to figure out whether the
+                # recovery was done successfully using AUTO or RH flow.
+                # Taskflow stores 'retry_instance_evacuate_engine_retry' task
+                # in case of RH flow so if
+                # 'retry_instance_evacuate_engine_retry' is stored in the
+                # given flow details then the sorting of task details should
+                # happen based on the RH flow.
+                # This logic won't be required after LP #1815738 is fixed.
+                if recovery_method in ['AUTO_PRIORITY', 'RH_PRIORITY']:
+                    persisted_task_list = [atom.name for atom in
+                                           atom_details]
+                    if ('retry_instance_evacuate_engine_retry' in
+                            persisted_task_list):
+                        recovery_method = (
+                            fields.FailoverSegmentRecoveryMethod.
+                            RESERVED_HOST)
+                    else:
+                        recovery_method = (
+                            fields.FailoverSegmentRecoveryMethod.AUTO)
 
-                    for key, value in od.items():
-                        # Add progress_details only if tasks are executed and
-                        # meta is available in which progress_details are
-                        # stored.
-                        if value.meta and value.meta.get('progress_details'):
-                            progress_details_obj = (
-                                objects.NotificationProgressDetails.create(
-                                    value.name,
-                                    value.meta['progress'],
-                                    value.meta['progress_details']['details']
-                                    ['progress_details'],
-                                    value.state))
+                # TODO(ShilpaSD): Taskflow doesn't support to return task
+                # details in the same sequence in which all tasks are
+                # executed. Reported this issue in LP #1815738. To resolve
+                # this issue load the tasks based on the recovery method and
+                # later sort it based on this task list so progress_details
+                # can be returned in the expected order.
+                task_list = self._get_taskflow_sequence(context,
+                                                        recovery_method,
+                                                        notification)
 
-                            progress_details.append(progress_details_obj)
+                for task in task_list:
+                    for atom in atom_details:
+                        if task == atom.name:
+                            od[atom.name] = atom
+
+                for key, value in od.items():
+                    # Add progress_details only if tasks are executed and meta
+                    # is available in which progress_details are stored.
+                    if value.meta:
+                        progress_details_obj = (
+                            objects.NotificationProgressDetails.create(
+                                value.name,
+                                value.meta['progress'],
+                                value.meta['progress_details']['details']
+                                ['progress_details'],
+                                value.state))
+
+                        progress_details.append(progress_details_obj)
 
         return progress_details

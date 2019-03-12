@@ -44,7 +44,13 @@ class MasakariTask(task.Task):
     """
 
     def __init__(self, context, novaclient, **kwargs):
-        super(MasakariTask, self).__init__(self.__class__.__name__, **kwargs)
+        requires = kwargs.get('requires')
+        rebind = kwargs.get('rebind')
+        provides = kwargs.get('provides')
+        super(MasakariTask, self).__init__(self.__class__.__name__,
+                                           requires=requires,
+                                           rebind=rebind,
+                                           provides=provides)
         self.context = context
         self.novaclient = novaclient
         self.progress = []

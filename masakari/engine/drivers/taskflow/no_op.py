@@ -21,7 +21,7 @@ LOG = logging.getLogger(__name__)
 
 class Noop(task.Task):
 
-    def __init__(self, context, novaclient):
+    def __init__(self, context, novaclient, **kwargs):
         self.context = context
         self.novaclient = novaclient
         super(Noop, self).__init__()

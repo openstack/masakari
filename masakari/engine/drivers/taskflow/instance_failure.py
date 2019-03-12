@@ -33,11 +33,11 @@ TASKFLOW_CONF = cfg.CONF.taskflow_driver_recovery_flows
 
 
 class StopInstanceTask(base.MasakariTask):
-    def __init__(self, context, novaclient):
-        requires = ["instance_uuid"]
+    def __init__(self, context, novaclient, **kwargs):
+        kwargs['requires'] = ["instance_uuid"]
         super(StopInstanceTask, self).__init__(context,
                                                novaclient,
-                                               requires=requires)
+                                               **kwargs)
 
     def execute(self, instance_uuid):
         """Stop the instance for recovery."""
@@ -105,11 +105,11 @@ class StopInstanceTask(base.MasakariTask):
 
 
 class StartInstanceTask(base.MasakariTask):
-    def __init__(self, context, novaclient):
-        requires = ["instance_uuid"]
+    def __init__(self, context, novaclient, **kwargs):
+        kwargs['requires'] = ["instance_uuid"]
         super(StartInstanceTask, self).__init__(context,
                                                 novaclient,
-                                                requires=requires)
+                                                **kwargs)
 
     def execute(self, instance_uuid):
         """Start the instance."""
@@ -134,11 +134,11 @@ class StartInstanceTask(base.MasakariTask):
 
 
 class ConfirmInstanceActiveTask(base.MasakariTask):
-    def __init__(self, context, novaclient):
-        requires = ["instance_uuid"]
+    def __init__(self, context, novaclient, **kwargs):
+        kwargs['requires'] = ["instance_uuid"]
         super(ConfirmInstanceActiveTask, self).__init__(context,
                                                         novaclient,
-                                                        requires=requires)
+                                                        **kwargs)
 
     def execute(self, instance_uuid):
         def _wait_for_active():
