@@ -63,7 +63,6 @@ class TaskFlowDriver(driver.NotificationDriver):
                              reserved_host_list):
         if not reserved_host_list:
             msg = _('No reserved_hosts available for evacuation.')
-            LOG.info(msg)
             raise exception.ReservedHostsUnavailable(message=msg)
 
         process_what['reserved_host_list'] = reserved_host_list
