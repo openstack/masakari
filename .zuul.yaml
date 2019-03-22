@@ -2,9 +2,9 @@
     name: masakari-openstack-multi-nodes
     nodes:
       - name: controller
-        label: ubuntu-xenial
+        label: ubuntu-bionic
       - name: compute1
-        label: ubuntu-xenial
+        label: ubuntu-bionic
     groups:
       # Nodes running the compute service
       - name: compute
