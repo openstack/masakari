@@ -92,3 +92,29 @@ class NotificationProcessTestCase(base.NotificationTestBase):
         # Test to create notification for process with 'STARTED' event type
 
         self._test_create_notification_event_start()
+
+
+class NotificationProcessTestCase_V1_1(NotificationProcessTestCase):
+
+    def setUp(self):
+        super(NotificationProcessTestCase, self).setUp("1.1")
+
+    def test_create_notification_event_stopped(self):
+        # Test to create notification for process with 'STOPPED' event type
+
+        notification = self._test_create_notification_event_stopped()
+        self.assertIsNotNone(notification.recovery_workflow_details)
+        recovery_details = notification.recovery_workflow_details
+        # check the status of each task is successful
+        for details in recovery_details:
+            self.assertEqual("SUCCESS", details.state)
+
+    def test_create_notification_event_start(self):
+        # Test to create notification for process with 'STARTED' event type
+
+        notification = self._test_create_notification_event_start()
+        self.assertIsNotNone(notification.recovery_workflow_details)
+        recovery_details = notification.recovery_workflow_details
+        # check the status of each task is successful
+        for details in recovery_details:
+            self.assertEqual("SUCCESS", details.state)
