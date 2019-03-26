@@ -123,7 +123,7 @@ Request
 .. rest_parameters:: parameters.yaml
 
 
-  - sgement: segment
+  - segment: segment
   - description: segment_description
   - name: segment_name
   - recovery_method: segment_recovery_method
