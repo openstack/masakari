@@ -737,3 +737,31 @@ class HostFailureTestCase(test.TestCase):
                       "'fake-host'", 0.7),
             mock.call('Evacuation process completed!', 1.0)
         ])
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    def test_host_failure_flow_for_stopped_instances(
+            self, _mock_novaclient, mock_unlock, mock_lock,
+            mock_enable_disable):
+        _mock_novaclient.return_value = self.fake_client
+
+        # create ha_enabled test data
+        self.fake_client.servers.create(id="1", host=self.instance_host,
+                                        vm_state='stopped',
+                                        task_state=None,
+                                        power_state=None,
+                                        ha_enabled=True)
+        instance_uuid_list = []
+        for instance in self.fake_client.servers.list():
+            instance_uuid_list.append(instance.id)
+
+        instance_list = {
+            "instance_list": instance_uuid_list,
+        }
+
+        # execute EvacuateInstancesTask
+        self._evacuate_instances(instance_list, mock_enable_disable)
+
+        # If vm_state=stopped and task_state=None, reset_state and stop API
+        # will not be called.
+        self.assertEqual(0, len(self.fake_client.servers.reset_state_calls))
+        self.assertEqual(0, len(self.fake_client.servers.stop_calls))
