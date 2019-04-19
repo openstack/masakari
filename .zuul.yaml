@@ -46,11 +46,11 @@
       devstack_services:
         horizon: false
         swift: false
-      zuul_work_dir: src/git.openstack.org/openstack/masakari
+      zuul_work_dir: src/opendev.org/openstack/masakari
     host-vars:
       controller:
         devstack_plugins:
-          masakari: https://git.openstack.org/openstack/masakari
+          masakari: https://opendev.org/openstack/masakari
         devstack_services:
           horizon: false
           swift: false
@@ -61,7 +61,7 @@
     group-vars:
       subnode:
         devstack_plugins:
-          masakari: https://git.openstack.org/openstack/masakari
+          masakari: https://opendev.org/openstack/masakari
         devstack_services:
           q-agt: true
           n-api: false
