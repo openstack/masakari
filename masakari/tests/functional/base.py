@@ -17,7 +17,6 @@ import logging
 import os
 import sys
 
-from openstack.cloud.openstackcloud import _OpenStackCloudMixin
 import openstack.config
 from openstack import connection
 
@@ -64,6 +63,6 @@ class BaseFunctionalTest(base.TestCase):
         self.hypervisors = self._hypervisors()
 
     def _hypervisors(self):
-        hypervisors = _OpenStackCloudMixin.list_hypervisors(
+        hypervisors = connection.Connection.list_hypervisors(
             connection.from_config(cloud_name=TEST_CLOUD_NAME))
         return hypervisors

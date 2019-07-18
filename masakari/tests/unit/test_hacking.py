@@ -12,13 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import sys
 import textwrap
 
 import ddt
 import mock
 import pep8
-import testtools
 
 from masakari.hacking import checks
 from masakari import test
@@ -222,7 +220,7 @@ class HackingTestCase(test.NoDBTestCase):
     def _run_check(self, code, checker, filename=None):
         pep8.register_check(checker)
 
-        lines = textwrap.dedent(code).strip().splitlines(True)
+        lines = textwrap.dedent(code).lstrip().splitlines(True)
 
         checker = pep8.Checker(filename=filename, lines=lines)
         checker.check_all()
@@ -364,20 +362,17 @@ class HackingTestCase(test.NoDBTestCase):
                                 filename="masakari/cmd/serialproxy.py",
                                 expected_errors=errors)
 
-    # TODO(neha-alhat): Remove when
-    # https://bugs.launchpad.net/masakari/+bug/1804062 is resolved.
-    @testtools.skipIf(
-        sys.version_info[0:3] >= (3, 6, 7),
-        'tokenize has backwards incompatible behavior from 3.6.7')
     def test_check_doubled_words(self):
         errors = [(1, 0, "M325")]
 
-        # Artificial break to stop pep8 detecting the test !
-        code = "This is the" + " the best comment"
+        # Explicit addition of line-ending here and below since this isn't a
+        # block comment and without it we trigger #1804062. Artificial break is
+        # necessary to stop flake8 detecting the test
+        code = "'This is the" + " the best comment'\n"
         self._assert_has_errors(code, checks.check_doubled_words,
                                 expected_errors=errors)
 
-        code = "This is the then best comment"
+        code = "'This is the then best comment'\n"
         self._assert_has_no_errors(code, checks.check_doubled_words)
 
     def test_dict_iteritems(self):

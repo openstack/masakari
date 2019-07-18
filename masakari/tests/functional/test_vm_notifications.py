@@ -32,13 +32,12 @@ class NotificationVMTestCase(base.NotificationTestBase):
         # Get image and flavor to create server
         image_uuids = [image.id for image in self.admin_conn.compute.images()]
         flavors = [flavor.id for flavor in self.admin_conn.compute.flavors()]
+        networks = [net.id for net in self.admin_conn.network.networks()]
 
         # Create server
-        server = self.conn.compute.create_server(name='abc',
-                                                 flavorRef=flavors[0],
-                                                 imageRef=image_uuids[0],
-                                                 metadata={
-                                                     'HA_Enabled': 'True'})
+        server = self.admin_conn.compute.create_server(
+            name='abc', flavorRef=flavors[0], imageRef=image_uuids[0],
+            networks=[{'uuid': networks[0]}], metadata={'HA_Enabled': 'True'})
 
         self.addCleanup(self.conn.compute.delete_server, server)
         self.check_server_status(server, 'ACTIVE')
