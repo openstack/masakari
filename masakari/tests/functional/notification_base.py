@@ -35,6 +35,25 @@ class NotificationTestBase(base.BaseFunctionalTest):
         if not self.hypervisors:
             self.skipTest("Skip Test as there are no hypervisors "
                           "configured in nova")
+
+        # Get image, flavor and network to create server
+        self.image_uuids = [image.id for image in self.conn.compute.images()]
+        self.flavors = [flavor.id for flavor in self.conn.compute.flavors()]
+
+        self.private_net = next((
+            net.id for net in self.conn.network.networks()
+            if net.name == 'private'), '')
+
+        if not self.image_uuids:
+            self.skipTest("Skip Test as there are no images "
+                          "configured in glance")
+        if not self.flavors:
+            self.skipTest("Skip Test as there are no flavors "
+                          "configured in nova")
+        if not self.private_net:
+            self.skipTest("Skip Test as there is no private network "
+                          "configured in neutron")
+
         # Create segment
         self.segment = self.admin_conn.ha.create_segment(
             name=self.getUniqueString(), recovery_method=self.recovery_method,
