@@ -41,7 +41,7 @@ class NotificationTestBase(base.BaseFunctionalTest):
             service_type=self.SERVICE_TYPE)
 
         # Create valid host
-        host_name = self.hypervisors[0]['hypervisor_hostname']
+        host_name = self.hypervisors[0]['name']
         self.host = self.admin_conn.ha.create_host(
             segment_id=self.segment.uuid, name=host_name,
             type=self.HOST_TYPE,

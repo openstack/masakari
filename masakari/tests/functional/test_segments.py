@@ -51,7 +51,7 @@ class TestSegments(base.BaseFunctionalTest):
             service_type='COMPUTE')
 
         # Create valid host
-        host_name = self.hypervisors[0]['hypervisor_hostname']
+        host_name = self.hypervisors[0]['name']
 
         host = self.admin_conn.ha.create_host(segment_id=segment.uuid,
                                         name=host_name,
@@ -135,7 +135,7 @@ class TestSegments(base.BaseFunctionalTest):
         self.addCleanup(self.admin_conn.ha.delete_segment, segment.uuid)
 
         # Create valid host
-        host_name = self.hypervisors[0]['hypervisor_hostname']
+        host_name = self.hypervisors[0]['name']
 
         self.admin_conn.ha.create_host(segment_id=segment.uuid, name=host_name,
                                 type='COMPUTE', control_attributes='SSH')

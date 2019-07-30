@@ -41,7 +41,7 @@ class TestHosts(base.BaseFunctionalTest):
     def test_create_get(self):
         # This test is for testing hosts create/get
         # Create valid host
-        host_name = self.hypervisors[0]['hypervisor_hostname']
+        host_name = self.hypervisors[0]['name']
         host_data = {'name': host_name,
                      'type': 'COMPUTE',
                      'on_maintenance': False,
@@ -66,7 +66,7 @@ class TestHosts(base.BaseFunctionalTest):
         for host in self.hypervisors:
             host_obj = self.admin_conn.ha.create_host(
                 segment_id=self.segment.uuid,
-                name=host.hypervisor_hostname,
+                name=host.name,
                 type='COMPUTE',
                 on_maintenance=False,
                 reserved=False,
@@ -95,13 +95,13 @@ class TestHosts(base.BaseFunctionalTest):
             self.skipTest("Skipped as there is only one hypervisor "
                           "configured in nova")
 
-        host_data_1 = {'name': self.hypervisors[0].hypervisor_hostname,
+        host_data_1 = {'name': self.hypervisors[0].name,
                        'type': 'COMPUTE',
                        'on_maintenance': False,
                        'reserved': False,
                        'control_attributes': 'SSH'}
 
-        host_data_2 = {'name': self.hypervisors[1].hypervisor_hostname,
+        host_data_2 = {'name': self.hypervisors[1].name,
                        'type': 'CONTROLLER',
                        'on_maintenance': True,
                        'reserved': True,
@@ -126,7 +126,7 @@ class TestHosts(base.BaseFunctionalTest):
 
     def test_update_get_delete(self):
         # This test is for updating created host and deletion of same
-        host_name = self.hypervisors[0]['hypervisor_hostname']
+        host_name = self.hypervisors[0]['name']
 
         host = self.admin_conn.ha.create_host(segment_id=self.segment.uuid,
                                         name=host_name,
@@ -155,14 +155,14 @@ class TestHosts(base.BaseFunctionalTest):
                           "configured in nova")
 
         host = self.admin_conn.ha.create_host(segment_id=self.segment.uuid,
-                            name=self.hypervisors[0]['hypervisor_hostname'],
+                            name=self.hypervisors[0]['name'],
                             type='COMPUTE',
                             control_attributes='SSH')
 
         # Update host name
         updated_host = self.admin_conn.ha.update_host(host['uuid'],
                 segment_id=self.segment.uuid,
-                name=self.hypervisors[1]['hypervisor_hostname'])
+                name=self.hypervisors[1]['name'])
 
         result = self.admin_conn.ha.get_host(host.uuid,
                                        host.failover_segment_id)
