@@ -320,7 +320,7 @@ class TaskFlowDriver(driver.NotificationDriver):
                 for key, value in od.items():
                     # Add progress_details only if tasks are executed and meta
                     # is available in which progress_details are stored.
-                    if value.meta:
+                    if value.meta and value.meta.get("progress_details"):
                         progress_details_obj = (
                             objects.NotificationProgressDetails.create(
                                 value.name,

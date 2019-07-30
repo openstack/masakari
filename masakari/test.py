@@ -182,6 +182,17 @@ class TestCase(testtools.TestCase):
                                                    inner_mismatch,
                                                    verbose=True)
 
+    def assertObjEqual(self, expect, actual):
+        actual.obj_reset_changes(recursive=True)
+        expect.obj_reset_changes(recursive=True)
+        self.assertEqual(expect.obj_to_primitive(),
+                         actual.obj_to_primitive())
+
+    def assertObjectList(self, expected, actual):
+        self.assertEqual(len(expected), len(actual))
+        for d1, d2 in zip(expected, actual):
+            self.assertObjEqual(d1, d2)
+
 
 class NoDBTestCase(TestCase):
     """`NoDBTestCase` differs from TestCase in that DB access is not supported.
