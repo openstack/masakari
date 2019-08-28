@@ -7,7 +7,10 @@ auto-generated from Masakari when this documentation is built, so
 if you are having issues with an option, please compare your version of
 Masakari with the version of this documentation.
 
-.. literalinclude:: _static/masakari.conf.sample
+The sample configuration can also be downloaded from :download:`here
+</_static/masakari.conf.sample>`.
+
+.. literalinclude:: /_static/masakari.conf.sample
 
 Minimal Configuration
 =====================

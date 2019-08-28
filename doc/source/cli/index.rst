@@ -9,3 +9,5 @@ interface.
    :maxdepth: 1
 
    masakari-status
+   masakari-manage
+   openstack-masakari

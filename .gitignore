@@ -60,6 +60,14 @@ releasenotes/build
 # PyCharm IDE
 .idea/
 
+# configuration sample generation
+etc/masakari/masakari.conf.sample
+etc/masakari/masakari-custom-recovery-methods.conf.sample
+
 # policy sample generation
 etc/masakari/policy.yaml.sample
 
+# Files created by doc build
+doc/source/_static/masakari.conf.sample
+doc/source/_static/masakari-custom-recovery-methods.conf.sample
+doc/source/_static/masakari.policy.yaml.sample

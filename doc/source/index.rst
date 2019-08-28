@@ -13,76 +13,84 @@
       License for the specific language governing permissions and limitations
       under the License.
 
-=======================================================
-Welcome to Masakari's developer/operator documentation!
-=======================================================
+====================================
+Welcome to Masakari's documentation!
+====================================
 
-Masakari is an OpenStack project designed to assure high availability of
+Masakari is an OpenStack project designed to ensure high availability of
 instances and compute processes running on hosts.
 
-The developer documentation provided here is continually kept up-to-date
-based on the latest code, and may not represent the state of the project at
-any specific prior release.
-
-This documentation is intended to help explain what the Masakari developers
-think is the current scope of the Masakari project, as well as the
-architectural decisions we have made in order to support that scope. We also
-document our plans for evolving our architecture over time. Finally, we
-documented our current development process and policies.
+This documentation is intended to help explain the current scope of the
+Masakari project and  the architectural decisions made to support this scope.
+The documentation will include the future architectural roadmap and  the
+current development process and policies.
 
 Masakari API References
 =======================
 
-The Masakari API is quite large, we provide a concept guide which
-gives some of the high level details, as well as a more detailed API
-reference.
-
-To generate API reference guide issue the following command while
-the masakari directory is current.
-
-.. code-block:: bash
-
-   $ tox -e api-ref
-
-Developer Guide
-===============
-
-If you are new to Masakari, this should help you start to understand what
-masakari actually does, and why.
-
-.. toctree::
-   :maxdepth: 1
-
-   how_to_get_involved
-   architecture
-   development.environment
+The `Masakari API <https://docs.openstack.org/api-ref/instance-ha/>`_ is
+extensive. We provide a concept guide which gives some of the high level
+details, as well as a more detailed API reference.
 
 Operator Guide
 ==============
 
-This section will help you in configuring masakari mannualy.
+Architecture Overview
+---------------------
+
+* :doc:`Masakari architecture </user/architecture>`: An overview of how all
+  the components in masakari work together.
+
+Installation
+------------
+
+A detailed install guide for masakari.
 
 .. toctree::
-    :maxdepth: 1
+   :maxdepth: 2
 
-    operators_guide
-    cli/index
-    sample_config
-    sample_policy
-    recovery_workflow_sample_config
-    recovery_workflow_custom_task
+   install/index
 
-Indices and tables
-==================
+Reference Material
+------------------
 
-* :ref:`search`
+* :doc:`Configuration Guide <configuration/index>`: Information on configuration files.
+* :doc:`Custom Recovery Workflow Configuration Guide <configuration/recovery_workflow_custom_task>`
+* :doc:`CLI Commands for Masakari </cli/index>`: The complete command
+  reference for Masakari.
+* :doc:`Versioned Notifications </user/notifications>`: This provides the list
+  of existing versioned notifications with sample payloads.
+* :doc:`Masakari team process <user/process>`
+* :doc:`Getting started with Masakari  <user/how_to_get_involved>`:
+  This will help newcomers understand basics of Masakari
+* `Nova Docs <https://docs.openstack.org/nova/latest/index.html>`_: A collection of guides for Nova.
 
-Versioned Notifications
-=======================
 
-This provides the list of existing versioned notifications with sample payloads.
-
+.. # NOTE(shilpasd): This is the section where we hide things that we don't
+   # actually want in the table of contents but sphinx build would fail if
+   # they aren't in the toctree somewhere.
 .. toctree::
-   :maxdepth: 1
+   :hidden:
 
-   notifications
+   cli/index
+   configuration/api-paste.ini.rst
+   configuration/config.rst
+   configuration/index.rst
+   configuration/policy.rst
+   configuration/recovery_config.rst
+   configuration/recovery_workflow_custom_task.rst
+   configuration/recovery_workflow_sample_config.rst
+   configuration/sample_config.rst
+   configuration/sample_policy.rst
+   install/development.environment.rst
+   user/architecture.rst
+   user/how_to_get_involved.rst
+   user/notifications.rst
+   user/process.rst
+
+Search
+======
+
+* :ref:`search`: Search the contents of this document.
+* `OpenStack wide search <https://docs.openstack.org>`_: Search the wider
+  set of OpenStack documentation, including forums.

@@ -16,7 +16,7 @@
 Masakari System Architecture
 ============================
 
-Masakari is comprised of two services api and engine, each performing different
+Masakari comprises of two services api and engine, each performing different
 functions. The user-facing interface is a REST API, while internally Masakari
 communicates via an RPC message passing mechanism.
 
@@ -25,9 +25,9 @@ reads/writes, sending RPC messages to other Masakari engine,
 and generating responses to the REST calls.
 RPC messaging is done via the **oslo.messaging** library,
 an abstraction on top of message queues.
-Masakari engine will run on same host where masakari api is running, and have
-a `manager` that is listening for `RPC` messages.
-The manager also, optionally, has periodic tasks.
+The Masakari engine will run on the same host where the Masakari api is
+running, and has a `manager` that is listening for `RPC` messages.
+The manager too has periodic tasks.
 
 Components
 ----------
@@ -35,10 +35,10 @@ Components
 Below you will find a helpful explanation of the key components
 of a typical Masakari deployment.
 
-.. image:: ./images/architecture.png
+.. image:: /_static/architecture.png
    :width: 100%
 
 * DB: sql database for data storage.
 * API: component that receives HTTP requests, converts commands and
-       communicates with masakari engine via the **oslo.messaging** queue.
+  communicates with masakari engine via the **oslo.messaging** queue.
 * Engine: Executes recovery workflow and communicates with nova via HTTP.

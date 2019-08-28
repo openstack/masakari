@@ -24,8 +24,25 @@ sys.path.insert(0, os.path.abspath('../'))
 extensions = [
     'openstackdocstheme',
     'sphinx.ext.autodoc',
-    'ext.versioned_notifications'
+    'ext.versioned_notifications',
+    'oslo_config.sphinxconfiggen',
+    'oslo_config.sphinxext',
+    'oslo_policy.sphinxpolicygen',
+    'oslo_policy.sphinxext',
 ]
+
+config_generator_config_file = [
+    ('../../etc/masakari/masakari-config-generator.conf',
+     '_static/masakari'),
+    ('../../etc/masakari/masakari-customized-recovery-flow-config-generator.conf',
+     '_static/masakari-custom-recovery-methods'),
+]
+sample_config_basename = '_static/masakari'
+
+policy_generator_config_file = [
+    ('../../etc/masakari/masakari-policy-generator.conf', '_static/masakari'),
+]
+sample_policy_basename = '_static/masakari'
 
 # autodoc generation is a bit aggressive and a nuisance when doing heavy
 # text edit cycles.

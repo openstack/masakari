@@ -14,7 +14,7 @@
 Notifications in Masakari
 ==========================
 
-Similarly to other OpenStack services Masakari emits notifications to the message
+Similar to other OpenStack services Masakari emits notifications to the message
 bus with the Notifier class provided by `oslo.messaging-doc`_. From the notification
 consumer point of view a notification consists of two parts: an envelope with a fixed
 structure defined by oslo.messaging and a payload defined by the service emitting the
@@ -94,7 +94,7 @@ changed. Masakari provides the following contract regarding the versioned
 notification payload:
 
 * the payload version defined by the ``masakari_object.version`` field of the
-  payload will be increased if and only if the syntax or the semantics of the
+  payload will be increased only if the syntax or the semantics of the
   ``masakari_object.data`` field of the payload is changed.
 * a minor version bump indicates a backward compatible change which means that
   only new fields are added to the payload so a well written consumer can still

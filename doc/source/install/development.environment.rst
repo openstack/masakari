@@ -24,10 +24,9 @@ These instructions assume you're already familiar with git.
 Following these instructions will allow you to build the documentation
 and run the masakari unit tests.
 
-.. note:: For how to contribute to Masakari, see
-          `How To Contribute <http://docs.openstack.org/infra/manual/developers.html>`_.
-          Masakari uses the Gerrit code review system,
-          See `Gerrit Workflow <http://docs.openstack.org/infra/manual/developers.html#development-workflow>`_.
+.. note:: For how to contribute to Masakari, refer: http://docs.openstack.org/infra/manual/developers.html
+
+          Masakari uses the Gerrit code review system, refer: http://docs.openstack.org/infra/manual/developers.html#development-workflow
 
 Setup
 =====
@@ -79,39 +78,13 @@ Explicit Install/Clone
 ----------------------
 
 DevStack installs a complete OpenStack environment.  Alternatively,
-you can explicitly install and clone just what you need for Masakari
-development.
-
-Getting the code
-~~~~~~~~~~~~~~~~
-
-Grab the code from git::
-
-    git clone https://opendev.org/openstack/masakari
-    cd masakari
-
-
-Linux Systems
-~~~~~~~~~~~~~
-
-The first step of this process is to install the system (not Python)
-packages that are required. Following are instructions on how to do
-this on Linux.
-
-On Debian-based distributions (e.g., Debian/Mint/Ubuntu)::
-
-  sudo apt-get install python-pip
-  sudo pip install tox
-  tox -e bindep
-  sudo apt-get install <indicated missing package names>
+to clone and install Masakari explicitly refer: :doc:`install_and_configure_ubuntu`
 
 Building the Documentation
 ==========================
 
-Install the prerequisite packages: graphviz
-
-To do a full documentation build, issue the following command while
-the masakari directory is current.
+For a full documentation build, issue the following command from the masakari
+directory
 
 .. code-block:: bash
 
@@ -124,4 +97,4 @@ documentation in that environment.
 Running unit tests
 ==================
 
-See `Running Python Unit Tests <https://docs.openstack.org/project-team-guide/project-setup/python.html#running-python-unit-tests>`_.
+See `Running Python Unit Tests <https://docs.openstack.org/project-team-guide/project-setup/python.html#running-python-unit-tests>`_

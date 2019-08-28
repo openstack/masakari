@@ -13,11 +13,20 @@
       License for the specific language governing permissions and limitations
       under the License.
 
-================
-Masakari Service
-================
+=====================
+Install and configure
+=====================
+
+This section describes how to install and configure Masakari services
+on the compute node.
+
+This section assumes that you already have a :doc:`working OpenStack
+environment <development.environment>` with the following components installed:
+Nova, Glance, Cinder, Neutron and Identity.
+
+The installation and configuration vary by distribution.
 
 .. toctree::
     :maxdepth: 1
 
-    masakari_overview
+    install_and_configure_ubuntu

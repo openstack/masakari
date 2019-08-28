@@ -19,10 +19,8 @@
 Masakari team process
 =====================
 
-Masakari is always evolving its processes, but it's important to explain why we
-have them: so we can all work to ensure that the interactions we need to
-happen do happen. The process exists to make productive communication between
-all members of our community easier.
+Masakari is always evolving its processes to ensure productive communication
+between all members of our community easily.
 
 OpenStack Wide Patterns
 =======================
@@ -50,7 +48,7 @@ But let's put a Masakari specific twist on things...
 Overview
 ~~~~~~~~
 
-.. image:: ./images/Masakari_spec_process.svg
+.. image:: /_static/Masakari_spec_process.svg
    :alt: Flow chart showing the Masakari bug/feature process
 
 Where do you track bugs?
@@ -68,7 +66,7 @@ has already fixed it for you (Launchpad helps you with that, at little,
 when you create the bug report).
 
 When do I need a blueprint vs. a spec?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To understand this question, we need to understand why blueprints and
 specs are useful.
