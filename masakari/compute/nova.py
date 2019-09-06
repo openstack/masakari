@@ -69,8 +69,7 @@ def translate_nova_exception(method):
                 nova_exception.Forbidden) as exc:
             err_msg = encodeutils.exception_to_unicode(exc)
             _reraise(exception.Forbidden(err_msg))
-        except (nova_exception.EndpointNotFound,
-                nova_exception.NotFound) as exc:
+        except (nova_exception.NotFound) as exc:
             err_msg = encodeutils.exception_to_unicode(exc)
             _reraise(exception.NotFound(reason=err_msg))
         except nova_exception.Conflict as exc:
