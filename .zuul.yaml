@@ -1,12 +1,13 @@
 ---
 - job:
-    name: masakari-functional-devstack-multinode
+    name: masakari-functional-devstack
     parent: devstack
     description: |
-      Masakari functional tests job based on devstack (two-node).
-    nodeset: openstack-two-node-focal
+      Masakari functional tests job based on devstack (single-node).
     pre-run: playbooks/devstack/pre.yaml
-    run: playbooks/devstack/run.yaml
+    run:
+      - playbooks/devstack/run-devstack.yaml
+      - playbooks/devstack/run-tox.yaml
     post-run: playbooks/devstack/post.yaml
     required-projects:
       - openstack/masakari
@@ -54,6 +55,29 @@
           # It is enabled by default by the parent job (devstack) definition.
           cinder: false
 
+- job:
+    name: masakari-functional-devstack-multinode
+    parent: masakari-functional-devstack
+    description: |
+      Masakari functional tests job based on devstack (two-node).
+    nodeset: openstack-two-node-focal
+
+- job:
+    name: masakari-functional-devstack-ipv6
+    # NOTE(yoctozepto): The devstack job does not support multinode IPv6 yet.
+    parent: masakari-functional-devstack
+    description: |
+      Masakari functional tests job based on devstack (single-node).
+      IPv6 variant.
+    run:
+      - playbooks/devstack/run-devstack.yaml
+      - playbooks/devstack/run-verify-config-is-ipv6-only.yaml
+      - playbooks/devstack/run-tox.yaml
+    vars:
+      devstack_localrc:
+        SERVICE_IP_VERSION: 6
+        SERVICE_HOST: ""
+
 - project:
     templates:
       - check-requirements
@@ -67,6 +91,7 @@
       jobs:
         - openstack-tox-linters
         - masakari-functional-devstack-multinode
+        - masakari-functional-devstack-ipv6
     gate:
       jobs:
         - openstack-tox-linters

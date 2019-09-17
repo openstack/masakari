@@ -1,0 +1,4 @@
+---
+- hosts: all
+  roles:
+    - devstack-ipv6-only-deployments-verification
