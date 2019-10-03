@@ -13,14 +13,18 @@ Masakari has two main config files:
 * :doc:`Config Reference <config>`: A complete reference of all
   config points in masakari and what they impact.
 
-* :doc:`Sample Config File <sample_config>`: A sample config
-  file with inline documentation.
+.. only:: html
+
+   * :doc:`Sample Config File <sample_config>`: A sample config
+     file with inline documentation.
 
 * :doc:`Recovery Config Reference <recovery_config>`: A complete reference of all
   config points in masakari and what they impact.
 
-* :doc:`Sample recovery workflow File <recovery_workflow_sample_config>`: A
-  complete reference of defining the monitoring processes.
+.. only:: html
+
+   * :doc:`Sample recovery workflow File <recovery_workflow_sample_config>`: A
+     complete reference of defining the monitoring processes.
 
 Policy
 ------

@@ -162,9 +162,9 @@ Install and configure Masakari
 
    #. Generate via tox:
 
-      Go to ‘opt/stack/masakari’ and execute the command below, this will generate
-      ``masakari.conf.sample``, sample configuration file at
-      ``/opt/stack/masakari/etc/masakari/``
+      Go to ``/opt/stack/masakari`` and execute the command below.
+      This will generate ``masakari.conf.sample``, a sample configuration file,
+      at ``/opt/stack/masakari/etc/masakari/``:
 
       .. code-block:: console
 

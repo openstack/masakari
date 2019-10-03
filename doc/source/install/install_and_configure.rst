@@ -20,8 +20,8 @@ Install and configure
 This section describes how to install and configure Masakari services
 on the compute node.
 
-This section assumes that you already have a :doc:`working OpenStack
-environment <development.environment>` with the following components installed:
+This section assumes that you already have a working OpenStack environment with
+the following components installed:
 Nova, Glance, Cinder, Neutron and Identity.
 
 The installation and configuration vary by distribution.
