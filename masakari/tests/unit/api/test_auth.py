@@ -79,6 +79,59 @@ class TestMasakariKeystoneContextMiddleware(test.NoDBTestCase):
         self.assertEqual(req_id, self.context.request_id)
 
 
+class TestNoAuthMiddleware(test.NoDBTestCase):
+
+    def setUp(self):
+        super(TestNoAuthMiddleware, self).setUp()
+
+        @webob.dec.wsgify()
+        def fake_app(req):
+            self.context = req.environ['masakari.context']
+            return webob.Response()
+
+        self.context = None
+        self.middleware = masakari.api.auth.NoAuthMiddleware(fake_app)
+        self.request = webob.Request.blank('/')
+        self.request.headers['X_SERVICE_CATALOG'] = jsonutils.dumps({})
+
+    def test_no_user_or_user_id(self):
+        response = self.request.get_response(self.middleware)
+        self.assertEqual(response.status_int, http.OK)
+
+    def test_user_id_only(self):
+        self.request.headers['X_USER_ID'] = 'testuserid'
+        response = self.request.get_response(self.middleware)
+        self.assertEqual(response.status_int, http.OK)
+        self.assertEqual(self.context.user_id, 'testuserid')
+
+    def test_user_only(self):
+        self.request.headers['X_USER'] = 'testuser'
+        response = self.request.get_response(self.middleware)
+        self.assertEqual(response.status_int, http.OK)
+        self.assertEqual(self.context.user_id, 'testuser')
+
+    def test_user_id_trumps_user(self):
+        self.request.headers['X_USER_ID'] = 'testuserid'
+        self.request.headers['X_USER'] = 'testuser'
+        response = self.request.get_response(self.middleware)
+        self.assertEqual(response.status_int, http.OK)
+        self.assertEqual(self.context.user_id, 'testuserid')
+
+    def test_invalid_service_catalog(self):
+        self.request.headers['X_USER'] = 'testuser'
+        self.request.headers['X_SERVICE_CATALOG'] = "bad json"
+        response = self.request.get_response(self.middleware)
+        self.assertEqual(response.status_int, http.INTERNAL_SERVER_ERROR)
+
+    def test_request_id_extracted_from_env(self):
+        req_id = 'dummy-request-id'
+        self.request.headers['X_PROJECT_ID'] = 'testtenantid'
+        self.request.headers['X_USER_ID'] = 'testuserid'
+        self.request.environ[request_id.ENV_REQUEST_ID] = req_id
+        self.request.get_response(self.middleware)
+        self.assertEqual(req_id, self.context.request_id)
+
+
 class TestKeystoneMiddlewareRoles(test.NoDBTestCase):
 
     def setUp(self):

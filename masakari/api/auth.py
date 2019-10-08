@@ -125,3 +125,45 @@ class MasakariKeystoneContext(wsgi.Middleware):
 
         roles = req.headers.get('X_ROLES', '')
         return [r.strip() for r in roles.split(',')]
+
+
+class NoAuthMiddleware(wsgi.Middleware):
+    """Return a fake token if one isn't specified.
+
+    noauth2 provides admin privs if 'admin' is provided as the user id.
+
+    """
+
+    @webob.dec.wsgify(RequestClass=wsgi.Request)
+    def __call__(self, req):
+        user_id = req.headers.get('X_USER', 'admin')
+        user_id = req.headers.get('X_USER_ID', user_id)
+
+        project_name = req.headers.get('X_TENANT_NAME')
+        user_name = req.headers.get('X_USER_NAME')
+
+        req_id = req.environ.get(request_id.ENV_REQUEST_ID)
+
+        remote_address = req.remote_addr
+        if CONF.use_forwarded_for:
+            remote_address = req.headers.get('X-Forwarded-For', remote_address)
+
+        service_catalog = None
+        if req.headers.get('X_SERVICE_CATALOG') is not None:
+            try:
+                catalog_header = req.headers.get('X_SERVICE_CATALOG')
+                service_catalog = jsonutils.loads(catalog_header)
+            except ValueError:
+                raise webob.exc.HTTPInternalServerError(
+                    _('Invalid service catalog json.'))
+
+        ctx = context.RequestContext(user_id,
+                                     user_name=user_name,
+                                     project_name=project_name,
+                                     remote_address=remote_address,
+                                     service_catalog=service_catalog,
+                                     request_id=req_id,
+                                     is_admin=True)
+
+        req.environ['masakari.context'] = ctx
+        return self.application
