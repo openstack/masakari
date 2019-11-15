@@ -46,6 +46,8 @@
       devstack_services:
         horizon: false
         swift: false
+      devstack_localrc:
+        USE_PYTHON3: true
       zuul_work_dir: src/opendev.org/openstack/masakari
     host-vars:
       controller:
@@ -83,8 +85,7 @@
       - check-requirements
       - openstack-cover-jobs
       - openstack-lower-constraints-jobs
-      - openstack-python-jobs
-      - openstack-python3-train-jobs
+      - openstack-python3-ussuri-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
     check:
