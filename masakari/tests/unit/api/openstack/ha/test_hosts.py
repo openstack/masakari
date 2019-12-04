@@ -30,6 +30,7 @@ from masakari.objects import host as host_obj
 from masakari.objects import segment as segment_obj
 from masakari import test
 from masakari.tests.unit.api.openstack import fakes
+from masakari.tests.unit import fakes as fakes_data
 from masakari.tests import uuidsentinel
 
 
@@ -40,33 +41,6 @@ def _make_host_obj(host_dict):
 def _make_hosts_list(hosts_list):
     return host_obj.Host(objects=[
         _make_host_obj(a) for a in hosts_list])
-
-
-HOST_LIST = [
-    {"name": "host_1", "id": "1", "reserved": False,
-     "on_maintenance": False, "type": "fake",
-     "control_attributes": "fake-control_attributes",
-     "uuid": uuidsentinel.fake_host_1,
-     "failover_segment_id": uuidsentinel.fake_segment1},
-
-    {"name": "host_2", "id": "2", "reserved": False,
-     "on_maintenance": False, "type": "fake",
-     "control_attributes": "fake-control_attributes",
-     "uuid": uuidsentinel.fake_host_2,
-     "failover_segment_id": uuidsentinel.fake_segment1}
-]
-
-HOST_LIST = _make_hosts_list(HOST_LIST)
-
-HOST = {
-    "name": "host_1", "id": "1", "reserved": False,
-    "on_maintenance": False, "type": "fake",
-    "control_attributes": "fake-control_attributes",
-    "uuid": uuidsentinel.fake_host_1,
-    "failover_segment_id": uuidsentinel.fake_segment1
-}
-
-HOST = _make_host_obj(HOST)
 
 
 @ddt.ddt
@@ -85,6 +59,25 @@ class HostTestCase(test.TestCase):
     def setUp(self):
         super(HostTestCase, self).setUp()
         self._set_up()
+        self.failover_segment = fakes_data.create_fake_failover_segment(
+            name="segment1", id=1, description="failover_segment for compute",
+            service_type="COMPUTE", recovery_method="auto",
+            uuid=uuidsentinel.fake_segment
+        )
+        self.host = fakes_data.create_fake_host(
+            name="host_1", id=1, reserved=False, on_maintenance=False,
+            type="fake", control_attributes="fake-control_attributes",
+            uuid=uuidsentinel.fake_host_1,
+            failover_segment=self.failover_segment
+        )
+        self.host_2 = fakes_data.create_fake_host(
+            name="host_2", id=2, reserved=False, on_maintenance=False,
+            type="fake", control_attributes="fake-control_attributes",
+            uuid=uuidsentinel.fake_host_2,
+            failover_segment=self.failover_segment
+        )
+        self.host_list = [self.host, self.host_2]
+        self.host_list_obj = _make_hosts_list(self.host_list)
 
     @property
     def app(self):
@@ -98,18 +91,20 @@ class HostTestCase(test.TestCase):
     @mock.patch.object(ha_api.HostAPI, 'get_all')
     def test_index(self, mock_get_all, mock_segment):
         mock_segment.return_value = mock.Mock()
-        mock_get_all.return_value = HOST_LIST
+        mock_get_all.return_value = self.host_list
 
         result = self.controller.index(self.req, uuidsentinel.fake_segment1)
         result = result['hosts']
-        self._assert_host_data(HOST_LIST, _make_hosts_list(result))
+        self._assert_host_data(self.host_list_obj, _make_hosts_list(result))
 
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     @mock.patch.object(ha_api.HostAPI, 'get_all')
     def test_index_valid_on_maintenance(self, mock_get_all, mock_segment):
-        host_list = [{"name": "host_1", "id": "1", "on_maintenance": True},
-                     {"name": "host_2", "id": "2", "on_maintenance": True}]
-        mock_get_all.return_value = host_list
+        mock_segment.return_value = mock.Mock()
+
+        self.host_list[0]['on_maintenance'] = True
+        self.host_list[1]['on_maintenance'] = True
+        mock_get_all.return_value = self.host_list
         for parameter in ['1', 't', 'true', 'on', 'y', 'yes']:
             req = fakes.HTTPRequest.blank(
                 '/v1/segments/%s/hosts?on_maintenance=''%s' % (
@@ -117,13 +112,12 @@ class HostTestCase(test.TestCase):
                 use_admin_context=True)
             result = self.controller.index(req, uuidsentinel.fake_segment1)
             self.assertIn('hosts', result)
-            self.assertEqual(len(host_list), len(result['hosts']))
             for host in result['hosts']:
                 self.assertTrue(host['on_maintenance'])
 
-        host_list = [{"name": "host_1", "id": "1", "on_maintenance": False},
-                     {"name": "host_2", "id": "2", "on_maintenance": False}]
-        mock_get_all.return_value = host_list
+        self.host_list[0]['on_maintenance'] = False
+        self.host_list[1]['on_maintenance'] = False
+        mock_get_all.return_value = self.host_list
         for parameter in ['0', 'f', 'false', 'off', 'n', 'no']:
             req = fakes.HTTPRequest.blank(
                 '/v1/segments/%s/hosts?on_maintenance=''%s' % (
@@ -131,7 +125,6 @@ class HostTestCase(test.TestCase):
                 use_admin_context=True)
             result = self.controller.index(req, uuidsentinel.fake_segment1)
             self.assertIn('hosts', result)
-            self.assertEqual(len(host_list), len(result['hosts']))
             for host in result['hosts']:
                 self.assertFalse(host['on_maintenance'])
 
@@ -148,9 +141,9 @@ class HostTestCase(test.TestCase):
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     @mock.patch.object(ha_api.HostAPI, 'get_all')
     def test_index_valid_reserved(self, mock_get_all, mock_segment):
-        host_list = [{"name": "host_1", "id": "1", "reserved": True},
-                     {"name": "host_2", "id": "2", "reserved": True}]
-        mock_get_all.return_value = host_list
+        self.host_list[0]['reserved'] = True
+        self.host_list[1]['reserved'] = True
+        mock_get_all.return_value = self.host_list
         for parameter in ['1', 't', 'true', 'on', 'y', 'yes']:
             req = fakes.HTTPRequest.blank(
                 '/v1/segments/%s/hosts?reserved=''%s' % (
@@ -158,13 +151,12 @@ class HostTestCase(test.TestCase):
                 ), use_admin_context=True)
             result = self.controller.index(req, uuidsentinel.fake_segment1)
             self.assertIn('hosts', result)
-            self.assertEqual(len(host_list), len(result['hosts']))
             for host in result['hosts']:
                 self.assertTrue(host['reserved'])
 
-        host_list = [{"name": "host_1", "id": "1", "reserved": False},
-                     {"name": "host_2", "id": "2", "reserved": False}]
-        mock_get_all.return_value = host_list
+        self.host_list[0]['reserved'] = False
+        self.host_list[1]['reserved'] = False
+        mock_get_all.return_value = self.host_list
         for parameter in ['0', 'f', 'false', 'off', 'n', 'no']:
             req = fakes.HTTPRequest.blank(
                 '/v1/segments/%s/hosts?reserved=''%s' % (
@@ -172,7 +164,6 @@ class HostTestCase(test.TestCase):
                 use_admin_context=True)
             result = self.controller.index(req, uuidsentinel.fake_segment1)
             self.assertIn('hosts', result)
-            self.assertEqual(len(host_list), len(result['hosts']))
             for host in result['hosts']:
                 self.assertFalse(host['reserved'])
 
@@ -232,7 +223,7 @@ class HostTestCase(test.TestCase):
 
     @mock.patch.object(ha_api.HostAPI, 'create_host')
     def test_create(self, mock_create):
-        mock_create.return_value = HOST
+        mock_create.return_value = self.host
         body = {
             "host": {
                 "name": "host-1", "type": "fake",
@@ -244,7 +235,7 @@ class HostTestCase(test.TestCase):
         result = self.controller.create(self.req,
                                         uuidsentinel.fake_segment1, body=body)
         result = result['host']
-        self._assert_host_data(HOST, _make_host_obj(result))
+        self._assert_host_data(self.host, _make_host_obj(result))
 
     @mock.patch('masakari.rpc.get_client')
     @mock.patch.object(ha_api.HostAPI, 'create_host')
@@ -354,12 +345,12 @@ class HostTestCase(test.TestCase):
     @mock.patch.object(ha_api.HostAPI, 'get_host')
     def test_show(self, mock_get_host):
 
-        mock_get_host.return_value = HOST
+        mock_get_host.return_value = self.host
 
         result = self.controller.show(self.req, uuidsentinel.fake_segment1,
                                       uuidsentinel.fake_host_1)
         result = result['host']
-        self._assert_host_data(HOST, _make_host_obj(result))
+        self._assert_host_data(self.host, _make_host_obj(result))
 
     @mock.patch.object(ha_api.HostAPI, 'get_host')
     def test_show_with_non_existing_id(self, mock_get_host):
@@ -368,6 +359,16 @@ class HostTestCase(test.TestCase):
         self.assertRaises(exc.HTTPNotFound,
                           self.controller.show, self.req,
                           uuidsentinel.fake_segment1, "2")
+
+    @mock.patch.object(ha_api.HostAPI, 'get_host')
+    def test_show_non_assigned_failover_segment(self, mock_get_host):
+
+        mock_get_host.side_effect = exception.HostNotFoundUnderFailoverSegment(
+            host_uuid=uuidsentinel.fake_host_3,
+            segment_uuid=uuidsentinel.fake_segment1)
+        self.assertRaises(exc.HTTPNotFound, self.controller.show,
+                          self.req, uuidsentinel.fake_segment1,
+                          uuidsentinel.fake_host_3)
 
     @ddt.data(
         {"body": {
@@ -382,14 +383,14 @@ class HostTestCase(test.TestCase):
     @ddt.unpack
     @mock.patch.object(ha_api.HostAPI, 'update_host')
     def test_update(self, mock_update_host, body):
-        mock_update_host.return_value = HOST
+        mock_update_host.return_value = self.host
 
         result = self.controller.update(self.req, uuidsentinel.fake_segment1,
                                         uuidsentinel.fake_host_1,
                                         body=body)
 
         result = result['host']
-        self._assert_host_data(HOST, _make_host_obj(result))
+        self._assert_host_data(self.host, _make_host_obj(result))
 
     @ddt.data(
         # no updates
@@ -434,6 +435,17 @@ class HostTestCase(test.TestCase):
         self.assertRaises(exc.HTTPConflict, self.controller.update,
                 self.req, uuidsentinel.fake_segment1,
                           uuidsentinel.fake_host_1, body=test_data)
+
+    @mock.patch.object(ha_api.HostAPI, 'update_host')
+    def test_update_non_assigned_failover_segment(self, mock_update_host):
+        test_data = {"host": {"name": "host-1"}}
+        mock_update_host.side_effect = \
+            exception.HostNotFoundUnderFailoverSegment(
+                host_uuid=uuidsentinel.fake_host_3,
+                segment_uuid=uuidsentinel.fake_segment1)
+        self.assertRaises(exc.HTTPNotFound, self.controller.update,
+                          self.req, uuidsentinel.fake_segment1,
+                          uuidsentinel.fake_host_3, body=test_data)
 
     @mock.patch.object(ha_api.HostAPI, 'delete_host')
     def test_delete_host(self, mock_delete):

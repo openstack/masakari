@@ -332,6 +332,7 @@ class HostsTestCase(test.TestCase, ModelsObjectComparatorMixin):
         # create one more reserved_host which is not on maintenance
         temp_host = self._get_fake_values()
         temp_host['on_maintenance'] = False
+        temp_host['failover_segment_id'] = uuidsentinel.failover_segment_id
         self._create_host(temp_host)
 
         ignored_keys = ['deleted', 'created_at', 'updated_at', 'deleted_at',

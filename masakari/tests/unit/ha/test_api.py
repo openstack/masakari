@@ -298,8 +298,7 @@ class HostAPITestCase(test.NoDBTestCase):
         self.host = fakes_data.create_fake_host(
             name="host_1", id=1, reserved=False, on_maintenance=False,
             type="fake", control_attributes="fake-control_attributes",
-            uuid=uuidsentinel.fake_host_1,
-            failover_segment_id=uuidsentinel.fake_segment1
+            uuid=uuidsentinel.fake_host_1
         )
         self.exception_in_use = exception.HostInUse(
             uuid=self.host.uuid)
@@ -315,8 +314,7 @@ class HostAPITestCase(test.NoDBTestCase):
         fake_host = fakes_data.create_fake_host(
             name="host_2", id=2, reserved=False, on_maintenance=False,
             type="fake", control_attributes="fake-control_attributes",
-            uuid=uuidsentinel.fake_host_2,
-            failover_segment_id=uuidsentinel.fake_segment1
+            uuid=uuidsentinel.fake_host_2
         )
         fake_host_list = [self.host, fake_host]
         mock_get_all.return_value = fake_host_list
@@ -461,7 +459,7 @@ class HostAPITestCase(test.NoDBTestCase):
             'control_attributes': 'fake-control_attributes',
             'on_maintenance': False,
             'uuid': uuidsentinel.fake_uuid,
-            'failover_segment_id': uuidsentinel.fake_segment,
+            'failover_segment_id': self.failover_segment.uuid,
             'type': 'fake-type'
         }
         mock_host_create.create = mock.Mock()
@@ -505,11 +503,9 @@ class HostAPITestCase(test.NoDBTestCase):
     @mock.patch.object(nova_obj.API, 'hypervisor_search')
     @mock.patch.object(host_obj.Host, 'save')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
-    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
-    def test_update(self, mock_segment_get, mock_get,
-                    mock_update, mock_hypervisor_search, mock_host_obj,
-                    mock_is_under_recovery):
-        mock_segment_get.return_value = self.failover_segment
+    def test_update(
+            self, mock_get, mock_update, mock_hypervisor_search,
+            mock_host_obj, mock_is_under_recovery):
         host_data = {"name": "host_1"}
         mock_get.return_value = self.host
         mock_host_obj.return_value = self.host
@@ -525,11 +521,8 @@ class HostAPITestCase(test.NoDBTestCase):
                        'is_under_recovery')
     @mock.patch.object(nova_obj.API, 'hypervisor_search')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
-    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
-    def test_update_with_non_existing_host(self, mock_segment_get, mock_get,
-                                           mock_hypervisor_search,
-                                           mock_is_under_recovery):
-        mock_segment_get.return_value = self.failover_segment
+    def test_update_with_non_existing_host(
+            self, mock_get, mock_hypervisor_search, mock_is_under_recovery):
         host_data = {"name": "host-2"}
         mock_get.return_value = self.host
         mock_hypervisor_search.side_effect = (
@@ -547,12 +540,9 @@ class HostAPITestCase(test.NoDBTestCase):
     @mock.patch.object(host_obj.Host, 'save')
     @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
-    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
-    def test_host_update_exception(self, mock_segment_get, mock_get,
-                                   mock_notify_about_host_api,
-                                   mock_host_obj, mock_hypervisor_search,
-                                   mock_is_under_recovery):
-        mock_segment_get.return_value = self.failover_segment
+    def test_host_update_exception(
+            self, mock_get, mock_notify_about_host_api, mock_host_obj,
+            mock_hypervisor_search, mock_is_under_recovery):
         host_data = {"name": "host_1"}
         mock_get.return_value = self.host
         e = exception.InvalidInput(reason="TEST")
@@ -579,10 +569,9 @@ class HostAPITestCase(test.NoDBTestCase):
                        'is_under_recovery')
     @mock.patch.object(host_obj, 'Host')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
-    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
-    def test_update_host_under_recovery(self, mock_segment_get, mock_get,
-        mock_host_obj, mock_is_under_recovery, mock_HostInUse):
-        mock_segment_get.return_value = self.failover_segment
+    def test_update_host_under_recovery(
+            self, mock_get, mock_host_obj, mock_is_under_recovery,
+            mock_HostInUse):
         host_data = {"name": "host_1"}
         mock_get.return_value = self.host
         mock_host_obj.return_value = self.host
@@ -596,13 +585,14 @@ class HostAPITestCase(test.NoDBTestCase):
     @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(segment_obj.FailoverSegment,
                        'is_under_recovery')
+    @mock.patch('masakari.objects.base.MasakariObject'
+                '.masakari_obj_get_changes')
     @mock.patch.object(host_obj.Host, '_from_db_object')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
     @mock.patch('masakari.db.host_update')
-    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_update_convert_boolean_attributes(
-        self, mock_segment, mock_host_update, mock_host_object,
-            mock__from_db_object, mock_is_under_recovery,
+            self, mock_host_update, mock_host_object, mock__from_db_object,
+            mock_masakari_obj_get_changes, mock_is_under_recovery,
             mock_notify_about_host_api):
         host_data = {
             "reserved": 'Off',
@@ -612,22 +602,23 @@ class HostAPITestCase(test.NoDBTestCase):
         expected_data = {
             'name': 'host_1', 'uuid': uuidsentinel.fake_host_1,
             'on_maintenance': True,
-            'failover_segment_id': uuidsentinel.fake_segment1,
+            'failover_segment': self.failover_segment,
             'reserved': False, 'type': 'fake',
             'control_attributes': 'fake-control_attributes'
         }
 
-        mock_segment.return_value = self.failover_segment
+        mock_masakari_obj_get_changes.return_value = host_data
         mock_host_object.return_value = self.host
         self.host._context = self.context
         mock_is_under_recovery.return_value = False
         result = self.host_api.update_host(self.context,
-                                           uuidsentinel.fake_segment1,
+                                           uuidsentinel.fake_segment,
                                            uuidsentinel.fake_host_1,
                                            host_data)
         mock_host_update.assert_called_with(self.context,
                                             uuidsentinel.fake_host_1,
-                                            expected_data)
+                                            host_data)
+        mock_host_update.return_value = expected_data
         action = fields.EventNotificationAction.HOST_UPDATE
         phase_start = fields.EventNotificationPhase.START
         phase_end = fields.EventNotificationPhase.END
@@ -642,10 +633,8 @@ class HostAPITestCase(test.NoDBTestCase):
                        'is_under_recovery')
     @mock.patch.object(host_obj.Host, 'destroy')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
-    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
-    def test_delete_host(self, mock_segment_get, mock_get,
-                         mock_segment_destroy, mock_is_under_recovery):
-        mock_segment_get.return_value = self.failover_segment
+    def test_delete_host(
+            self, mock_get, mock_segment_destroy, mock_is_under_recovery):
         mock_get.return_value = self.host
         mock_is_under_recovery.return_value = False
 
@@ -659,11 +648,9 @@ class HostAPITestCase(test.NoDBTestCase):
     @mock.patch.object(host_obj.Host, 'destroy')
     @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
-    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
-    def test_host_delete_exception(self, mock_segment_get, mock_get,
-                                   mock_notify_about_host_api,
-                                   mock_host_destroy, mock_is_under_recovery):
-        mock_segment_get.return_value = self.failover_segment
+    def test_host_delete_exception(
+            self, mock_get, mock_notify_about_host_api, mock_host_destroy,
+            mock_is_under_recovery):
         mock_get.return_value = self.host
         mock_is_under_recovery.return_value = False
         e = exception.InvalidInput(reason="TEST")
@@ -689,10 +676,9 @@ class HostAPITestCase(test.NoDBTestCase):
                        'is_under_recovery')
     @mock.patch.object(host_obj, 'Host')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
-    @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
-    def test_delete_host_under_recovery(self, mock_segment_get, mock_get,
-        mock_host_obj, mock_is_under_recovery, mock_HostInUse):
-        mock_segment_get.return_value = self.failover_segment
+    def test_delete_host_under_recovery(
+            self, mock_get, mock_host_obj, mock_is_under_recovery,
+            mock_HostInUse):
         mock_get.return_value = self.host
         mock_is_under_recovery.return_value = True
         mock_HostInUse.return_value = self.exception_in_use
@@ -712,11 +698,15 @@ class NotificationAPITestCase(test.NoDBTestCase):
         self.req = fakes.HTTPRequest.blank('/v1/notifications',
                                            use_admin_context=True)
         self.context = self.req.environ['masakari.context']
+        self.failover_segment = fakes_data.create_fake_failover_segment(
+            name="segment1", id=1, description="something",
+            service_type="COMPUTE", recovery_method="auto",
+            uuid=uuidsentinel.fake_segment
+        )
         self.host = fakes_data.create_fake_host(
             name="host_1", id=1, reserved=False, on_maintenance=False,
             type="fake", control_attributes="fake-control_attributes",
-            uuid=uuidsentinel.fake_host_1,
-            failover_segment_id=uuidsentinel.fake_segment1
+            uuid=uuidsentinel.fake_host_1
         )
         self.notification = fakes_data.create_fake_notification(
             type="VM", id=1, payload={

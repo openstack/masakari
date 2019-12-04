@@ -155,12 +155,13 @@ class HostAPI(object):
 
     def get_host(self, context, segment_uuid, host_uuid):
         """Get a host by id"""
-        objects.FailoverSegment.get_by_uuid(context, segment_uuid)
+
         if uuidutils.is_uuid_like(host_uuid):
             LOG.debug("Fetching host by "
                       "UUID", host_uuid=host_uuid)
 
-            host = objects.Host.get_by_uuid(context, host_uuid)
+            host = objects.Host.get_by_uuid(
+                context, host_uuid, segment_uuid=segment_uuid)
         else:
             LOG.debug("Failed to fetch host by uuid %s", host_uuid)
             raise exception.HostNotFound(id=host_uuid)
@@ -189,7 +190,7 @@ class HostAPI(object):
 
         # Populate host object for create
         host.name = host_data.get('name')
-        host.failover_segment_id = segment.uuid
+        host.failover_segment = segment
         host.type = host_data.get('type')
         host.control_attributes = host_data.get('control_attributes')
         host.on_maintenance = strutils.bool_from_string(
@@ -213,11 +214,11 @@ class HostAPI(object):
 
     def update_host(self, context, segment_uuid, id, host_data):
         """Update the host"""
-        segment = objects.FailoverSegment.get_by_uuid(context, segment_uuid)
 
-        host = objects.Host.get_by_uuid(context, id)
+        host = objects.Host.get_by_uuid(
+            context, id, segment_uuid=segment_uuid)
 
-        if is_failover_segment_under_recovery(segment):
+        if is_failover_segment_under_recovery(host.failover_segment):
             msg = _("Host %s can't be updated as "
                     "it is in-use to process notifications.") % host.uuid
             LOG.error(msg)
@@ -248,9 +249,8 @@ class HostAPI(object):
     def delete_host(self, context, segment_uuid, id):
         """Delete the host"""
 
-        segment = objects.FailoverSegment.get_by_uuid(context, segment_uuid)
         host = objects.Host.get_by_uuid(context, id, segment_uuid=segment_uuid)
-        if is_failover_segment_under_recovery(segment):
+        if is_failover_segment_under_recovery(host.failover_segment):
             msg = _("Host %s can't be deleted as "
                     "it is in-use to process notifications.") % host.uuid
             LOG.error(msg)

@@ -23,7 +23,7 @@ from masakari import db
 from masakari import exception
 from masakari.objects import fields
 from masakari.objects import host
-from masakari.objects import segment
+from masakari.tests.unit import fakes as fakes_data
 from masakari.tests.unit.objects import test_objects
 from masakari.tests import uuidsentinel
 
@@ -56,8 +56,7 @@ def _fake_host(**kwargs):
         'on_maintenance': False,
         'control_attributes': 'fake_control_attributes',
         'type': 'SSH',
-        'failover_segment': fake_segment_dict,
-        'failover_segment_id': uuidsentinel.fake_segment,
+        'failover_segment': fake_segment_dict
         }
     fake_host.update(kwargs)
     return fake_host
@@ -107,9 +106,15 @@ class TestHostObject(test_objects._LocalTest):
 
     def _host_create_attributes(self):
 
+        failover_segment = fakes_data.create_fake_failover_segment(
+            name="fake_segment", id=123, description="fakefake",
+            service_type="COMPUTE", recovery_method="auto",
+            uuid=uuidsentinel.fake_segment
+        )
+
         host_obj = host.Host(context=self.context)
         host_obj.name = 'foo-host'
-        host_obj.failover_segment_id = uuidsentinel.fake_segment
+        host_obj.failover_segment = failover_segment
         host_obj.type = 'fake-type'
         host_obj.reserved = False
         host_obj.on_maintenance = False
@@ -225,24 +230,30 @@ class TestHostObject(test_objects._LocalTest):
                           self.context, limit=5, marker=host_name)
 
     @mock.patch.object(api_utils, 'notify_about_host_api')
+    @mock.patch('masakari.objects.base.MasakariObject'
+                '.masakari_obj_get_changes')
     @mock.patch.object(db, 'host_update')
-    def test_save(self, mock_host_update, mock_notify_about_host_api):
+    def test_save(
+            self, mock_host_update, mock_masakari_obj_get_changes,
+            mock_notify_about_host_api):
 
         mock_host_update.return_value = fake_host
 
+        host_data = {
+            'name': 'foo-host',
+            "uuid": uuidsentinel.fake_host,
+            'id': 123
+        }
+
+        mock_masakari_obj_get_changes.return_value = host_data
         host_obj = self._host_create_attributes()
         host_obj.id = 123
         host_obj.save()
         self._compare_segment_and_host_data(host_obj)
         (mock_host_update.
          assert_called_once_with(self.context, uuidsentinel.fake_host,
-                                 {'control_attributes': u'fake_attributes',
-                                  'type': u'fake-type',
-                                  'failover_segment_id':
-                                      uuidsentinel.fake_segment,
-                                  'name': u'foo-host',
-                                  'uuid': uuidsentinel.fake_host,
-                                  'reserved': False, 'on_maintenance': False
+                                 {'name': 'foo-host',
+                                  'uuid': uuidsentinel.fake_host
                                   }))
         action = fields.EventNotificationAction.HOST_UPDATE
         phase_start = fields.EventNotificationPhase.START
@@ -260,8 +271,6 @@ class TestHostObject(test_objects._LocalTest):
         mock_host_update.return_value = fake_host
 
         host_obj = self._host_create_attributes()
-        host_obj.failover_segment = (segment.
-                                     FailoverSegment(context=self.context))
         host_obj.id = 123
         self.assertRaises(exception.ObjectActionError, host_obj.save)
 
@@ -304,3 +313,23 @@ class TestHostObject(test_objects._LocalTest):
             mock.call(self.context, host_object, action=action,
                       phase=phase_start)]
         mock_notify_about_host_api.assert_has_calls(notify_calls)
+
+    def _host_create_attributes2(self):
+
+        failover_segment = fakes_data.create_fake_failover_segment(
+            name="fake_segment", id=123, description="fakefake",
+            service_type="COMPUTE", recovery_method="auto",
+            uuid=uuidsentinel.fake_segment
+        )
+
+        host_obj = self._host_create_attributes()
+        host_obj.failover_segment_id = failover_segment.uuid
+
+        return host_obj
+
+    def test_obj_make_compatible(self):
+        host_obj = self._host_create_attributes2()
+        primitive = host_obj.obj_to_primitive()
+        self.assertIn('failover_segment', primitive['masakari_object.data'])
+        self.assertNotIn(
+            'failover_segment_id', primitive['masakari_object.data'])

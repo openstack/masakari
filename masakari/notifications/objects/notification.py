@@ -66,7 +66,6 @@ class HostApiPayloadBase(base.NotificationPayloadBase):
         'id': ('host', 'id'),
         'uuid': ('host', 'uuid'),
         'name': ('host', 'name'),
-        'failover_segment_id': ('host', 'failover_segment_id'),
         'failover_segment': ('host', 'failover_segment'),
         'type': ('host', 'type'),
         'reserved': ('host', 'reserved'),
@@ -74,12 +73,12 @@ class HostApiPayloadBase(base.NotificationPayloadBase):
         'on_maintenance': ('host', 'on_maintenance'),
     }
     # Version 1.0: Initial version
-    VERSION = '1.0'
+    # Version 1.1: Removed 'failover_segment_id' parameter
+    VERSION = '1.1'
     fields = {
         'id': fields.IntegerField(),
         'uuid': fields.UUIDField(),
         'name': fields.StringField(),
-        'failover_segment_id': fields.UUIDField(),
         'failover_segment': fields.ObjectField('FailoverSegment'),
         'type': fields.StringField(),
         'reserved': fields.BooleanField(),

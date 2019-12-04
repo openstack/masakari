@@ -142,7 +142,7 @@ class TestHosts(base.BaseFunctionalTest):
                                  reserved='True')
 
         result = self.admin_conn.ha.get_host(host.uuid,
-                                       host.failover_segment_id)
+                                       self.segment.uuid)
         # Confirm host update
         self.assertEqual(True, result.on_maintenance)
         self.assertEqual(True, result.reserved)
@@ -165,5 +165,5 @@ class TestHosts(base.BaseFunctionalTest):
                 name=self.hypervisors[1]['name'])
 
         result = self.admin_conn.ha.get_host(host.uuid,
-                                       host.failover_segment_id)
+                                       self.segment.uuid)
         self.assertEqual(result.name, updated_host.name)
