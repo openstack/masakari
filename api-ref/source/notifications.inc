@@ -91,7 +91,7 @@ Create Notification
 
 .. rest_method:: POST /notifications
 
-Creates a notiification.
+Creates a notification.
 
 Response Codes
 --------------

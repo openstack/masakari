@@ -46,7 +46,7 @@ rules = [
     policy.DocumentedRuleDefault(
         name=NOTIFICATIONS % 'create',
         check_str=base.RULE_ADMIN_API,
-        description="Creates a notiification.",
+        description="Creates a notification.",
         operations=[
             {
                 'method': 'POST',
