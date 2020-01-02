@@ -34,6 +34,7 @@ fake_segment_dict = {
     'recovery_method': 'auto',
     'description': 'fake',
     'service_type': 'CINDER',
+    'enabled': True,
     'id': 123,
     'uuid': uuidsentinel.fake_segment,
     'created_at': NOW,

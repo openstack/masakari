@@ -93,6 +93,8 @@ class FailoverSegmentAPI(object):
         segment.description = segment_data.get('description')
         segment.recovery_method = segment_data.get('recovery_method')
         segment.service_type = segment_data.get('service_type')
+        segment.enabled = strutils.bool_from_string(
+            segment_data.get('enabled', True), strict=True)
 
         try:
             segment.create()

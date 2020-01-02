@@ -64,6 +64,12 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             return exc
         # else the workflow executed successfully
 
+    def _get_fake_host(self, segment_enabled):
+        segment = fakes.create_fake_failover_segment(enabled=segment_enabled)
+        host = fakes.create_fake_host()
+        host.failover_segment = segment
+        return host
+
     def _get_process_type_notification(self):
         return fakes.create_fake_notification(
             type="PROCESS", id=1, payload={
@@ -84,6 +90,20 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             status="new",
             notification_uuid=uuidsentinel.fake_notification)
 
+    @mock.patch.object(host_obj.Host, "get_by_uuid")
+    @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(engine_utils, 'notify_about_notification_update')
+    def test_process_notification_with_segment_disabled(
+            self, mock_notify_about_notification_update,
+            mock_notification_save, mock_host_get, mock_notification_get):
+        notification = _get_vm_type_notification()
+        mock_notification_get.return_value = notification
+        mock_host_get.return_value = self._get_fake_host(
+            segment_enabled=False)
+        self.assertRaises(exception.FailoverSegmentDisabled,
+                          self.engine.process_notification,
+                          self.context, notification)
+
     @mock.patch("masakari.engine.drivers.taskflow."
                 "TaskFlowDriver.execute_instance_failure")
     @mock.patch.object(notification_obj.Notification, "save")
@@ -94,8 +114,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_instance_failure.side_effect = self._fake_notification_workflow()
         notification = _get_vm_type_notification()
         mock_notification_get.return_value = notification
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("finished", notification.status)
         mock_instance_failure.assert_called_once_with(
             self.context, notification.payload.get('instance_uuid'),
@@ -123,8 +143,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             exc=exception.InstanceRecoveryFailureException)
         notification = _get_vm_type_notification()
         mock_notification_get.return_value = notification
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("error", notification.status)
         mock_instance_failure.assert_called_once_with(
             self.context, notification.payload.get('instance_uuid'),
@@ -156,8 +176,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             notification_uuid=uuidsentinel.fake_notification)
 
         mock_notification_get.return_value = notification
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("ignored", notification.status)
 
     @mock.patch("masakari.engine.drivers.taskflow."
@@ -173,8 +193,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_notification_get.return_value = notification
         mock_instance_failure.side_effect = self._fake_notification_workflow(
             exc=exception.SkipInstanceRecoveryException)
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("finished", notification.status)
         mock_instance_failure.assert_called_once_with(
             self.context, notification.payload.get('instance_uuid'),
@@ -204,8 +224,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_process_failure.side_effect = self._fake_notification_workflow()
         fake_host = fakes.create_fake_host()
         mock_host_obj.return_value = fake_host
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("finished", notification.status)
         mock_host_save.assert_called_once()
         mock_process_failure.assert_called_once_with(
@@ -240,8 +260,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_host_obj.return_value = fake_host
         mock_process_failure.side_effect = self._fake_notification_workflow(
             exc=exception.SkipProcessRecoveryException)
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("finished", notification.status)
         mock_host_save.assert_called_once()
         action = fields.EventNotificationAction.NOTIFICATION_PROCESS
@@ -272,8 +292,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_host_obj.return_value = fake_host
         mock_process_failure.side_effect = self._fake_notification_workflow(
             exc=exception.ProcessRecoveryFailureException)
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("error", notification.status)
         mock_host_save.assert_called_once()
         e = exception.ProcessRecoveryFailureException('Failed to execute '
@@ -304,8 +324,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         notification.payload['event'] = 'started'
         fake_host = fakes.create_fake_host()
         mock_host_obj.return_value = fake_host
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("finished", notification.status)
         self.assertFalse(mock_process_failure.called)
         action = fields.EventNotificationAction.NOTIFICATION_PROCESS
@@ -328,8 +348,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         notification = self._get_process_type_notification()
         mock_notification_get.return_value = notification
         notification.payload['event'] = 'other'
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("ignored", notification.status)
         self.assertFalse(mock_process_failure.called)
         action = fields.EventNotificationAction.NOTIFICATION_PROCESS
@@ -362,8 +382,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_get_all.return_value = None
         fake_host.failover_segment = fakes.create_fake_failover_segment()
         mock_host_obj.return_value = fake_host
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
 
         update_data_by_host_failure = {
             'on_maintenance': True,
@@ -407,8 +427,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         notification = self._get_compute_host_type_notification()
         mock_notification_get.return_value = notification
 
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
 
         update_data_by_host_failure = {
             'on_maintenance': True,
@@ -456,8 +476,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_notification_get.return_value = notification
         mock_host_failure.side_effect = self._fake_notification_workflow()
 
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
 
         update_data_by_host_failure = {
             'on_maintenance': True,
@@ -510,8 +530,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         reserved_host_list = [host.name for host in
                               reserved_host_object_list]
 
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
 
         update_data_by_host_failure = {
             'on_maintenance': True,
@@ -559,8 +579,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_host_obj.return_value = fake_host
         mock_host_failure.side_effect = self._fake_notification_workflow(
             exc=exception.HostRecoveryFailureException)
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
 
         update_data_by_host_failure = {
             'on_maintenance': True,
@@ -606,8 +626,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         # mock_host_failure.side_effect = str(e)
         mock_host_failure.side_effect = self._fake_notification_workflow(
             exc=exception.SkipHostRecoveryException)
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
 
         update_data_by_host_failure = {
             'on_maintenance': True,
@@ -635,8 +655,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         notification = self._get_compute_host_type_notification()
         mock_notification_get.return_value = notification
         notification.payload['event'] = 'started'
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("finished", notification.status)
         self.assertFalse(mock_host_failure.called)
         action = fields.EventNotificationAction.NOTIFICATION_PROCESS
@@ -659,8 +679,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         notification = self._get_compute_host_type_notification()
         mock_notification_get.return_value = notification
         notification.payload['event'] = 'other'
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("ignored", notification.status)
         self.assertFalse(mock_host_failure.called)
         action = fields.EventNotificationAction.NOTIFICATION_PROCESS
@@ -689,8 +709,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             id=1, uuid=uuidsentinel.fake_ins, host='fake_host',
             vm_state='paused', ha_enabled=True)
 
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("ignored", notification.status)
         self.assertFalse(mock_stop_server.called)
         msg = ("Recovery of instance '%(instance_uuid)s' is ignored as it is "
@@ -725,8 +745,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             id=1, uuid=uuidsentinel.fake_ins, host='fake_host',
             vm_state='rescued', ha_enabled=True)
 
-        self.engine.process_notification(self.context,
-                                         notification=notification)
+        self.engine._process_notification(self.context,
+                                          notification=notification)
         self.assertEqual("ignored", notification.status)
         self.assertFalse(mock_stop_server.called)
         msg = ("Recovery of instance '%(instance_uuid)s' is ignored as it is "
@@ -752,8 +772,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             status="failed")
 
         with mock.patch("masakari.engine.manager.LOG.warning") as mock_log:
-            self.engine.process_notification(self.context,
-                                             notification=noti_new)
+            self.engine._process_notification(self.context,
+                                              notification=noti_new)
             mock_log.assert_called_once()
             args = mock_log.call_args[0]
             expected_log = ("Processing of notification is skipped to avoid "
@@ -817,8 +837,8 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_notification_save.side_effect = [notification, notification_new]
 
         with mock.patch("masakari.engine.manager.LOG.warning") as mock_log:
-            self.engine.process_notification(self.context,
-                                             notification=notification)
+            self.engine._process_notification(self.context,
+                                              notification=notification)
             mock_log.assert_called_once()
             args = mock_log.call_args[0]
             expected_log = ("Notification '%(uuid)s' ignored as host_status"

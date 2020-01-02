@@ -47,10 +47,9 @@ class SegmentsController(wsgi.Controller):
             sort_keys, sort_dirs = common.get_sort_params(req.params)
 
             filters = {}
-            if 'recovery_method' in req.params:
-                filters['recovery_method'] = req.params['recovery_method']
-            if 'service_type' in req.params:
-                filters['service_type'] = req.params['service_type']
+            for field in ['recovery_method', 'service_type', 'enabled']:
+                if field in req.params:
+                    filters[field] = req.params[field]
 
             segments = self.api.get_all(context, filters=filters,
                                         sort_keys=sort_keys,
@@ -77,7 +76,8 @@ class SegmentsController(wsgi.Controller):
 
     @wsgi.response(http.CREATED)
     @extensions.expected_errors((http.FORBIDDEN, http.CONFLICT))
-    @validation.schema(schema.create)
+    @validation.schema(schema.create, '1.0', '1.1')
+    @validation.schema(schema.create_v12, '1.2')
     def create(self, req, body):
         """Creates a new failover segment."""
         context = req.environ['masakari.context']
@@ -92,7 +92,8 @@ class SegmentsController(wsgi.Controller):
 
     @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND,
                                  http.CONFLICT))
-    @validation.schema(schema.update)
+    @validation.schema(schema.update, '1.0', '1.1')
+    @validation.schema(schema.update_v12, '1.2')
     def update(self, req, id, body):
         """Updates the existing segment."""
         context = req.environ['masakari.context']

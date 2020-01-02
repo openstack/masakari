@@ -45,6 +45,9 @@ create = copy.deepcopy(_base)
 create['properties']['segment']['required'] = ['name', 'recovery_method',
                                                'service_type']
 
+create_v12 = copy.deepcopy(create)
+create_v12['properties']['segment']['properties']['enabled'] = \
+    parameter_types.boolean
 
 update = copy.deepcopy(_base)
 update['properties']['segment']['anyOf'] = [{'required': ['name']},
@@ -52,3 +55,6 @@ update['properties']['segment']['anyOf'] = [{'required': ['name']},
                                             {'required': ['recovery_method']},
                                             {'required': ['service_type']},
                                             ]
+
+update_v12 = copy.deepcopy(update)
+update_v12['properties']['segment']['anyOf'].append({'required': ['enabled']})

@@ -15,6 +15,7 @@
 
 from oslo_log import log as logging
 from oslo_utils import uuidutils
+from oslo_utils import versionutils
 
 from masakari.api import utils as api_utils
 from masakari import db
@@ -29,16 +30,26 @@ LOG = logging.getLogger(__name__)
 @base.MasakariObjectRegistry.register
 class FailoverSegment(base.MasakariPersistentObject, base.MasakariObject,
                       base.MasakariObjectDictCompat):
-    VERSION = '1.0'
+    # 1.0, init
+    # 1.1, add enabled field
+    VERSION = '1.1'
 
     fields = {
         'id': fields.IntegerField(),
         'uuid': fields.UUIDField(),
         'name': fields.StringField(),
         'service_type': fields.StringField(),
+        'enabled': fields.BooleanField(default=True),
         'description': fields.StringField(nullable=True),
         'recovery_method': fields.FailoverSegmentRecoveryMethodField(),
         }
+
+    def obj_make_compatible(self, primitive, target_version):
+        super(FailoverSegment, self).obj_make_compatible(primitive,
+                                                         target_version)
+        target_version = versionutils.convert_version_to_tuple(target_version)
+        if target_version < (1, 1) and 'enabled' in primitive:
+            del primitive['enabled']
 
     @staticmethod
     def _from_db_object(context, segment, db_segment):

@@ -87,6 +87,7 @@ class FailoverSegment(BASE, MasakariAPIBase, models.SoftDeleteMixin):
     uuid = Column(String(36), nullable=False)
     name = Column(String(255), nullable=False)
     service_type = Column(String(255), nullable=False)
+    enabled = Column(Boolean, default=True)
     description = Column(Text)
     recovery_method = Column(Enum('auto', 'reserved_host', 'auto_priority',
                                   'rh_priority',
