@@ -858,6 +858,17 @@ class NotificationAPITestCase(test.NoDBTestCase):
             self.context, self.notification))
 
     @mock.patch.object(notification_obj.NotificationList, 'get_all')
+    def test_is_duplicate_true_for_any_notification_status(
+            self, mock_get_all):
+        FAKE_NOTIFICATION_FINISHED = copy.deepcopy(self.notification)
+        FAKE_NOTIFICATION_FINISHED.status = fields.NotificationStatus.FINISHED
+        mock_get_all.return_value = [FAKE_NOTIFICATION_FINISHED]
+        FAKE_NOTIFICATION_NEW = copy.deepcopy(self.notification)
+        FAKE_NOTIFICATION_NEW.status = fields.NotificationStatus.NEW
+        self.assertTrue(self.notification_api._is_duplicate_notification(
+            self.context, FAKE_NOTIFICATION_NEW))
+
+    @mock.patch.object(notification_obj.NotificationList, 'get_all')
     def test_create_is_duplicate_false(self, mock_get_all):
         mock_get_all.return_value = [self.notification, ]
         FAKE_NOTIFICATION = copy.deepcopy(self.notification)

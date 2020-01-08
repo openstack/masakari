@@ -278,8 +278,6 @@ class NotificationAPI(object):
 
         filters = {
             'type': notification.type,
-            'status': [fields.NotificationStatus.NEW,
-                       fields.NotificationStatus.RUNNING],
             'source_host_uuid': notification.source_host_uuid,
             'generated-since': (notification.generated_time -
                 datetime.timedelta(
