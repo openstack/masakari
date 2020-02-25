@@ -212,7 +212,7 @@ Update Segment
 
 .. rest_method:: PUT /segments/{segment_id}
 
-Updates the editable attributes of an existing host.
+Updates the editable attributes of an existing segment.
 
 **Preconditions**
 
