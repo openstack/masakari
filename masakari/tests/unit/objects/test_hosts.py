@@ -289,7 +289,7 @@ class TestHostObject(test_objects._LocalTest):
     def test_save_host_not_found(self, mock_host_update,
                                  mock_notify_about_host_api):
 
-        mock_host_update.side_effect = exception.HostNotFound(name="foo-host")
+        mock_host_update.side_effect = exception.HostNotFound(id="foo-host")
 
         host_object = host.Host(context=self.context)
         host_object.name = "foo-host"
