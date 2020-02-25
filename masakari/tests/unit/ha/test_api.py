@@ -388,7 +388,7 @@ class HostAPITestCase(test.NoDBTestCase):
                                     mock_hypervisor_search):
         mock_segment_get.return_value = self.failover_segment
         mock_hypervisor_search.side_effect = exception\
-            .HypervisorNotFoundByName(host_name='host-2')
+            .HypervisorNotFoundByName(hypervisor_name='host-2')
 
         host_data = {
             "name": 'host-2',
@@ -532,7 +532,7 @@ class HostAPITestCase(test.NoDBTestCase):
         host_data = {"name": "host-2"}
         mock_get.return_value = self.host
         mock_hypervisor_search.side_effect = (
-            exception.HypervisorNotFoundByName(host_name='host-2'))
+            exception.HypervisorNotFoundByName(hypervisor_name='host-2'))
         mock_is_under_recovery.return_value = False
         self.assertRaises(exception.HypervisorNotFoundByName,
                           self.host_api.update_host, self.context,
