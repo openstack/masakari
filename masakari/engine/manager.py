@@ -172,11 +172,21 @@ class MasakariManager(manager.Manager):
         return notification_status
 
     def _handle_notification_type_host(self, context, notification):
+        host_status = notification.payload.get('host_status')
         notification_status = fields.NotificationStatus.FINISHED
         notification_event = notification.payload.get('event')
         exception_info = None
 
-        if notification_event.upper() == 'STARTED':
+        if host_status.upper() != fields.HostStatusType.NORMAL:
+            # NOTE(shilpasd): Avoid host recovery for host_status other than
+            # 'NORMAL' otherwise it could lead to unsafe evacuation of
+            # instances running on the failed source host.
+            LOG.warning("Notification '%(uuid)s' ignored as host_status"
+                        "is '%(host_status)s'",
+                        {'uuid': notification.notification_uuid,
+                         'host_status': host_status.upper()})
+            notification_status = fields.NotificationStatus.IGNORED
+        elif notification_event.upper() == 'STARTED':
             LOG.info("Notification type '%(type)s' received for host "
                      "'%(host_uuid)s' has been %(event)s.",
                      {'type': notification.type,

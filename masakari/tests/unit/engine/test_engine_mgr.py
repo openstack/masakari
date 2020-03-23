@@ -796,6 +796,39 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         # is executed.
         _mock_log.info.assert_called_with(expected_msg_format)
 
+    @mock.patch.object(notification_obj.Notification, "save")
+    def test_process_notification_host_failure_with_host_status_unknown(
+            self, mock_get_noti, mock_notification_save):
+        notification = fakes.create_fake_notification(
+            type="COMPUTE_HOST", id=1, payload={
+                'event': 'stopped', 'host_status': 'UNKNOWN',
+                'cluster_status': 'ONLINE'
+            },
+            source_host_uuid=uuidsentinel.fake_host,
+            generated_time=NOW, status=fields.NotificationStatus.NEW,
+            notification_uuid=uuidsentinel.fake_notification)
+
+        mock_get_noti.return_value = notification
+        notification_new = notification.obj_clone()
+        notification_new.status = fields.NotificationStatus.IGNORED
+        mock_notification_save.side_effect = [notification, notification_new]
+
+        with mock.patch("masakari.engine.manager.LOG.warning") as mock_log:
+            self.engine.process_notification(self.context,
+                                             notification=notification)
+            mock_log.assert_called_once()
+            args = mock_log.call_args[0]
+            expected_log = ("Notification '%(uuid)s' ignored as host_status"
+                        "is '%(host_status)s'")
+            expected_log_args_1 = {
+                'uuid': notification.notification_uuid,
+                'host_status': fields.HostStatusType.UNKNOWN}
+
+            self.assertEqual(expected_log, args[0])
+            self.assertEqual(expected_log_args_1, args[1])
+            self.assertEqual(
+                fields.NotificationStatus.IGNORED, notification.status)
+
     @mock.patch('masakari.compute.nova.novaclient')
     @mock.patch.object(nova.API, "enable_disable_service")
     @mock.patch('masakari.engine.drivers.taskflow.host_failure.'
