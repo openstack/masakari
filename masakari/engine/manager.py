@@ -94,7 +94,7 @@ class MasakariManager(manager.Manager):
                 self.driver.execute_process_failure(
                     context, process_name, host_name,
                     notification.notification_uuid)
-            except exception.SkipProcessRecoveryException as e:
+            except exception.SkipProcessRecoveryException:
                 notification_status = fields.NotificationStatus.FINISHED
             except (exception.MasakariException,
                     exception.ProcessRecoveryFailureException) as e:
@@ -144,7 +144,7 @@ class MasakariManager(manager.Manager):
         except exception.IgnoreInstanceRecoveryException as e:
             notification_status = fields.NotificationStatus.IGNORED
             exception_info = e
-        except exception.SkipInstanceRecoveryException as e:
+        except exception.SkipInstanceRecoveryException:
             notification_status = fields.NotificationStatus.FINISHED
         except (exception.MasakariException,
                 exception.InstanceRecoveryFailureException) as e:
@@ -230,7 +230,7 @@ class MasakariManager(manager.Manager):
                     notification.notification_uuid,
                     update_host_method=update_host_method,
                     reserved_host_list=reserved_host_list)
-            except exception.SkipHostRecoveryException as e:
+            except exception.SkipHostRecoveryException:
                 notification_status = fields.NotificationStatus.FINISHED
             except (exception.HostRecoveryFailureException,
                     exception.ReservedHostsUnavailable,

@@ -15,6 +15,7 @@
 
 import re
 
+from hacking import core
 
 """
 Guidelines for writing new hacking checks
@@ -39,10 +40,10 @@ rule_default_re = re.compile(r".*RuleDefault\(")
 policy_enforce_re = re.compile(r".*_ENFORCER\.enforce\(")
 asse_trueinst_re = re.compile(
     r"(.)*assertTrue\(isinstance\((\w|\.|\'|\"|\[|\])+, "
-    "(\w|\.|\'|\"|\[|\])+\)\)")
+    r"(\w|\.|\'|\"|\[|\])+\)\)")
 asse_equal_type_re = re.compile(
     r"(.)*assertEqual\(type\((\w|\.|\'|\"|\[|\])+\), "
-    "(\w|\.|\'|\"|\[|\])+\)")
+    r"(\w|\.|\'|\"|\[|\])+\)")
 asse_equal_in_end_with_true_or_false_re = re.compile(
     r"assertEqual\("r"(\w|[][.'\"])+ in (\w|[][.'\", ])+, (True|False)\)")
 asse_equal_in_start_with_true_or_false_re = re.compile(
@@ -72,7 +73,7 @@ asse_raises_regexp = re.compile(r"assertRaisesRegexp\(")
 conf_attribute_set_re = re.compile(r"CONF\.[a-z0-9_.]+\s*=\s*\w")
 translated_log = re.compile(
     r"(.)*LOG\.(audit|error|info|critical|exception)"
-    "\(\s*_\(\s*('|\")")
+    r"\(\s*_\(\s*('|\")")
 mutable_default_args = re.compile(r"^\s*def .+\((.+=\{\}|.+=\[\])")
 string_translation = re.compile(r"[^_]*_\(\s*('|\")")
 underscore_import_check = re.compile(r"(.)*import _(.)*")
@@ -99,6 +100,7 @@ log_translation_re = re.compile(
     })
 
 
+@core.flake8ext
 def no_db_session_in_public_api(logical_line, filename):
     if "db/api.py" in filename:
         if session_check.match(logical_line):
@@ -106,6 +108,7 @@ def no_db_session_in_public_api(logical_line, filename):
                       " session")
 
 
+@core.flake8ext
 def use_timeutils_utcnow(logical_line, filename):
     # tools are OK to use the standard datetime module
     if "/tools/" in filename:
@@ -121,6 +124,7 @@ def use_timeutils_utcnow(logical_line, filename):
             yield (pos, msg % f)
 
 
+@core.flake8ext
 def capital_cfg_help(logical_line, tokens):
     msg = "M303: capitalize help string"
 
@@ -132,6 +136,7 @@ def capital_cfg_help(logical_line, tokens):
                     yield (0, msg)
 
 
+@core.flake8ext
 def assert_true_instance(logical_line):
     """Check for assertTrue(isinstance(a, b)) sentences
 
@@ -142,6 +147,7 @@ def assert_true_instance(logical_line):
                   "not allowed")
 
 
+@core.flake8ext
 def assert_equal_type(logical_line):
     """Check for assertEqual(type(A), B) sentences
 
@@ -151,6 +157,7 @@ def assert_equal_type(logical_line):
         yield (0, "M306: assertEqual(type(A), B) sentences not allowed")
 
 
+@core.flake8ext
 def no_translate_logs(logical_line):
     """Check for 'LOG.*(_*("'
 
@@ -165,6 +172,7 @@ def no_translate_logs(logical_line):
         yield (0, "M308: Log messages should not be translated")
 
 
+@core.flake8ext
 def no_import_translation_in_tests(logical_line, filename):
     """Check for 'from masakari.i18n import _'
     M309
@@ -175,6 +183,7 @@ def no_import_translation_in_tests(logical_line, filename):
             yield (0, "M309 Don't import translation in tests")
 
 
+@core.flake8ext
 def no_setting_conf_directly_in_tests(logical_line, filename):
     """Check for setting CONF.* attributes directly in tests
 
@@ -192,12 +201,14 @@ def no_setting_conf_directly_in_tests(logical_line, filename):
                       "instead")
 
 
+@core.flake8ext
 def no_mutable_default_args(logical_line):
     msg = "M315: Method's default argument shouldn't be mutable!"
     if mutable_default_args.match(logical_line):
         yield (0, msg)
 
 
+@core.flake8ext
 def check_explicit_underscore_import(logical_line, filename):
     """Check for explicit import of the _ function
 
@@ -220,6 +231,7 @@ def check_explicit_underscore_import(logical_line, filename):
                   "import of _ !")
 
 
+@core.flake8ext
 def use_jsonutils(logical_line, filename):
     # tools are OK to use the standard json module
     if "/tools/" in filename:
@@ -235,6 +247,7 @@ def use_jsonutils(logical_line, filename):
                 yield (pos, msg % {'fun': f[:-1]})
 
 
+@core.flake8ext
 def assert_true_or_false_with_in(logical_line):
     """Check for assertTrue/False(A in B), assertTrue/False(A not in B),
     assertTrue/False(A in B, message) or assertTrue/False(A not in B, message)
@@ -250,6 +263,7 @@ def assert_true_or_false_with_in(logical_line):
                   "contents.")
 
 
+@core.flake8ext
 def assert_raises_regexp(logical_line):
     """Check for usage of deprecated assertRaisesRegexp
 
@@ -261,6 +275,7 @@ def assert_raises_regexp(logical_line):
                   "of assertRaisesRegexp")
 
 
+@core.flake8ext
 def dict_constructor_with_list_copy(logical_line):
     msg = ("M320: Must use a dict comprehension instead of a dict "
            "constructor with a sequence of key-value pairs.")
@@ -268,6 +283,7 @@ def dict_constructor_with_list_copy(logical_line):
         yield (0, msg)
 
 
+@core.flake8ext
 def assert_equal_in(logical_line):
     """Check for assertEqual(A in B, True), assertEqual(True, A in B),
     assertEqual(A in B, False) or assertEqual(False, A in B) sentences
@@ -282,7 +298,8 @@ def assert_equal_in(logical_line):
                   "contents.")
 
 
-def check_greenthread_spawns(logical_line, physical_line, filename):
+@core.flake8ext
+def check_greenthread_spawns(logical_line, filename):
     """Check for use of greenthread.spawn(), greenthread.spawn_n(),
     eventlet.spawn(), and eventlet.spawn_n()
 
@@ -299,6 +316,7 @@ def check_greenthread_spawns(logical_line, physical_line, filename):
         yield (0, msg % {'spawn': match.group('spawn_part')})
 
 
+@core.flake8ext
 def check_no_contextlib_nested(logical_line, filename):
     msg = ("M323: contextlib.nested is deprecated. With Python 2.7"
            "and later  the with-statement supports multiple nested objects. "
@@ -310,6 +328,7 @@ def check_no_contextlib_nested(logical_line, filename):
         yield (0, msg)
 
 
+@core.flake8ext
 def check_config_option_in_central_place(logical_line, filename):
     msg = ("M324: Config options should be in the central location "
            "'/masakari/conf/*'. Do not declare new config options outside "
@@ -334,6 +353,7 @@ def check_config_option_in_central_place(logical_line, filename):
         yield (0, msg)
 
 
+@core.flake8ext
 def check_doubled_words(physical_line, filename):
     """Check for the common doubled-word typos
 
@@ -347,6 +367,7 @@ def check_doubled_words(physical_line, filename):
         return (0, msg % {'word': match.group(1)})
 
 
+@core.flake8ext
 def check_python3_no_iteritems(logical_line):
     msg = ("M326: Use dict.items() instead of dict.iteritems().")
 
@@ -354,6 +375,7 @@ def check_python3_no_iteritems(logical_line):
         yield (0, msg)
 
 
+@core.flake8ext
 def check_python3_no_iterkeys(logical_line):
     msg = ("M327: Use 'for key in dict' instead of 'for key in "
            "dict.iterkeys()'.")
@@ -362,6 +384,7 @@ def check_python3_no_iterkeys(logical_line):
         yield (0, msg)
 
 
+@core.flake8ext
 def check_python3_no_itervalues(logical_line):
     msg = ("M328: Use dict.values() instead of dict.itervalues().")
 
@@ -369,6 +392,7 @@ def check_python3_no_itervalues(logical_line):
         yield (0, msg)
 
 
+@core.flake8ext
 def no_os_popen(logical_line):
     """Disallow 'os.popen('
 
@@ -383,6 +407,7 @@ def no_os_popen(logical_line):
                   'Replace it using subprocess module. ')
 
 
+@core.flake8ext
 def no_log_warn(logical_line):
     """Disallow 'LOG.warn('
 
@@ -397,6 +422,7 @@ def no_log_warn(logical_line):
         yield (0, msg)
 
 
+@core.flake8ext
 def yield_followed_by_space(logical_line):
     """Yield should be followed by a space.
 
@@ -414,6 +440,7 @@ def yield_followed_by_space(logical_line):
                "M332: Yield keyword should be followed by a space.")
 
 
+@core.flake8ext
 def check_policy_registration_in_central_place(logical_line, filename):
     msg = ('M333: Policy registration should be in the central location '
            '"/masakari/policies/*".')
@@ -428,6 +455,7 @@ def check_policy_registration_in_central_place(logical_line, filename):
         yield (0, msg)
 
 
+@core.flake8ext
 def check_policy_enforce(logical_line, filename):
     """Look for uses of masakari.policy._ENFORCER.enforce()
 
@@ -436,7 +464,7 @@ def check_policy_enforce(logical_line, filename):
     Uses of _ENFORCER.enforce could allow unregistered policies to be used, so
     this check looks for uses of that method.
 
-    M333
+    M334
     """
 
     msg = ('M334: masakari.policy._ENFORCER.enforce() should not be used. '
@@ -444,33 +472,3 @@ def check_policy_enforce(logical_line, filename):
 
     if policy_enforce_re.match(logical_line):
         yield (0, msg)
-
-
-def factory(register):
-    register(no_db_session_in_public_api)
-    register(use_timeutils_utcnow)
-    register(capital_cfg_help)
-    register(no_import_translation_in_tests)
-    register(assert_true_instance)
-    register(assert_equal_type)
-    register(assert_raises_regexp)
-    register(no_translate_logs)
-    register(no_setting_conf_directly_in_tests)
-    register(no_mutable_default_args)
-    register(check_explicit_underscore_import)
-    register(use_jsonutils)
-    register(assert_true_or_false_with_in)
-    register(dict_constructor_with_list_copy)
-    register(assert_equal_in)
-    register(check_no_contextlib_nested)
-    register(check_greenthread_spawns)
-    register(check_config_option_in_central_place)
-    register(check_doubled_words)
-    register(check_python3_no_iteritems)
-    register(check_python3_no_iterkeys)
-    register(check_python3_no_itervalues)
-    register(no_os_popen)
-    register(no_log_warn)
-    register(yield_followed_by_space)
-    register(check_policy_registration_in_central_place)
-    register(check_policy_enforce)

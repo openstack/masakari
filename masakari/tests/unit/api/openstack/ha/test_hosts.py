@@ -41,6 +41,7 @@ def _make_hosts_list(hosts_list):
     return host_obj.Host(objects=[
         _make_host_obj(a) for a in hosts_list])
 
+
 HOST_LIST = [
     {"name": "host_1", "id": "1", "reserved": False,
      "on_maintenance": False, "type": "fake",

@@ -97,7 +97,7 @@ class ProjectMapper(APIMapper):
         # NOTE(abhishekk): project_id parameter is only valid if its hex
         # or hex + dashes (note, integers are a subset of this). This
         # is required to hand our overlaping routes issues.
-        project_id_regex = '[0-9a-f\-]+'
+        project_id_regex = r'[0-9a-f\-]+'
         if CONF.osapi_v1.project_id_regex:
             project_id_regex = CONF.osapi_v1.project_id_regex
 
@@ -250,7 +250,7 @@ class APIRouterV1(base_wsgi.Router):
                             **kargs)
 
             if resource.custom_routes_fn:
-                    resource.custom_routes_fn(mapper, wsgi_resource)
+                resource.custom_routes_fn(mapper, wsgi_resource)
 
     def _register_controllers(self, ext):
         """Register controllers defined by the extensions
