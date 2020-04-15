@@ -37,6 +37,12 @@
       - zuul: openstack-infra/devstack
     timeout: 9000
     required-projects:
+      - openstack/cinder
+      - openstack/glance
+      - openstack/keystone
+      - openstack/neutron
+      - openstack/nova
+      - openstack/placement
       - openstack/horizon
       - openstack/python-masakariclient
       - openstack/masakari
@@ -48,20 +54,52 @@
         swift: false
       devstack_localrc:
         USE_PYTHON3: true
+        DATABASE_TYPE: mysql
       zuul_work_dir: src/opendev.org/openstack/masakari
     host-vars:
       controller:
         devstack_plugins:
           masakari: https://opendev.org/openstack/masakari
         devstack_services:
+          mysql: true
+          rabbit: true
+          tls-proxy: false
           horizon: false
           swift: false
+          # Keystone services
+          key: true
+          # Glance services
+          g-api: true
+          # Nova services
+          n-api: true
+          n-api-meta: true
+          n-cond: true
+          n-cpu: true
+          n-novnc: true
+          n-sch: true
+          placement-api: true
+          # Legacy Neutron services
+          q-agt: true
+          q-dhcp: true
+          q-l3: true
+          q-meta: true
+          q-metering: true
           q-svc: true
+          # Cinder services
+          c-api: true
+          c-sch: true
+          c-vol: true
+          cinder: true
+          # Masakari services
+          masakari-api: true
+          masakari-engine: true
           masakari-monitors: true
         tox_install_siblings: false
         tox_envlist: functional
     group-vars:
       subnode:
+        devstack_localrc:
+          DATABASE_TYPE: mysql
         devstack_plugins:
           masakari: https://opendev.org/openstack/masakari
         devstack_services:
@@ -75,10 +113,10 @@
           n-sch: false
           horizon: false
           tls-proxy: false
+          # Masakari services
           masakari-monitors: true
           masakari-api: false
           masakari-engine: false
-
 
 - project:
     templates:
