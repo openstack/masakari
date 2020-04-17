@@ -12,6 +12,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+import datetime
 import mock
 from oslo_utils import importutils
 from oslo_utils import timeutils
@@ -33,6 +35,8 @@ from masakari.tests import uuidsentinel
 CONF = masakari.conf.CONF
 
 NOW = timeutils.utcnow().replace(microsecond=0)
+EXPIRED_TIME = timeutils.utcnow().replace(microsecond=0) \
+    - datetime.timedelta(seconds=CONF.notifications_expired_interval)
 
 
 def _get_vm_type_notification(status="new"):
@@ -68,14 +72,15 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             generated_time=NOW, status="new",
             notification_uuid=uuidsentinel.fake_notification)
 
-    def _get_compute_host_type_notification(self):
+    def _get_compute_host_type_notification(self, expired=False):
         return fakes.create_fake_notification(
             type="COMPUTE_HOST", id=1, payload={
                 'event': 'stopped', 'host_status': 'NORMAL',
                 'cluster_status': 'ONLINE'
             },
             source_host_uuid=uuidsentinel.fake_host,
-            generated_time=NOW, status="new",
+            generated_time=EXPIRED_TIME if expired else NOW,
+            status="new",
             notification_uuid=uuidsentinel.fake_notification)
 
     @mock.patch("masakari.engine.drivers.taskflow."
@@ -1116,3 +1121,12 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
 
         mock_progress_details.assert_called_once_with(
             self.context, notification)
+
+    @mock.patch.object(notification_obj.Notification, "save")
+    @mock.patch.object(notification_obj.NotificationList, "get_all")
+    def test_check_expired_notifications(self, mock_get_all, mock_save,
+                                         mock_notification_get):
+        notification = self._get_compute_host_type_notification(expired=True)
+        mock_get_all.return_value = [notification]
+        self.engine._check_expired_notifications(self.context)
+        self.assertEqual("failed", notification.status)

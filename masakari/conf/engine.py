@@ -97,6 +97,13 @@ notification_opts = [
                     "generated_time, then it is considered that notification "
                     "is ignored by the messaging queue and will be processed "
                     "by 'process_unfinished_notifications' periodic task."),
+    cfg.IntOpt('check_expired_notifications_interval',
+               default=600,
+               help='Interval in seconds for checking running notifications.'),
+    cfg.IntOpt('notifications_expired_interval',
+               default=86400,
+               help='Interval in seconds for identifying running '
+                    'notifications expired.'),
     cfg.IntOpt('host_failure_recovery_threads',
                default=3,
                min=1,
