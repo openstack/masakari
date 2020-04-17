@@ -368,6 +368,34 @@ class MasakariManager(manager.Manager):
                     {'notification_uuid': notification.notification_uuid,
                      'status': notification_status})
 
+    @periodic_task.periodic_task(
+        spacing=CONF.check_expired_notifications_interval)
+    def _check_expired_notifications(self, context):
+        filters = {
+            'status': [fields.NotificationStatus.RUNNING,
+                       fields.NotificationStatus.ERROR,
+                       fields.NotificationStatus.NEW]
+        }
+        notifications_list = objects.NotificationList.get_all(context,
+                                                              filters=filters)
+
+        for notification in notifications_list:
+            if timeutils.is_older_than(
+                    notification.generated_time,
+                    CONF.notifications_expired_interval):
+                # update running expired notification status as failed
+                notification_status = fields.NotificationStatus.FAILED
+                update_data = {
+                    'status': notification_status
+                }
+
+                notification.update(update_data)
+                notification.save()
+                LOG.error(
+                    "Periodic task 'check_expired_notifications': "
+                    "Notification %(notification_uuid)s is expired.",
+                    {'notification_uuid': notification.notification_uuid})
+
     def get_notification_recovery_workflow_details(self, context,
                                                    notification):
         """Retrieve recovery workflow details of the notification"""
