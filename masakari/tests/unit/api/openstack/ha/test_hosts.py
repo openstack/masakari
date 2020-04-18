@@ -15,8 +15,9 @@
 
 """Tests for the hosts api."""
 
+from unittest import mock
+
 import ddt
-import mock
 from oslo_serialization import jsonutils
 from six.moves import http_client as http
 from webob import exc

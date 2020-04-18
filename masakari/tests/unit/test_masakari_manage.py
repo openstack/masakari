@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 import sys
+from unittest import mock
 
 from masakari.cmd import manage
 from masakari import context

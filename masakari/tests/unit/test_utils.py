@@ -13,9 +13,9 @@
 #    under the License.
 
 import importlib
+from unittest import mock
 
 import eventlet
-import mock
 from oslo_config import cfg
 from oslo_context import context as common_context
 from oslo_context import fixture as context_fixture

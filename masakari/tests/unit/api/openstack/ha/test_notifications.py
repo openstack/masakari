@@ -16,9 +16,9 @@
 """Tests for the notifications api."""
 
 import copy
+from unittest import mock
 
 import ddt
-import mock
 from oslo_serialization import jsonutils
 from oslo_utils import timeutils
 from six.moves import http_client as http

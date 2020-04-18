@@ -17,8 +17,9 @@
 Test suites for 'common' code used throughout the OpenStack HTTP API.
 """
 
-import mock
 from testtools import matchers
+from unittest import mock
+
 import webob
 
 from masakari.api.openstack import common

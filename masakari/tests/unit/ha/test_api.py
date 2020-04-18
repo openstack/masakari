@@ -16,7 +16,8 @@
 """Tests for the failover segment api."""
 
 import copy
-import mock
+from unittest import mock
+
 from oslo_utils import timeutils
 
 from masakari.api import utils as api_utils

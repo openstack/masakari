@@ -17,9 +17,9 @@
 Unit Tests for host failure TaskFlow
 """
 import copy
+from unittest import mock
 
 import ddt
-import mock
 
 from masakari.compute import nova
 from masakari import conf

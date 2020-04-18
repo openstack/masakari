@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
 import socket
 import testtools
+from unittest import mock
 
 from masakari.api import utils as api_utils
 from masakari.notifications.objects import base as notification_base

@@ -23,9 +23,9 @@ import contextlib
 import datetime
 import eventlet
 eventlet.monkey_patch(os=False)  # noqa
+from unittest import mock
 
 import fixtures
-import mock
 
 import six
 import testtools

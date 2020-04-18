@@ -17,7 +17,7 @@
 Unit Tests for process failure TaskFlow
 """
 
-import mock
+from unittest import mock
 
 from masakari.compute import nova
 from masakari import context

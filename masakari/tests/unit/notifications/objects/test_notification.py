@@ -14,8 +14,8 @@
 # limitations under the License.
 
 import collections
+from unittest import mock
 
-import mock
 from oslo_utils import timeutils
 from oslo_versionedobjects import fixture
 

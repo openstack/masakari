@@ -14,8 +14,8 @@
 #    under the License.
 
 import copy
+from unittest import mock
 
-import mock
 from oslo_serialization import jsonutils
 from six.moves import http_client as http
 import webob

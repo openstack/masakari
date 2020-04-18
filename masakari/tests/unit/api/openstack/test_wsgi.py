@@ -14,8 +14,8 @@
 #    under the License.
 
 import inspect
+from unittest import mock
 
-import mock
 import six
 from six.moves import http_client as http
 import testscenarios

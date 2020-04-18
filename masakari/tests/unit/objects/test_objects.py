@@ -18,8 +18,8 @@ import datetime
 import inspect
 import os
 import pprint
+from unittest import mock
 
-import mock
 from oslo_versionedobjects import exception as ovo_exc
 from oslo_versionedobjects import fixture
 

@@ -17,8 +17,8 @@ Unit Tests for masakari.engine.rpcapi
 """
 
 import copy
+from unittest import mock
 
-import mock
 
 from masakari import context
 from masakari.engine import rpcapi as engine_rpcapi
