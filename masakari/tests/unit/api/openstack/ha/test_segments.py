@@ -40,6 +40,7 @@ def _make_segments_list(segments_list):
     return segment_obj.FailoverSegment(objects=[
         _make_segment_obj(a) for a in segments_list])
 
+
 FAILOVER_SEGMENT_LIST = [
     {"name": "segment1", "id": "1", "service_type": "COMPUTE",
      "recovery_method": "auto", "uuid": uuidsentinel.fake_segment,

@@ -62,6 +62,7 @@ def _fake_host(**kwargs):
     fake_host.update(kwargs)
     return fake_host
 
+
 fake_host = _fake_host()
 
 

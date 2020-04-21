@@ -66,6 +66,7 @@ def _fake_object_notification(**kwargs):
     fake_notification.update(kwargs)
     return fake_notification
 
+
 fake_object_notification = _fake_object_notification()
 
 fake_db_notification = _fake_db_notification()

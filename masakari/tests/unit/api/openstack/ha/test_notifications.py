@@ -52,6 +52,7 @@ def _make_notifications_list(notifications_list):
     return notification_obj.Notification(objects=[
         _make_notification_obj(a) for a in notifications_list])
 
+
 NOTIFICATION_DATA = {"type": "VM", "id": 1,
                      "payload":
                          {'event': 'STOPPED', 'host_status': 'NORMAL',
