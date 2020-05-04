@@ -41,17 +41,6 @@ LOG = logging.getLogger(__name__)
 CONF = masakari.conf.CONF
 
 
-def assert_eventlet_uses_monotonic_clock():
-    import eventlet.hubs as hubs
-    import monotonic
-
-    hub = hubs.get_hub()
-    if hub.clock is not monotonic.monotonic:
-        raise RuntimeError(
-            'eventlet hub is not using a monotonic clock - '
-            'periodic tasks will be affected by drifts of system time.')
-
-
 class Service(service.Service):
     """Service object for binaries running on hosts.
 
@@ -89,7 +78,6 @@ class Service(service.Service):
                }
 
     def start(self):
-        assert_eventlet_uses_monotonic_clock()
         verstr = version.version_string_with_package()
         LOG.info('Starting %(topic)s (version %(version)s)', {
             'topic': self.topic,
