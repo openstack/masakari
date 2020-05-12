@@ -15,8 +15,6 @@
 
 import inspect
 
-import six
-
 from masakari.notifications.objects import base
 from masakari.objects import base as masakari_base
 from masakari.objects import fields
@@ -56,7 +54,7 @@ class ExceptionPayload(base.NotificationPayloadBase):
             function_name=function_name,
             module_name=module_name,
             exception=fault.__class__.__name__,
-            exception_message=six.text_type(fault),
+            exception_message=str(fault),
             traceback=traceback)
 
 
