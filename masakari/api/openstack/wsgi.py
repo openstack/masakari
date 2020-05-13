@@ -1016,9 +1016,7 @@ class Fault(webob.exc.HTTPException):
         http.UNSUPPORTED_MEDIA_TYPE: "badMediaType",
         http.NOT_IMPLEMENTED: "notImplemented",
         http.SERVICE_UNAVAILABLE: "serviceUnavailable",
-        # TODO(Dinesh_Bhor) Replace it with symbolic constant when it is
-        # defined in six.moves.http_client
-        429: "overLimit"
+        http.TOO_MANY_REQUESTS: "overLimit"
     }
 
     def __init__(self, exception):

@@ -13,8 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from http import client as http
+
 from oslo_utils import timeutils
-from six.moves import http_client as http
 from webob import exc
 
 from masakari.api import api_version_request
