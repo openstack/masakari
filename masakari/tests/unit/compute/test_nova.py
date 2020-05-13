@@ -12,9 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from http import client as http
 from unittest import mock
-
-from six.moves import http_client as http
 
 from keystoneauth1 import exceptions as keystone_exception
 from novaclient import exceptions as nova_exception

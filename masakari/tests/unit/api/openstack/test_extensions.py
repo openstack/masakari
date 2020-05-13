@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from http import client as http
 from unittest import mock
 
 from oslo_config import cfg
-from six.moves import http_client as http
 import webob.exc
 
 from masakari.api.openstack import extensions

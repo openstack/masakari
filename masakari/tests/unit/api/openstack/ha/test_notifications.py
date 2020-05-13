@@ -16,12 +16,12 @@
 """Tests for the notifications api."""
 
 import copy
+from http import client as http
 from unittest import mock
 
 import ddt
 from oslo_serialization import jsonutils
 from oslo_utils import timeutils
-from six.moves import http_client as http
 from webob import exc
 
 from masakari.api.openstack.ha import notifications

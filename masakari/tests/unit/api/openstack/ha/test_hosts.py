@@ -15,11 +15,11 @@
 
 """Tests for the hosts api."""
 
+from http import client as http
 from unittest import mock
 
 import ddt
 from oslo_serialization import jsonutils
-from six.moves import http_client as http
 from webob import exc
 
 from masakari.api.openstack.ha import hosts

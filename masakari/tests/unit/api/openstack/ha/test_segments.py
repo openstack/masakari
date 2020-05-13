@@ -15,11 +15,11 @@
 
 """Tests for the failover segment api."""
 
+from http import client as http
 from unittest import mock
 
 import ddt
 from oslo_serialization import jsonutils
-from six.moves import http_client as http
 from webob import exc
 
 from masakari.api.openstack.ha import segments

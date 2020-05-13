@@ -17,7 +17,6 @@ import datetime
 
 import iso8601
 from oslo_versionedobjects import exception as ovo_exc
-import six
 
 from masakari.objects import fields
 from masakari import test
@@ -108,8 +107,6 @@ class TestString(TestField):
         super(TestString, self).setUp()
         self.field = fields.StringField()
         self.coerce_good_values = [('foo', 'foo'), (1, '1'), (True, 'True')]
-        if six.PY2:
-            self.coerce_good_values.append((int(1), '1'))
         self.coerce_bad_values = [None]
         self.to_primitive_values = self.coerce_good_values[0:1]
         self.from_primitive_values = self.coerce_good_values[0:1]
@@ -147,8 +144,6 @@ class TestEnum(TestField):
         self.field = fields.EnumField(
             valid_values=['foo', 'bar', 1, 1, True])
         self.coerce_good_values = [('foo', 'foo'), (1, '1'), (True, 'True')]
-        if six.PY2:
-            self.coerce_good_values.append((int(1), '1'))
         self.coerce_bad_values = ['boo', 2, False]
         self.to_primitive_values = self.coerce_good_values[0:1]
         self.from_primitive_values = self.coerce_good_values[0:1]

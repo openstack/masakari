@@ -11,9 +11,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from http import client as http
+
 from oslo_middleware import request_id
 from oslo_serialization import jsonutils
-from six.moves import http_client as http
 import webob
 import webob.exc
 

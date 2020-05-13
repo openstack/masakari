@@ -14,10 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from http import client as http
 import inspect
 
-import six
-from six.moves import http_client as http
 from webob.util import status_reasons
 
 from masakari import exception
@@ -30,18 +29,18 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
             msg_fmt = "default message"
 
         exc = FakeMasakariException()
-        self.assertEqual('default message', six.text_type(exc))
+        self.assertEqual('default message', str(exc))
 
     def test_error_msg(self):
         self.assertEqual('test',
-                         six.text_type(exception.MasakariException('test')))
+                         str(exception.MasakariException('test')))
 
     def test_default_error_msg_with_kwargs(self):
         class FakeMasakariException(exception.MasakariException):
             msg_fmt = "default message: %(code)s"
 
         exc = FakeMasakariException(code=int(http.INTERNAL_SERVER_ERROR))
-        self.assertEqual('default message: 500', six.text_type(exc))
+        self.assertEqual('default message: 500', str(exc))
         self.assertEqual('default message: 500', exc.message)
 
     def test_error_msg_exception_with_kwargs(self):
@@ -50,7 +49,7 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
 
         exc = FakeMasakariException(code=int(http.INTERNAL_SERVER_ERROR),
                                     misspelled_code='blah')
-        self.assertEqual('default message: blah', six.text_type(exc))
+        self.assertEqual('default message: blah', str(exc))
         self.assertEqual('default message: blah', exc.message)
 
     def test_default_error_code(self):
@@ -72,21 +71,17 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
             msg_fmt = "some message"
 
         exc = FakeMasakariException()
-        self.assertEqual(six.text_type(exc), exc.format_message())
+        self.assertEqual(str(exc), exc.format_message())
 
     def test_format_message_remote(self):
         class FakeMasakariException_Remote(exception.MasakariException):
             msg_fmt = "some message"
 
-            if six.PY2:
-                def __unicode__(self):
-                    return u"print the whole trace"
-            else:
-                def __str__(self):
-                    return "print the whole trace"
+            def __str__(self):
+                return "print the whole trace"
 
         exc = FakeMasakariException_Remote()
-        self.assertEqual(u"print the whole trace", six.text_type(exc))
+        self.assertEqual(u"print the whole trace", str(exc))
         self.assertEqual("some message", exc.format_message())
 
     def test_format_message_remote_error(self):

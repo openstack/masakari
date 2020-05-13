@@ -13,12 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from http import client as http
 import re
 
 import fixtures
 from jsonschema import exceptions as jsonschema_exc
-import six
-from six.moves import http_client as http
 import sys
 
 from masakari.api import api_version_request as api_version
@@ -40,7 +39,7 @@ class ValidationRegex(test.NoDBTestCase):
 
         def _get_all_chars():
             for i in range(0x7F):
-                yield six.unichr(i)
+                yield chr(i)
 
         self.useFixture(fixtures.MonkeyPatch(
             'masakari.api.validation.parameter_types._get_all_chars',

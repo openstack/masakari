@@ -19,7 +19,6 @@ import eventlet
 from oslo_config import cfg
 from oslo_context import context as common_context
 from oslo_context import fixture as context_fixture
-import six
 
 import masakari
 from masakari import context
@@ -44,7 +43,7 @@ class UTF8TestCase(test.NoDBTestCase):
     def test_not_text_type(self):
         return_value = utils.utf8(1)
         self.assertEqual(b"1", return_value)
-        self.assertIsInstance(return_value, six.binary_type)
+        self.assertIsInstance(return_value, bytes)
 
     def test_text_type_with_encoding(self):
         some_value = 'test\u2026config'
@@ -254,5 +253,5 @@ class ValidateIntegerTestCase(test.NoDBTestCase):
                           max_value=54)
         self.assertRaises(exception.InvalidInput,
                           utils.validate_integer,
-                          six.unichr(129), "UnicodeError",
+                          chr(129), "UnicodeError",
                           max_value=1000)

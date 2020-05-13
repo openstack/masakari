@@ -14,10 +14,10 @@
 #    under the License.
 
 import copy
+from http import client as http
 from unittest import mock
 
 from oslo_serialization import jsonutils
-from six.moves import http_client as http
 import webob
 
 from masakari.api import api_version_request as avr

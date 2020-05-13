@@ -13,9 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import builtins
+import io
 from oslo_config import cfg
-import six
-from six.moves import builtins
 
 from masakari import test
 from masakari import version
@@ -49,11 +49,11 @@ class VersionTestCase(test.NoDBTestCase):
 vendor = ACME Corporation
 product = ACME Masakari
 package = 1337"""
-                return six.StringIO(data)
+                return io.StringIO(data)
 
             return real_open(path, *args, **kwargs)
 
-        self.stub_out('six.moves.builtins.open', fake_open)
+        self.stub_out('builtins.open', fake_open)
         self.stub_out('oslo_config.cfg.ConfigOpts.find_file', fake_find_file)
 
         self.assertEqual(version.vendor_string(), "ACME Corporation")

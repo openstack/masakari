@@ -13,11 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from http import client as http
 import inspect
 from unittest import mock
 
-import six
-from six.moves import http_client as http
 import testscenarios
 import webob
 
@@ -30,7 +29,6 @@ from masakari.api import versioned_method
 from masakari import exception
 from masakari import test
 from masakari.tests.unit.api.openstack import fakes
-from masakari.tests.unit import matchers
 
 
 class MicroversionedTest(testscenarios.WithScenarios, test.NoDBTestCase):
@@ -887,17 +885,9 @@ class ResourceTest(MicroversionedTest):
         app = fakes.TestRouter(Controller())
         response = req.get_response(app)
 
-        if six.PY2:
-            for val in response.headers.values():
-                # All headers must be utf8
-                self.assertThat(val, matchers.EncodedByUTF8())
-            self.assertEqual(b'1', response.headers['x-header1'])
-            self.assertEqual(b'header2', response.headers['x-header2'])
-            self.assertEqual(b'header3', response.headers['x-header3'])
-        else:
-            self.assertEqual('1', response.headers['x-header1'])
-            self.assertEqual(u'header2', response.headers['x-header2'])
-            self.assertEqual(u'header3', response.headers['x-header3'])
+        self.assertEqual('1', response.headers['x-header1'])
+        self.assertEqual(u'header2', response.headers['x-header2'])
+        self.assertEqual(u'header3', response.headers['x-header3'])
 
     def test_resource_valid_utf8_body(self):
         class Controller(object):
