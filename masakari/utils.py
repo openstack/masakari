@@ -30,7 +30,6 @@ from oslo_log import log as logging
 from oslo_utils import importutils
 from oslo_utils import strutils
 from oslo_utils import timeutils
-import six
 
 import masakari.conf
 from masakari import exception
@@ -43,6 +42,18 @@ CONF = masakari.conf.CONF
 LOG = logging.getLogger(__name__)
 
 
+def reraise(tp, value, tb=None):
+    try:
+        if value is None:
+            value = tp()
+        if value.__traceback__ is not tb:
+            raise value.with_traceback(tb)
+        raise value
+    finally:
+        value = None
+        tb = None
+
+
 def utf8(value):
     """Try to turn a string into utf-8 if possible.
 
@@ -50,11 +61,11 @@ def utf8(value):
     http://github.com/facebook/tornado/blob/master/tornado/escape.py
 
     """
-    if value is None or isinstance(value, six.binary_type):
+    if value is None or isinstance(value, bytes):
         return value
 
-    if not isinstance(value, six.text_type):
-        value = six.text_type(value)
+    if not isinstance(value, str):
+        value = str(value)
 
     return value.encode('utf-8')
 
@@ -80,12 +91,11 @@ def monkey_patch():
     # If CONF.monkey_patch is not True, this function do nothing.
     if not CONF.monkey_patch:
         return
-    if six.PY2:
-        is_method = inspect.ismethod
-    else:
-        def is_method(obj):
-            # Unbound methods became regular functions on Python 3
-            return inspect.ismethod(obj) or inspect.isfunction(obj)
+
+    def is_method(obj):
+        # Unbound methods became regular functions on Python 3
+        return inspect.ismethod(obj) or inspect.isfunction(obj)
+
     # Get list of modules and decorators
     for module_and_decorator in CONF.monkey_patch_modules:
         module, decorator_name = module_and_decorator.split(':')
@@ -177,7 +187,7 @@ class ExceptionHelper(object):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                six.reraise(*e.exc_info)
+                reraise(*e.exc_info)
         return wrapper
 
 
@@ -252,7 +262,7 @@ def validate_integer(value, name, min_value=None, max_value=None):
 
 def synchronized(name, semaphores=None, blocking=False):
     def wrap(f):
-        @six.wraps(f)
+        @functools.wraps(f)
         def inner(*args, **kwargs):
             lock_name = 'masakari-%s' % name
             int_lock = lockutils.internal_lock(lock_name,
