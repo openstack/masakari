@@ -15,7 +15,7 @@
 import re
 
 from oslo_log import log as logging
-import six.moves.urllib.parse as urlparse
+from urllib import parse as urlparse
 import webob
 
 import masakari.conf

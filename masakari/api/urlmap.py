@@ -16,12 +16,7 @@ import re
 
 from oslo_log import log as logging
 import paste.urlmap
-import six
-
-if six.PY2:  # noqa
-    import urllib2
-else:  # noqa
-    from urllib import request as urllib2
+from urllib import request
 
 from masakari.api.openstack import wsgi
 
@@ -68,7 +63,7 @@ def parse_list_header(value):
     :return: :class:`list`
     """
     result = []
-    for item in urllib2.parse_http_list(value):
+    for item in request.parse_http_list(value):
         if item[:1] == item[-1:] == '"':
             item = unquote_header_value(item[1:-1])
         result.append(item)

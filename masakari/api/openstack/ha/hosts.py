@@ -15,9 +15,10 @@
 
 """The Host API extension."""
 
+from http import client as http
+
 from oslo_utils import encodeutils
 from oslo_utils import strutils
-from six.moves import http_client as http
 from webob import exc
 
 from masakari.api.openstack import common

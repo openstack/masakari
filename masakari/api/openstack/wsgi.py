@@ -14,14 +14,13 @@
 #    under the License.
 
 import functools
+from http import client as http
 import inspect
 
 import microversion_parse
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import strutils
-import six
-from six.moves import http_client as http
 import webob
 
 from masakari.api import api_version_request as api_version
@@ -29,7 +28,6 @@ from masakari.api import versioned_method
 from masakari import exception
 from masakari import i18n
 from masakari.i18n import _
-from masakari import utils
 from masakari import wsgi
 
 
@@ -243,7 +241,7 @@ class JSONDictSerializer(ActionDispatcher):
         return self.dispatch(data, action=action)
 
     def default(self, data):
-        return six.text_type(jsonutils.dumps(data))
+        return str(jsonutils.dumps(data))
 
 
 def response(code):
@@ -306,25 +304,12 @@ class ResponseObject(object):
             body = serializer.serialize(self.obj)
         response = webob.Response(body=body)
         if response.headers.get('Content-Length'):
-            if six.PY3:
-                response.headers['Content-Length'] = (str(
-                    response.headers['Content-Length']))
-            else:
-                # NOTE: we need to encode 'Content-Length' header, since
-                # webob.Response auto sets it if "body" attr is presented.
-                # github.com/Pylons/webob/blob/1.5.0b0/webob/response.py#L147
-                response.headers['Content-Length'] = utils.utf8(
-                    response.headers['Content-Length'])
+            response.headers['Content-Length'] = (str(
+                response.headers['Content-Length']))
         response.status_int = self.code
         for hdr, value in self._headers.items():
-            if six.PY3:
-                response.headers[hdr] = str(value)
-            else:
-                response.headers[hdr] = utils.utf8(value)
-        if six.PY3:
-            response.headers['Content-Type'] = str(content_type)
-        else:
-            response.headers['Content-Type'] = utils.utf8(content_type)
+            response.headers[hdr] = str(value)
+        response.headers['Content-Type'] = str(content_type)
         return response
 
     @property
@@ -629,7 +614,7 @@ class Resource(wsgi.Application):
         if body:
             msg = _("Action: '%(action)s', calling method: %(meth)s, body: "
                     "%(body)s") % {'action': action,
-                                   'body': six.text_type(body, 'utf-8'),
+                                   'body': str(body, 'utf-8'),
                                    'meth': str(meth)}
             LOG.debug(strutils.mask_password(msg))
         else:
@@ -699,11 +684,7 @@ class Resource(wsgi.Application):
 
         if hasattr(response, 'headers'):
             for hdr, val in list(response.headers.items()):
-                if six.PY3:
-                    response.headers[hdr] = str(val)
-                else:
-                    # Headers must be utf-8 strings
-                    response.headers[hdr] = utils.utf8(val)
+                response.headers[hdr] = str(val)
 
             if not request.api_version_request.is_null():
                 response.headers[API_VERSION_REQUEST_HEADER] = \
@@ -865,8 +846,7 @@ class ControllerMetaclass(type):
                                                        cls_dict)
 
 
-@six.add_metaclass(ControllerMetaclass)
-class Controller(object):
+class Controller(object, metaclass=ControllerMetaclass):
     """Default controller."""
 
     _view_builder_class = None

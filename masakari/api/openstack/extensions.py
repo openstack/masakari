@@ -18,7 +18,6 @@ import os
 
 from oslo_log import log as logging
 from oslo_utils import importutils
-import six
 import webob.dec
 import webob.exc
 
@@ -190,7 +189,7 @@ class ExtensionManager(object):
 
         LOG.debug("Loading extension %s", ext_factory)
 
-        if isinstance(ext_factory, six.string_types):
+        if isinstance(ext_factory, str):
             # Load the factory
             factory = importutils.import_class(ext_factory)
         else:
@@ -314,8 +313,7 @@ def load_standard_extensions(ext_mgr, logger, path, package, ext_list=None):
         dirnames[:] = subdirs
 
 
-@six.add_metaclass(abc.ABCMeta)
-class V1APIExtensionBase(object):
+class V1APIExtensionBase(object, metaclass=abc.ABCMeta):
     """Abstract base class for all v1 API extensions.
 
     All v1 API extensions must derive from this class and implement

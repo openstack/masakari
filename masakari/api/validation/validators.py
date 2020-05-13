@@ -24,7 +24,6 @@ import jsonschema
 from jsonschema import exceptions as jsonschema_exc
 from oslo_utils import timeutils
 from oslo_utils import uuidutils
-import six
 
 from masakari.api.validation import parameter_types
 from masakari import exception
@@ -194,7 +193,7 @@ class _SchemaValidator(object):
         except TypeError as ex:
             # NOTE: If passing non string value to patternProperties parameter,
             #       TypeError happens. Here is for catching the TypeError.
-            detail = six.text_type(ex)
+            detail = str(ex)
             raise exception.ValidationError(detail=detail)
 
     def _number_from_str(self, instance):

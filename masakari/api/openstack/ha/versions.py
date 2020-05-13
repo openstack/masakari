@@ -12,8 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from http import client as http_client
+
 from oslo_config import cfg
-from six.moves import http_client
 
 from masakari.api.openstack.ha.views import versions as views_versions
 from masakari.api.openstack import wsgi
