@@ -22,7 +22,6 @@ import sys
 from oslo_log import log as logging
 from oslo_service import _options as service_opts
 from paste import deploy
-import six
 
 from masakari.common import config
 import masakari.conf
@@ -58,7 +57,7 @@ def main():
         launcher.launch_service(server, workers=server.workers or 1)
     except exception.PasteAppNotFound as ex:
         log.error("Failed to start ``masakari_api`` service. Error: %s",
-                  six.text_type(ex))
+                  str(ex))
         sys.exit(1)
 
     launcher.wait()
