@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Fixes validation of compute host existence from checking hypervisor list
+    to compute service list. Since masakari needs to match nova compute service
+    hostname with the one in pacemaker cluster and added to API for correctly
+    processing hostmonitors failover notifications.

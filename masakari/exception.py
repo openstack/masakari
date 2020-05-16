@@ -276,8 +276,9 @@ class HostNotFoundByName(HostNotFound):
     msg_fmt = _("Host with name %(host_name)s could not be found.")
 
 
-class HypervisorNotFoundByName(NotFound):
-    msg_fmt = _("Hypervisor with name %(hypervisor_name)s could not be found.")
+class ComputeNotFoundByName(NotFound):
+    msg_fmt = _("Compute service with name %(compute_name)s could not "
+                "be found.")
 
 
 class FailoverSegmentExists(MasakariException):
