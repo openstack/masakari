@@ -151,7 +151,7 @@ class HostAPI(object):
 
     def _is_valid_host_name(self, context, name):
         novaclient = nova.API()
-        novaclient.hypervisor_search(context, name)
+        novaclient.find_compute_service(context, name)
 
     def get_host(self, context, segment_uuid, host_uuid):
         """Get a host by id"""

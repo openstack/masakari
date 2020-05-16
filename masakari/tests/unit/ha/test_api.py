@@ -363,9 +363,9 @@ class HostAPITestCase(test.NoDBTestCase):
 
     @mock.patch.object(host_obj, 'Host')
     @mock.patch.object(host_obj.Host, 'create')
-    @mock.patch.object(nova_obj.API, 'hypervisor_search')
+    @mock.patch.object(nova_obj.API, 'find_compute_service')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
-    def test_create(self, mock_get, mock_hypervisor_search,
+    def test_create(self, mock_get, mock_find_compute_service,
                 mock_host_create, mock_host_obj):
         mock_get.return_value = self.failover_segment
 
@@ -382,13 +382,13 @@ class HostAPITestCase(test.NoDBTestCase):
                                            host_data)
         self._assert_host_data(self.host, _make_host_obj(result))
 
-    @mock.patch.object(nova_obj.API, 'hypervisor_search')
+    @mock.patch.object(nova_obj.API, 'find_compute_service')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_create_non_existing_host(self, mock_segment_get,
-                                    mock_hypervisor_search):
+                                    mock_find_compute_service):
         mock_segment_get.return_value = self.failover_segment
-        mock_hypervisor_search.side_effect = exception\
-            .HypervisorNotFoundByName(host_name='host-2')
+        mock_find_compute_service.side_effect = exception\
+            .ComputeNotFoundByName(compute_name='host-2')
 
         host_data = {
             "name": 'host-2',
@@ -398,18 +398,18 @@ class HostAPITestCase(test.NoDBTestCase):
             "control_attributes": "fake-control_attributes"
         }
 
-        self.assertRaises(exception.HypervisorNotFoundByName,
+        self.assertRaises(exception.ComputeNotFoundByName,
                           self.host_api.create_host,
                           self.context, uuidsentinel.fake_segment1, host_data)
 
     @mock.patch.object(host_obj, 'Host')
     @mock.patch.object(host_obj.Host, 'create')
-    @mock.patch.object(nova_obj.API, 'hypervisor_search')
+    @mock.patch.object(nova_obj.API, 'find_compute_service')
     @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_host_create_exception(self, mock_get,
                                    mock_notify_about_host_api,
-                                   mock_hypervisor_search, mock_host_obj,
+                                   mock_find_compute_service, mock_host_obj,
                                    mock_host_create):
         mock_get.return_value = self.failover_segment
         host_data = {
@@ -434,16 +434,16 @@ class HostAPITestCase(test.NoDBTestCase):
                       exception=e,
                       tb=mock.ANY)]
         mock_notify_about_host_api.assert_has_calls(notify_calls)
-        mock_hypervisor_search.assert_called_once()
+        mock_find_compute_service.assert_called_once()
 
     @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch('oslo_utils.uuidutils.generate_uuid')
     @mock.patch('masakari.db.host_create')
     @mock.patch.object(host_obj.Host, '_from_db_object')
-    @mock.patch.object(nova_obj.API, 'hypervisor_search')
+    @mock.patch.object(nova_obj.API, 'find_compute_service')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_create_convert_boolean_attributes(self, mock_get_segment,
-                                               mock_hypervisor_search,
+                                               mock_find_compute_service,
                                                mock__from_db_object,
                                                mock_host_create,
                                                mock_generate_uuid,
@@ -501,12 +501,12 @@ class HostAPITestCase(test.NoDBTestCase):
     @mock.patch.object(segment_obj.FailoverSegment,
                        'is_under_recovery')
     @mock.patch.object(host_obj, 'Host')
-    @mock.patch.object(nova_obj.API, 'hypervisor_search')
+    @mock.patch.object(nova_obj.API, 'find_compute_service')
     @mock.patch.object(host_obj.Host, 'save')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_update(self, mock_segment_get, mock_get,
-                    mock_update, mock_hypervisor_search, mock_host_obj,
+                    mock_update, mock_find_compute_service, mock_host_obj,
                     mock_is_under_recovery):
         mock_segment_get.return_value = self.failover_segment
         host_data = {"name": "host_1"}
@@ -522,19 +522,19 @@ class HostAPITestCase(test.NoDBTestCase):
 
     @mock.patch.object(segment_obj.FailoverSegment,
                        'is_under_recovery')
-    @mock.patch.object(nova_obj.API, 'hypervisor_search')
+    @mock.patch.object(nova_obj.API, 'find_compute_service')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_update_with_non_existing_host(self, mock_segment_get, mock_get,
-                                           mock_hypervisor_search,
+                                           mock_find_compute_service,
                                            mock_is_under_recovery):
         mock_segment_get.return_value = self.failover_segment
         host_data = {"name": "host-2"}
         mock_get.return_value = self.host
-        mock_hypervisor_search.side_effect = (
-            exception.HypervisorNotFoundByName(host_name='host-2'))
+        mock_find_compute_service.side_effect = (
+            exception.ComputeNotFoundByName(compute_name='host-2'))
         mock_is_under_recovery.return_value = False
-        self.assertRaises(exception.HypervisorNotFoundByName,
+        self.assertRaises(exception.ComputeNotFoundByName,
                           self.host_api.update_host, self.context,
                           uuidsentinel.fake_segment,
                           uuidsentinel.fake_host_1,
@@ -542,14 +542,14 @@ class HostAPITestCase(test.NoDBTestCase):
 
     @mock.patch.object(segment_obj.FailoverSegment,
                        'is_under_recovery')
-    @mock.patch.object(nova_obj.API, 'hypervisor_search')
+    @mock.patch.object(nova_obj.API, 'find_compute_service')
     @mock.patch.object(host_obj.Host, 'save')
     @mock.patch.object(api_utils, 'notify_about_host_api')
     @mock.patch.object(host_obj.Host, 'get_by_uuid')
     @mock.patch.object(segment_obj.FailoverSegment, 'get_by_uuid')
     def test_host_update_exception(self, mock_segment_get, mock_get,
                                    mock_notify_about_host_api,
-                                   mock_host_obj, mock_hypervisor_search,
+                                   mock_host_obj, mock_find_compute_service,
                                    mock_is_under_recovery):
         mock_segment_get.return_value = self.failover_segment
         host_data = {"name": "host_1"}
