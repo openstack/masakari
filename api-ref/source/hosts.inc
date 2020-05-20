@@ -126,6 +126,7 @@ Request
   - host: host
   - type: host_type
   - name: host_name
+  - control_attributes: control_attributes
   - reserved: reserved
   - on_maintenance: on_maintenance
 
