@@ -220,7 +220,7 @@ Response
 Update Host
 ===========
 
-.. rest_method:: PUT /segments/{segment_id}hosts/{host_id}
+.. rest_method:: PUT /segments/{segment_id}/hosts/{host_id}
 
 Updates the editable attributes of an existing host.
 
@@ -303,7 +303,7 @@ Response
 Delete Host
 ===========
 
-.. rest_method:: DELETE /segments/{segment_id}hosts/{host_id}
+.. rest_method:: DELETE /segments/{segment_id}/hosts/{host_id}
 
 Deletes a host from given segment.
 
