@@ -1,7 +1,8 @@
 {
-    "segment" : {
+    "segment": {
         "service_type": "COMPUTE",
         "recovery_method": "AUTO",
-        "name": "new_segment"
+        "name": "new_segment",
+        "enabled": True
     }
 }

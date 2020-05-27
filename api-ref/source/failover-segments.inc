@@ -26,13 +26,15 @@ List FailoverSegments
 
 .. rest_method:: GET /segments
 
-Lists IDs, names, description, recovery_method, service_type for all segments.
+Lists IDs, names, description, recovery_method, service_type, enabled for all
+segments.
 
-Segments contains `service_type` and `recovery_method` attributes.
+Segments contains `service_type`, `recovery_method` and `enabled` attributes.
 `service_type` attribute indicates for which service (e.g. compute, cinder
 etc) this segment belongs to. `recovery_method` attribute indicates the
-recovery action to be followed when any host in a segment goes down. The
-possible `recovery_method` values are:
+recovery action to be followed when any host in a segment goes down. `enabled`
+attribute indicates whether notifications which belong to this segment will
+be dealt with. The possible `recovery_method` values are:
 
 - ``AUTO``. Auto recovery action.
 - ``RESERVED_HOST``. Reserved host recovery action.
@@ -41,8 +43,8 @@ possible `recovery_method` values are:
 - ``RH_PRIORITY``. First executes reserved host and if it fails then retried
   with reserved host recover action.
 
-You can filter on the `service_type` and `recovery_method` when you complete a
-list segments request.
+You can filter on the `service_type`, `recovery_method` and `enabled` when you
+complete a list segments request.
 
 Response Codes
 --------------
@@ -67,6 +69,7 @@ Request
   - marker: marker
   - recovery_method: recovery_method_query_segment
   - service_type: service_type_query_segment
+  - enabled: segment_enabled
   - sort_dir: sort_dir
   - sort_key: sort_key_segment
 
@@ -92,12 +95,13 @@ Create Segment
 
 Creates a segment.
 
-Creates a FailoverSegment with name, description, service_type and
+Creates a FailoverSegment with name, description, service_type, enabled and
 recovery_method. For `service_type` user can mention the name of service for
 which this segment is created. As of now user can mention `COMPUTE` as
 `service_type`. For `recovery_method` user can mention either `AUTO`,
 `RESERVED_HOST`, `AUTO_PRIORITY` or `RH_PRIORITY`. Segment name should be
-unique.
+unique. For `enabled` user can mention `True` or `False` to enable/disable
+this segment.
 
 Response Codes
 --------------
@@ -128,6 +132,7 @@ Request
   - name: segment_name
   - recovery_method: segment_recovery_method
   - service_type: segment_service_type
+  - enabled: segment_enabled
 
 **Example Create Segment**
 
@@ -146,6 +151,7 @@ Response
   - name: segment_name
   - recovery_method: segment_recovery_method
   - service_type: segment_service_type
+  - enabled: segment_enabled
   - updated: updated
   - uuid: segment_uuid
 
@@ -198,6 +204,7 @@ Response
   - name: segment_name
   - recovery_method: segment_recovery_method
   - service_type: segment_service_type
+  - enabled: segment_enabled
   - updated: updated
   - uuid: segment_uuid
 
@@ -254,6 +261,7 @@ Request
   - name: segment_name
   - recovery_method: segment_recovery_method
   - service_type: segment_service_type
+  - enabled: segment_enabled
 
 **Example Update segment name**
 
@@ -272,6 +280,7 @@ Response
   - name: segment_name
   - recovery_method: segment_recovery_method
   - service_type: segment_service_type
+  - enabled: segment_enabled
   - updated: updated
   - uuid: segment_uuid
 

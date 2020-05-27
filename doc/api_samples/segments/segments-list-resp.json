@@ -10,7 +10,8 @@
             "service_type": "Compute",
             "deleted_at": null,
             "id": 1,
-            "name": "segment2"
+            "name": "segment2",
+            "enabled": True
         }
     ]
 }

@@ -323,6 +323,12 @@ segment_description:
   description: |
     A free form description of the segment. Limited to 255 characters
     in length.
+segment_enabled:
+  type: boolean
+  in: body
+  required: false
+  description: |
+    Boolean whether this segment is enabled or not.
 segment_id:
   description: |
     The Id of the segment.
