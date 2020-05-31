@@ -94,7 +94,7 @@ exclude_patterns = []
 # show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'native'
 
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
@@ -103,7 +103,9 @@ pygments_style = 'sphinx'
 # keep_warnings = False
 
 # openstackdocstheme options
-repository_name = 'openstack/masakari'
+openstackdocs_repo_name = 'openstack/masakari'
+openstackdocs_bug_project = 'masakari'
+openstackdocs_auto_name = False
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -144,10 +146,6 @@ html_static_path = ['_static']
 # .htaccess) here, relative to this directory. These files are copied
 # directly to the root of the documentation.
 # html_extra_path = []
-
-# If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
-# using the given strftime format.
-# html_last_updated_fmt = '%b %d, %Y'
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
