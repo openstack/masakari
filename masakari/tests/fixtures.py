@@ -13,7 +13,6 @@
 # under the License.
 
 """Fixtures for Masakari tests."""
-from __future__ import absolute_import
 
 import fixtures
 from oslo_config import cfg
