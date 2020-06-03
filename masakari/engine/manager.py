@@ -216,7 +216,7 @@ class MasakariManager(manager.Manager):
                     fields.FailoverSegmentRecoveryMethod.AUTO):
                 reserved_host_object_list = objects.HostList.get_all(
                     context, filters={
-                        'failover_segment_id': host_obj.failover_segment_id,
+                        'failover_segment_id': host_obj.failover_segment.uuid,
                         'reserved': True,
                         'on_maintenance': False
                         })

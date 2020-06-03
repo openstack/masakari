@@ -15,6 +15,7 @@
 
 from oslo_log import log as logging
 from oslo_utils import uuidutils
+from oslo_utils import versionutils
 
 from masakari.api import utils as api_utils
 from masakari import db
@@ -32,19 +33,26 @@ class Host(base.MasakariPersistentObject, base.MasakariObject,
 
     # Version 1.0: Initial version
     # Version 1.1: Added 'segment_uuid' parameter to 'get_by_uuid' method
-    VERSION = '1.1'
+    # Version 1.2: Removed 'failover_segment_id' parameter which can be
+    #              retrieved from failover_segment object
+    VERSION = '1.2'
 
     fields = {
         'id': fields.IntegerField(),
         'uuid': fields.UUIDField(),
         'name': fields.StringField(),
-        'failover_segment_id': fields.UUIDField(),
         'failover_segment': fields.ObjectField('FailoverSegment'),
         'type': fields.StringField(),
         'reserved': fields.BooleanField(),
         'control_attributes': fields.StringField(),
         'on_maintenance': fields.BooleanField(),
         }
+
+    def obj_make_compatible(self, primitive, target_version):
+        super(Host, self).obj_make_compatible(primitive, target_version)
+        target_version = versionutils.convert_version_to_tuple(target_version)
+        if target_version >= (1, 2) and 'failover_segment_id' in primitive:
+            del primitive['failover_segment_id']
 
     @staticmethod
     def _from_db_object(context, host, db_host):
@@ -53,7 +61,7 @@ class Host(base.MasakariPersistentObject, base.MasakariObject,
             db_value = db_host.get(key)
             if key == "failover_segment":
                 db_value = objects.FailoverSegment._from_db_object(
-                    host._context, objects.FailoverSegment(), db_value)
+                    context, objects.FailoverSegment(), db_value)
 
             setattr(host, key, db_value)
 
@@ -88,10 +96,13 @@ class Host(base.MasakariPersistentObject, base.MasakariObject,
             LOG.debug('Generated uuid %(uuid)s for host',
                       dict(uuid=updates['uuid']))
 
-        if 'failover_segment' in updates:
+        if 'failover_segment' not in updates:
             raise exception.ObjectActionError(action='create',
                                               reason='failover segment '
-                                                     'assigned')
+                                                     'not assigned')
+
+        segment = updates.pop('failover_segment')
+        updates['failover_segment_id'] = segment.uuid
 
         api_utils.notify_about_host_api(self._context, self,
             action=fields.EventNotificationAction.HOST_CREATE,

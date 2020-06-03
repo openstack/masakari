@@ -12,13 +12,29 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
+import iso8601
 from oslo_utils import timeutils
 from oslo_utils import uuidutils
 
 from masakari import objects
+from masakari.objects import segment as segment_obj
 from masakari.tests import uuidsentinel
 
 NOW = timeutils.utcnow().replace(microsecond=0)
+
+
+def _make_segment_obj(segment_dict):
+    return segment_obj.FailoverSegment(**segment_dict)
+
+
+FAILOVER_SEGMENT = {"name": "segment1", "id": "1",
+                    "service_type": "COMPUTE", "recovery_method": "auto",
+                    "uuid": uuidsentinel.fake_segment1,
+                    "description": "failover_segment for compute"}
+
+
+FAILOVER_SEGMENT = _make_segment_obj(FAILOVER_SEGMENT)
 
 
 class FakeNovaClient(object):
@@ -170,15 +186,19 @@ def create_fake_notification(type="VM", id=1, payload=None,
         notification_uuid=notification_uuid)
 
 
-def create_fake_host(name='fake_host', id=1, reserved=False,
-                     on_maintenance=False, type='SSH',
-                     control_attributes='fake',
-                     uuid=uuidsentinel.fake_host,
-                     failover_segment_id=uuidsentinel.fake_segment):
-    return objects.Host(
-        name=name, id=id, reserved=reserved, on_maintenance=on_maintenance,
-        type=type, control_attributes=control_attributes, uuid=uuid,
-        failover_segment_id=failover_segment_id)
+def create_fake_host(**updates):
+    host = {
+        'name': 'fake_host', 'id': 1, 'reserved': False,
+        'on_maintenance': False, 'type': 'SSH',
+        'control_attributes': 'fake', 'uuid': uuidsentinel.fake_host,
+        'failover_segment': FAILOVER_SEGMENT,
+        'created_at': datetime.datetime(
+            2019, 8, 8, 0, 0, 0, tzinfo=iso8601.UTC),
+        'updated_at': None, 'deleted_at': None, 'deleted': False
+    }
+    if updates:
+        host.update(updates)
+    return objects.Host(**host)
 
 
 def create_fake_failover_segment(name='fake_segment', id=1, description=None,

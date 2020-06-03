@@ -23,6 +23,7 @@ from webob import exc
 from masakari.api.openstack import common
 from masakari.api.openstack import extensions
 from masakari.api.openstack.ha.schemas import hosts as schema
+from masakari.api.openstack.ha.views import hosts as views_hosts
 from masakari.api.openstack import wsgi
 from masakari.api import validation
 from masakari import exception
@@ -94,7 +95,8 @@ class HostsController(wsgi.Controller):
         except exception.FailoverSegmentNotFound as ex:
             raise exc.HTTPNotFound(explanation=ex.format_message())
 
-        return {'hosts': hosts}
+        builder = views_hosts.get_view_builder(req)
+        return builder.build_hosts(hosts)
 
     @wsgi.response(http.CREATED)
     @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN,
@@ -114,7 +116,8 @@ class HostsController(wsgi.Controller):
         except exception.HostExists as e:
             raise exc.HTTPConflict(explanation=e.format_message())
 
-        return {'host': host}
+        builder = views_hosts.get_view_builder(req)
+        return {'host': builder.build_host(host)}
 
     @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND))
     def show(self, req, segment_id, id):
@@ -127,7 +130,9 @@ class HostsController(wsgi.Controller):
             raise exc.HTTPNotFound(explanation=e.format_message())
         except exception.FailoverSegmentNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
-        return {'host': host}
+
+        builder = views_hosts.get_view_builder(req)
+        return {'host': builder.build_host(host)}
 
     @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN,
                                  http.NOT_FOUND, http.CONFLICT))
@@ -148,7 +153,8 @@ class HostsController(wsgi.Controller):
         except (exception.HostExists, exception.Conflict) as e:
             raise exc.HTTPConflict(explanation=e.format_message())
 
-        return {'host': host}
+        builder = views_hosts.get_view_builder(req)
+        return {'host': builder.build_host(host)}
 
     @wsgi.response(http.NO_CONTENT)
     @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND,

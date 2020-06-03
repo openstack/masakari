@@ -396,8 +396,7 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
         mock_format.return_value = mock.ANY
 
         fake_host = fakes.create_fake_host()
-        fake_host.failover_segment = fakes.create_fake_failover_segment(
-            recovery_method='reserved_host')
+        fake_host.failover_segment.recovery_method = 'reserved_host'
         mock_host_obj.return_value = fake_host
 
         notification = self._get_compute_host_type_notification()
@@ -440,8 +439,7 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             mock_host_update, mock_host_save, mock_host_obj,
             mock_notification_get):
         fake_host = fakes.create_fake_host()
-        fake_host.failover_segment = fakes.create_fake_failover_segment(
-            recovery_method='reserved_host')
+        fake_host.failover_segment.recovery_method = 'reserved_host'
         reserved_host_object_list = [fake_host]
         mock_get_all.return_value = reserved_host_object_list
         mock_host_obj.return_value = fake_host
@@ -495,8 +493,7 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             mock_host_update, mock_host_save, mock_host_obj,
             mock_notification_get):
         fake_host = fakes.create_fake_host(reserved=True)
-        fake_host.failover_segment = fakes.create_fake_failover_segment(
-            recovery_method='reserved_host')
+        fake_host.failover_segment.recovery_method = 'reserved_host'
         reserved_host_object_list = [fake_host]
         mock_get_all.return_value = reserved_host_object_list
         mock_host_obj.return_value = fake_host
