@@ -200,6 +200,12 @@ class EvacuateInstancesTask(base.MasakariTask):
         def _wait_for_evacuation_confirmation():
             old_vm_state, new_vm_state, instance_host = (
                 self._get_state_and_host_of_instance(context, instance))
+
+            if (new_vm_state == 'error' and
+                    new_vm_state != old_vm_state):
+                raise exception.InstanceEvacuateFailed(
+                    instance_uuid=instance.id)
+
             if instance_host != host_name:
                 if ((old_vm_state == 'error' and
                     new_vm_state == 'active') or
@@ -216,6 +222,9 @@ class EvacuateInstancesTask(base.MasakariTask):
                 etimeout.with_timeout(
                     CONF.wait_period_after_evacuation,
                     periodic_call.wait)
+            except exception.InstanceEvacuateFailed as e:
+                LOG.warning(str(e))
+                failed_evacuation_instances.append(instance.id)
             except etimeout.Timeout:
                 # Instance is not evacuated in the expected time_limit.
                 failed_evacuation_instances.append(instance.id)
