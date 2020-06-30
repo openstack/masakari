@@ -255,7 +255,7 @@ function start_masakari {
                 start_tls_proxy masakari-service '*' $MASAKARI_SERVICE_PORT $SERVICE_HOST $MASAKARI_SERVICE_PORT_INT
             fi
         else
-            run_process "masakari-api" "$MASAKARI_BIN_DIR/uwsgi --procname-prefix masakari-api --ini $MASAKARI_UWSGI_CONF"
+            run_process "masakari-api" "$(which uwsgi) --procname-prefix masakari-api --ini $MASAKARI_UWSGI_CONF"
             masakari_url=$MASAKARI_SERVICE_PROTOCOL://$MASAKARI_SERVICE_HOST/instance-ha/v1
         fi
 
