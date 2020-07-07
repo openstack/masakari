@@ -495,7 +495,7 @@ class NotificationV1_1_TestCase(NotificationTestCase):
 
         result = self.controller.show(self.req, uuidsentinel.fake_notification)
         result = result['notification']
-        self.assertItemsEqual([RECOVERY_OBJ],
+        self.assertCountEqual([RECOVERY_OBJ],
                               result.recovery_workflow_details)
         self._assert_notification_data(NOTIFICATION_WITH_PROGRESS_DETAILS,
                                        _make_notification_obj(result))

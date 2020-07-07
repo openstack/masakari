@@ -78,7 +78,7 @@ class TestHosts(base.BaseFunctionalTest):
             expected_hosts.append(host_obj)
 
         hosts = self.admin_conn.ha.hosts(self.segment.uuid)
-        self.assertItemsEqual(expected_hosts, hosts)
+        self.assertCountEqual(expected_hosts, hosts)
 
     @ddt.data(
         {'on_maintenance': False, 'host_type': 'COMPUTE', 'reserved': False,
