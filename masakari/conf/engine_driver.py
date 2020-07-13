@@ -43,13 +43,26 @@ host_failure_opts = [
     cfg.BoolOpt('evacuate_all_instances',
                 default=True,
                 help="""
-Operators can decide whether all instances or only those instances which
-contain metadata key 'HA_Enabled=True' should be allowed for evacuation from
-a failed source compute node. When set to True, it will evacuate all instances
-from a failed source compute node. First preference will be given to those
-instances which contain 'HA_Enabled=True' metadata key, and then it will
-evacuate the remaining ones. When set to False, it will evacuate only those
-instances which contain 'HA_Enabled=True' metadata key."""),
+Operators can decide whether all instances or only those instances which have
+``[host_failure]\\ha_enabled_instance_metadata_key`` set to ``True`` should be
+allowed for evacuation from a failed source compute node.
+When set to True, it will evacuate all instances from a failed source compute
+node.
+First preference will be given to those instances which have
+``[host_failure]\\ha_enabled_instance_metadata_key`` set to ``True``,
+and then it will evacuate the remaining ones.
+When set to False, it will evacuate only those instances which have
+``[host_failure]\\ha_enabled_instance_metadata_key`` set to ``True``.
+    """),
+
+    cfg.StrOpt('ha_enabled_instance_metadata_key',
+               default='HA_Enabled',
+               help="""
+Operators can decide on the instance metadata key naming that affects the
+per-instance behaviour of ``[host_failure]\\evacuate_all_instances``.
+The default is the same for both failure types (host, instance) but the value
+can be overridden to make the metadata key different per failure type.
+    """),
 
     cfg.BoolOpt('ignore_instances_in_error_state',
                 default=False,
@@ -74,12 +87,24 @@ instance_failure_options = [
                 default=False,
                 help="""
 Operators can decide whether all instances or only those instances which
-contain metadata key 'HA_Enabled=True' should be taken into account to
-recover from instance failure events. When set to True, it will execute
-instance failure recovery actions for an instance irrespective of whether
-that particular instance contains metadata key 'HA_Enabled=True' or not.
+have ``[instance_failure]\\ha_enabled_instance_metadata_key`` set to ``True``
+should be taken into account to recover from instance failure events.
+When set to True, it will execute instance failure recovery actions for an
+instance irrespective of whether that particular instance has
+``[instance_failure]\\ha_enabled_instance_metadata_key`` set to ``True``.
 When set to False, it will only execute instance failure recovery actions
-for an instance which contain metadata key 'HA_Enabled=True'."""),
+for an instance which has
+``[instance_failure]\\ha_enabled_instance_metadata_key`` set to ``True``.
+    """),
+
+    cfg.StrOpt('ha_enabled_instance_metadata_key',
+               default='HA_Enabled',
+               help="""
+Operators can decide on the instance metadata key naming that affects the
+per-instance behaviour of ``[instance_failure]\\process_all_instances``.
+The default is the same for both failure types (host, instance) but the value
+can be overridden to make the metadata key different per failure type.
+    """),
 ]
 
 taskflow_options = [

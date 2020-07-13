@@ -43,12 +43,14 @@ class StopInstanceTask(base.MasakariTask):
         """Stop the instance for recovery."""
         instance = self.novaclient.get_server(self.context, instance_uuid)
 
+        ha_enabled_key = CONF.instance_failure.ha_enabled_instance_metadata_key
+
         # If an instance is not HA_Enabled and "process_all_instances" config
         # option is also disabled, then there is no need to take any recovery
         # action.
         if not CONF.instance_failure.process_all_instances and not (
                 strutils.bool_from_string(
-                    instance.metadata.get('HA_Enabled', False))):
+                    instance.metadata.get(ha_enabled_key, False))):
             msg = ("Skipping recovery for instance: %(instance_uuid)s as it is"
                    " not Ha_Enabled") % {'instance_uuid': instance_uuid}
             LOG.info(msg)
