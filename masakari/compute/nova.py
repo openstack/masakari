@@ -21,7 +21,7 @@ import sys
 
 from keystoneauth1 import exceptions as keystone_exception
 import keystoneauth1.loading
-import keystoneauth1.session
+import keystoneauth1.loading.session
 from novaclient import api_versions
 from novaclient import client as nova_client
 from novaclient import exceptions as nova_exception
@@ -113,7 +113,10 @@ def novaclient(context, timeout=None):
         project_name=context.project_name,
         user_domain_name=CONF.os_user_domain_name,
         project_domain_name=CONF.os_project_domain_name)
-    keystone_session = keystoneauth1.session.Session(auth=auth)
+    session_loader = keystoneauth1.loading.session.Session()
+    keystone_session = session_loader.load_from_options(
+        auth=auth, cacert=CONF.nova_ca_certificates_file,
+        insecure=CONF.nova_api_insecure)
 
     client_obj = nova_client.Client(
         api_versions.APIVersion(NOVA_API_VERSION),
