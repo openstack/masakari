@@ -36,14 +36,24 @@ class ExceptionPayload(base.NotificationPayloadBase):
 
     @classmethod
     def from_exc_and_traceback(cls, fault, traceback):
-        trace = inspect.trace()[-1]
-        # TODO(gibi): apply strutils.mask_password on exception_message and
-        # consider emitting the exception_message only if the safe flag is
-        # true in the exception like in the REST API
-        module = inspect.getmodule(trace[0])
+        trace = inspect.trace()
+        # FIXME(mgoddard): In some code paths we reach this point without being
+        # inside an exception handler. This results in inspect.trace()
+        # returning an empty list. Ideally we should only end up here from an
+        # exception handler.
+        if trace:
+            trace = trace[-1]
+            # TODO(gibi): apply strutils.mask_password on exception_message and
+            # consider emitting the exception_message only if the safe flag is
+            # true in the exception like in the REST API
+            module = inspect.getmodule(trace[0])
+            function_name = trace[3]
+        else:
+            module = None
+            function_name = 'unknown'
         module_name = module.__name__ if module else 'unknown'
         return cls(
-            function_name=trace[3],
+            function_name=function_name,
             module_name=module_name,
             exception=fault.__class__.__name__,
             exception_message=six.text_type(fault),
