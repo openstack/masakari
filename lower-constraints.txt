@@ -36,7 +36,6 @@ kombu==4.1.0
 linecache2==1.0.0
 Mako==1.0.7
 MarkupSafe==1.0
-mccabe==0.2.1
 microversion-parse==0.2.1
 monotonic==1.4
 mox3==0.25.0
