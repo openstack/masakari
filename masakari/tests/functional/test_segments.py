@@ -88,7 +88,7 @@ class TestSegments(base.BaseFunctionalTest):
         self.addCleanup(self.admin_conn.ha.delete_segment, segment_2.uuid)
 
         segments = self.admin_conn.ha.segments()
-        self.assertItemsEqual([segment_1, segment_2], segments)
+        self.assertCountEqual([segment_1, segment_2], segments)
 
     def test_list_with_filter(self):
         # This test is for listing segments using filters
