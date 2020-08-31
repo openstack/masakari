@@ -49,6 +49,19 @@
       - openstack/python-masakariclient
       - openstack/masakari
       - openstack/masakari-monitors
+    irrelevant-files:
+      - ^api-ref/
+      - ^doc/
+      - ^masakari/tests/unit/
+      - ^releasenotes/
+      - ^\.coveragerc$
+      - ^\.gitignore$
+      - ^\.gitreview$
+      - ^\.mailmap$
+      - ^\.zuul.yaml$
+      - ^LICENSE$
+      - ^lower-constraints.txt$
+      - \.rst$
     vars:
       test_matrix_configs: [neutron]
       devstack_services:
