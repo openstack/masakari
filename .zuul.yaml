@@ -130,8 +130,12 @@
       - release-notes-jobs-python3
     check:
       jobs:
+        - openstack-tox-linters
         - masakari-functional-devstack-multinode:
             voting: true
+    gate:
+      jobs:
+        - openstack-tox-linters
 
 - project:
     masakari-systemfault-integration-ci:
