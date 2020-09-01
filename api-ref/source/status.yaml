@@ -1,3 +1,5 @@
+---
+
 #################
 # Success Codes #
 #################
@@ -47,9 +49,9 @@
   default: |
     Method is not valid for this endpoint.
 409:
- default: |
+  default: |
     This operation conflicted with another operation on this resource.
- duplicate_zone: |
+  duplicate_zone: |
     There is already a zone with this name.
 500:
   default: |

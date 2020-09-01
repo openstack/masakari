@@ -177,7 +177,7 @@ Install and configure Masakari
    #. Rename ``masakari.conf.sample`` file to ``masakari.conf``,
       and edit sections as shown below:
 
-      .. code-block:: none
+      .. code-block:: ini
 
          [default]
          transport_url = rabbit://stackrabbit:admin@<CONTROLLER_IP>:5672/

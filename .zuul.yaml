@@ -1,3 +1,5 @@
+---
+
 - nodeset:
     name: masakari-openstack-multi-nodes
     nodes:

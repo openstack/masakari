@@ -1,6 +1,7 @@
+---
 - name: Collect devstack stackenv file
   fetch:
-    flat: yes
+    flat: true
     dest: "{{ zuul.executor.log_root }}/{{ inventory_hostname }}/confs/devstack/-stackenv"
     src: "/opt/stack/devstack/.stackenv"
 
