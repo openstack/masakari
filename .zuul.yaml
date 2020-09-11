@@ -1,12 +1,12 @@
 ---
 
 - nodeset:
-    name: masakari-openstack-multi-nodes
+    name: masakari-ubuntu-focal-duo
     nodes:
       - name: controller
-        label: ubuntu-bionic
+        label: ubuntu-focal
       - name: compute1
-        label: ubuntu-bionic
+        label: ubuntu-focal
     groups:
       # Nodes running the compute service
       - name: compute
@@ -31,7 +31,7 @@
     parent: devstack
     description: |
       Base multinodes job for devstack-based functional tests
-    nodeset: masakari-openstack-multi-nodes
+    nodeset: masakari-ubuntu-focal-duo
     pre-run: playbooks/devstack/pre.yaml
     run: playbooks/devstack/run.yaml
     post-run: playbooks/devstack/post.yaml
