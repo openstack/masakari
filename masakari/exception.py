@@ -22,19 +22,19 @@ SHOULD include dedicated exception logging.
 """
 
 import functools
+from http import client as http
 import inspect
 import sys
 
 from oslo_log import log as logging
 from oslo_utils import excutils
-import six
-from six.moves import http_client as http
 import webob.exc
 from webob import util as woutil
 
 import masakari.conf
 from masakari.i18n import _
 from masakari import safe_utils
+from masakari import utils
 
 LOG = logging.getLogger(__name__)
 
@@ -142,7 +142,7 @@ class MasakariException(Exception):
                     LOG.error("%s: %s" % (name, value))    # noqa
 
                 if CONF.fatal_exception_format_errors:
-                    six.reraise(*exc_info)
+                    utils.reraise(*exc_info)
                 else:
                     # at least get the core message out if something happened
                     message = self.msg_fmt

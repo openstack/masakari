@@ -27,7 +27,6 @@ from unittest import mock
 
 import fixtures
 
-import six
 import testtools
 
 from oslo_config import cfg
@@ -44,13 +43,10 @@ CONF.set_override('use_stderr', False)
 logging.setup(CONF, 'masakari')
 
 
-if six.PY2:
-    nested = contextlib.nested
-else:
-    @contextlib.contextmanager
-    def nested(*contexts):
-        with contextlib.ExitStack() as stack:
-            yield [stack.enter_context(c) for c in contexts]
+@contextlib.contextmanager
+def nested(*contexts):
+    with contextlib.ExitStack() as stack:
+        yield [stack.enter_context(c) for c in contexts]
 
 
 def _patch_mock_to_raise_for_invalid_assert_calls():
@@ -136,9 +132,9 @@ class TestCase(testtools.TestCase):
         matcher.
 
         """
-        if isinstance(expected, six.string_types):
+        if isinstance(expected, str):
             expected = jsonutils.loads(expected)
-        if isinstance(observed, six.string_types):
+        if isinstance(observed, str):
             observed = jsonutils.loads(observed)
 
         def sort_key(x):
@@ -157,7 +153,7 @@ class TestCase(testtools.TestCase):
                 observed_keys = sorted(observed)
                 self.assertEqual(expected_keys, observed_keys)
 
-                for key in list(six.iterkeys(expected)):
+                for key in expected:
                     inner(expected[key], observed[key])
             elif (isinstance(expected, (list, tuple, set)) and isinstance(
                     observed, (list, tuple, set))):
