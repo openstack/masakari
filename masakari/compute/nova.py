@@ -28,11 +28,11 @@ from novaclient import exceptions as nova_exception
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 from requests import exceptions as request_exceptions
-import six
 
 from masakari import conf
 from masakari import context as ctx
 from masakari import exception
+from masakari import utils
 
 CONF = conf.CONF
 CONF.import_group('keystone_authtoken', 'keystonemiddleware.auth_token')
@@ -47,7 +47,7 @@ nova_extensions = [ext for ext in
 
 
 def _reraise(desired_exc):
-    six.reraise(type(desired_exc), desired_exc, sys.exc_info()[2])
+    utils.reraise(type(desired_exc), desired_exc, sys.exc_info()[2])
 
 
 def translate_nova_exception(method):
