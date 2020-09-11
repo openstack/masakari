@@ -18,7 +18,6 @@ import re
 
 import fixtures
 from jsonschema import exceptions as jsonschema_exc
-import sys
 
 from masakari.api import api_version_request as api_version
 from masakari.api import validation
@@ -269,10 +268,7 @@ class PatternPropertiesTestCase(APIValidationTestCase):
         self.check_validation_error(self.post, body={'0123456789a': 'bar'},
                                     expected_detail=details)
 
-        if sys.version[:3] in ['3.5', '3.6', '3.7']:
-            detail = "expected string or bytes-like object"
-        else:
-            detail = "expected string or buffer"
+        detail = "expected string or bytes-like object"
         self.check_validation_error(self.post, body={None: 'bar'},
                                     expected_detail=detail)
 

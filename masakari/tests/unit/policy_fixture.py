@@ -13,10 +13,10 @@
 # under the License.
 
 import os
+import yaml
 
 import fixtures
 from oslo_policy import policy as oslo_policy
-from oslo_serialization import jsonutils
 
 import masakari.conf
 from masakari.conf import paths
@@ -46,11 +46,11 @@ class RealPolicyFixture(fixtures.Fixture):
     def setUp(self):
         super(RealPolicyFixture, self).setUp()
         # policy_file can be overridden by subclasses
-        self.policy_file = paths.state_path_def('etc/masakari/policy.json')
+        self.policy_file = paths.state_path_def('etc/masakari/policy.yaml')
         self._prepare_policy()
         CONF.set_override('policy_file', self.policy_file, group='oslo_policy')
         masakari.policy.reset()
-        masakari.policy.init()
+        masakari.policy.init(suppress_deprecation_warnings=True)
         self.addCleanup(masakari.policy.reset)
 
     def set_rules(self, rules, overwrite=True):
@@ -68,13 +68,13 @@ class PolicyFixture(RealPolicyFixture):
     """
     def _prepare_policy(self):
         self.policy_dir = self.useFixture(fixtures.TempDir())
-        self.policy_file = os.path.join(self.policy_dir.path, 'policy.json')
+        self.policy_file = os.path.join(self.policy_dir.path, 'policy.yaml')
 
         # load the fake_policy data and add the missing default rules.
-        policy_rules = jsonutils.loads(fake_policy.policy_data)
+        policy_rules = yaml.safe_load(fake_policy.policy_data)
 
         with open(self.policy_file, 'w') as f:
-            jsonutils.dump(policy_rules, f)
+            yaml.dump(policy_rules, f)
         CONF.set_override('policy_dirs', [], group='oslo_policy')
 
 
@@ -99,6 +99,6 @@ class RoleBasedPolicyFixture(RealPolicyFixture):
             policy[rule.name] = 'role:%s' % self.role
 
         self.policy_dir = self.useFixture(fixtures.TempDir())
-        self.policy_file = os.path.join(self.policy_dir.path, 'policy.json')
+        self.policy_file = os.path.join(self.policy_dir.path, 'policy.yaml')
         with open(self.policy_file, 'w') as f:
-            jsonutils.dump(policy, f)
+            yaml.dump(policy, f)

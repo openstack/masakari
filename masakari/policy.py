@@ -45,7 +45,8 @@ def reset():
         _ENFORCER = None
 
 
-def init(policy_file=None, rules=None, default_rule=None, use_conf=True):
+def init(policy_file=None, rules=None, default_rule=None, use_conf=True,
+         suppress_deprecation_warnings=False):
     """Init an Enforcer class.
 
        :param policy_file: Custom policy file to use, if none is specified,
@@ -55,6 +56,8 @@ def init(policy_file=None, rules=None, default_rule=None, use_conf=True):
        :param default_rule: Default rule to use, CONF.default_rule will
                             be used if none is specified.
        :param use_conf: Whether to load rules from config file.
+       :param suppress_deprecation_warnings: Whether to suppress the
+                                             deprecation warnings.
     """
     global _ENFORCER
     global saved_file_rules
@@ -64,6 +67,15 @@ def init(policy_file=None, rules=None, default_rule=None, use_conf=True):
                                     rules=rules,
                                     default_rule=default_rule,
                                     use_conf=use_conf)
+        # NOTE(gmann): Explictly disable the warnings for policies
+        # changing their default check_str. During policy-defaults-refresh
+        # work, all the policy defaults have been changed and warning for
+        # each policy started filling the logs limit for various tool.
+        # Once we move to new defaults only world then we can enable these
+        # warning again.
+        _ENFORCER.suppress_default_change_warnings = True
+        if suppress_deprecation_warnings:
+            _ENFORCER.suppress_deprecation_warnings = True
         register_rules(_ENFORCER)
         _ENFORCER.load_rules()
 

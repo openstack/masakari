@@ -49,7 +49,7 @@ class PolicyFileTestCase(test.NoDBTestCase):
             # determine is_admin or not. As a side-effect, policy reset is
             # needed here to flush existing policy cache.
             policy.reset()
-            policy.init()
+            policy.init(suppress_deprecation_warnings=True)
             rule = oslo_policy.RuleDefault('example:test', "")
             policy._ENFORCER.register_defaults([rule])
 
@@ -84,7 +84,7 @@ class PolicyTestCase(test.NoDBTestCase):
                                     "role:ADMIN or role:sysadmin"),
         ]
         policy.reset()
-        policy.init()
+        policy.init(suppress_deprecation_warnings=True)
         # before a policy rule can be used, its default has to be registered.
         policy._ENFORCER.register_defaults(rules)
         self.context = context.RequestContext('fake', 'fake', roles=['member'])
@@ -158,7 +158,7 @@ class PolicyTestCase(test.NoDBTestCase):
 class IsAdminCheckTestCase(test.NoDBTestCase):
     def setUp(self):
         super(IsAdminCheckTestCase, self).setUp()
-        policy.init()
+        policy.init(suppress_deprecation_warnings=True)
 
     def test_init_true(self):
         check = policy.IsAdminCheck('is_admin', 'True')
