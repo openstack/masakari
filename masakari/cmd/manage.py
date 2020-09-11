@@ -26,7 +26,6 @@ import time
 from oslo_config import cfg
 from oslo_db.sqlalchemy import migration
 from oslo_log import log as logging
-import six
 
 import masakari.conf
 from masakari import context
@@ -92,13 +91,13 @@ class DbCommands(object):
             max_rows = utils.validate_integer(
                 max_rows, 'max_rows', -1, db.MAX_INT)
         except exception.Invalid as exc:
-            sys.exit(six.text_type(exc))
+            sys.exit(str(exc))
 
         try:
             age_in_days = int(age_in_days)
         except ValueError:
             msg = 'Invalid value for age, %(age)s' % {'age': age_in_days}
-            sys.exit(six.text_type(msg))
+            sys.exit(str(msg))
 
         if max_rows == 0:
             sys.exit(_("Must supply value greater than 0 for max_rows."))

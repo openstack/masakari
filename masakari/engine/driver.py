@@ -24,7 +24,6 @@ import abc
 import sys
 
 from oslo_log import log as logging
-import six
 from stevedore import driver
 
 import masakari.conf
@@ -35,8 +34,7 @@ CONF = masakari.conf.CONF
 LOG = logging.getLogger(__name__)
 
 
-@six.add_metaclass(abc.ABCMeta)
-class NotificationDriver(object):
+class NotificationDriver(object, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def execute_host_failure(self, context, host_name, recovery_method,
                              notification_uuid, **kwargs):
