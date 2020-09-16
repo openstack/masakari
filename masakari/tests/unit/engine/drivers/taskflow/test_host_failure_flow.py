@@ -99,7 +99,9 @@ class HostFailureTestCase(test.TestCase):
                 self.assertNotEqual("error",
                                     getattr(instance, "OS-EXT-STS:vm_state"))
             if not CONF.host_failure.evacuate_all_instances:
-                self.assertTrue(instance.metadata.get('HA_Enabled', False))
+                ha_enabled_key = (CONF.host_failure
+                                      .ha_enabled_instance_metadata_key)
+                self.assertTrue(instance.metadata.get(ha_enabled_key, False))
 
             instance_uuid_list.append(instance.id)
 
@@ -203,6 +205,54 @@ class HostFailureTestCase(test.TestCase):
             mock.call("Evacuation of instance started: '1'", 0.5),
             mock.call("Evacuation of instance started: '2'", 0.5),
             mock.call("Successfully evacuate instances '1,2' from host "
+                      "'fake-host'", 0.7),
+            mock.call('Evacuation process completed!', 1.0)
+        ])
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_host_failure_flow_for_auto_recovery_custom_ha_key(
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
+            mock_enable_disable):
+        _mock_novaclient.return_value = self.fake_client
+        self.override_config("evacuate_all_instances",
+                             False, "host_failure")
+
+        ha_enabled_key = 'Ensure-My-HA'
+
+        self.override_config('ha_enabled_instance_metadata_key',
+                             ha_enabled_key, 'host_failure')
+
+        # create test data
+        self.fake_client.servers.create(id="1", host=self.instance_host,
+                                        ha_enabled=True)
+        self.fake_client.servers.create(id="2", host=self.instance_host,
+                                        ha_enabled=True,
+                                        ha_enabled_key=ha_enabled_key)
+
+        # execute DisableComputeServiceTask
+        self._test_disable_compute_service(mock_enable_disable)
+
+        # execute PrepareHAEnabledInstancesTask
+        instance_list = self._test_instance_list(1)
+
+        # execute EvacuateInstancesTask
+        self._evacuate_instances(instance_list, mock_enable_disable)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0),
+            mock.call('Preparing instances for evacuation'),
+            mock.call("Total instances running on failed host 'fake-host' is 2"
+                      "", 0.3),
+            mock.call("Total HA Enabled instances count: '1'", 0.6),
+            mock.call("Instances to be evacuated are: '2'", 1.0),
+            mock.call("Start evacuation of instances from failed host "
+                      "'fake-host', instance uuids are: '2'"),
+            mock.call("Evacuation of instance started: '2'", 0.5),
+            mock.call("Successfully evacuate instances '2' from host "
                       "'fake-host'", 0.7),
             mock.call('Evacuation process completed!', 1.0)
         ])

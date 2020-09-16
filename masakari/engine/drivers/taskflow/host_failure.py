@@ -73,9 +73,11 @@ class PrepareHAEnabledInstancesTask(base.MasakariTask):
             ha_enabled_instances = []
             non_ha_enabled_instances = []
 
+            ha_enabled_key = CONF.host_failure.ha_enabled_instance_metadata_key
+
             for instance in instance_list:
                 is_instance_ha_enabled = strutils.bool_from_string(
-                    instance.metadata.get('HA_Enabled', False))
+                    instance.metadata.get(ha_enabled_key, False))
                 if CONF.host_failure.ignore_instances_in_error_state and (
                         getattr(instance, "OS-EXT-STS:vm_state") == "error"):
                     if is_instance_ha_enabled:

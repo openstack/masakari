@@ -96,6 +96,46 @@ class InstanceFailureTestCase(test.TestCase):
     @mock.patch('masakari.compute.nova.novaclient')
     @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
                 'update_details')
+    def test_instance_failure_flow_custom_ha_key(
+            self, _mock_notify, _mock_novaclient):
+        _mock_novaclient.return_value = self.fake_client
+
+        ha_enabled_key = 'Ensure-My-HA'
+
+        self.override_config('ha_enabled_instance_metadata_key',
+                             ha_enabled_key, 'instance_failure')
+
+        # create test data with custom ha_enabled_key
+        self.fake_client.servers.create(self.instance_id,
+                                        host="fake-host",
+                                        ha_enabled=True,
+                                        ha_enabled_key=ha_enabled_key)
+
+        # test StopInstanceTask
+        self._test_stop_instance()
+
+        # test StartInstanceTask
+        task = instance_failure.StartInstanceTask(self.ctxt, self.novaclient)
+        task.execute(self.instance_id)
+
+        # test ConfirmInstanceActiveTask
+        self._test_confirm_instance_is_active()
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call('Stopping instance: ' + self.instance_id),
+            mock.call("Stopped instance: '" + self.instance_id + "'", 1.0),
+            mock.call("Starting instance: '" + self.instance_id + "'"),
+            mock.call("Instance started: '" + self.instance_id + "'", 1.0),
+            mock.call("Confirming instance '" + self.instance_id +
+                      "' vm_state is ACTIVE"),
+            mock.call("Confirmed instance '" + self.instance_id +
+                      "' vm_state is ACTIVE", 1.0)
+        ])
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_instance_failure_flow_resized_instance(self, _mock_notify,
                                                     _mock_novaclient):
         _mock_novaclient.return_value = self.fake_client

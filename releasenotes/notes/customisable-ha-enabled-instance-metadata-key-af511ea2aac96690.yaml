@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Adds ``ha_enabled_instance_metadata_key`` config option to ``host_failure``
+    and ``instance_failure`` config groups. This option allows operators to
+    override the default ``HA_Enabled`` instance metadata key which controls
+    the behaviour of Masakari towards the instance. This way one can have
+    different keys for different failure types (host vs instance failures).
