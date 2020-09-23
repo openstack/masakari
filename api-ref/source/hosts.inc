@@ -88,7 +88,9 @@ Creates a host under given segment.
 Creates a Host under given segment with name, type, control_attributes.
 User can set sepcific hosts as reserved by setting reserved attribute to True.
 By default `on_maintenance` mode which indicates whether host is under
-maintenance or not is False when host is created.
+maintenance or not is False when host is created. Host name should be equal
+to nova-compute host name from nova service list and host name from the
+corosync cluster.
 
 **Preconditions**
 

@@ -110,7 +110,7 @@ class HostsController(wsgi.Controller):
         host_data = body.get('host')
         try:
             host = self.api.create_host(context, segment_id, host_data)
-        except exception.HypervisorNotFoundByName as e:
+        except exception.ComputeNotFoundByName as e:
             raise exc.HTTPBadRequest(explanation=e.message)
         except exception.FailoverSegmentNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
@@ -145,7 +145,7 @@ class HostsController(wsgi.Controller):
         host_data = body.get('host')
         try:
             host = self.api.update_host(context, segment_id, id, host_data)
-        except exception.HypervisorNotFoundByName as e:
+        except exception.ComputeNotFoundByName as e:
             raise exc.HTTPBadRequest(explanation=e.message)
         except exception.HostNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
