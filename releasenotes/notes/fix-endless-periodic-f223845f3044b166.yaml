@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes an issue where a periodic task in Masakari Engine could loop forever
+    querying Nova API following a failed evacuation. `LP#1897888
+    <https://bugs.launchpad.net/masakari/+bug/1897888>`__
