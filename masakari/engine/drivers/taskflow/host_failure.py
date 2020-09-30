@@ -176,11 +176,10 @@ class EvacuateInstancesTask(base.MasakariTask):
                 periodic_call_stopped.wait)
         except etimeout.Timeout:
             with excutils.save_and_reraise_exception():
-                periodic_call_stopped.stop()
                 msg = ("Instance '%(uuid)s' is successfully evacuated but "
-                       "failed to stop.") % {'uuid': instance.id}
+                       "timeout to stop.") % {'uuid': instance.id}
                 LOG.warning(msg)
-        else:
+        finally:
             periodic_call_stopped.stop()
 
     def _evacuate_and_confirm(self, context, instance, host_name,
@@ -217,9 +216,11 @@ class EvacuateInstancesTask(base.MasakariTask):
                     CONF.wait_period_after_evacuation,
                     periodic_call.wait)
             except etimeout.Timeout:
-                # Instance is not evacuated in the expected time_limit.
-                failed_evacuation_instances.append(instance.id)
-            else:
+                with excutils.save_and_reraise_exception():
+                    msg = ("Timeout for instance '%(uuid)s' evacuation."
+                           % {'uuid': instance.id})
+                    LOG.warning(msg)
+            finally:
                 # stop the periodic call, in case of exceptions or
                 # Timeout.
                 periodic_call.stop()
@@ -266,9 +267,10 @@ class EvacuateInstancesTask(base.MasakariTask):
         except etimeout.Timeout:
             # Instance is not stop in the expected time_limit.
             failed_evacuation_instances.append(instance.id)
-        except Exception:
+        except Exception as e:
             # Exception is raised while resetting instance state or
             # evacuating the instance itself.
+            LOG.warning(str(e))
             failed_evacuation_instances.append(instance.id)
         finally:
             if not instance_already_locked:
