@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from http import client as http
+from http import HTTPStatus
 
 from webob import exc
 
@@ -36,7 +36,7 @@ class SegmentsController(wsgi.Controller):
     def __init__(self):
         self.api = segment_api.FailoverSegmentAPI()
 
-    @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN))
+    @extensions.expected_errors((HTTPStatus.BAD_REQUEST, HTTPStatus.FORBIDDEN))
     def index(self, req):
         """Returns a summary list of failover segments."""
         context = req.environ['masakari.context']
@@ -62,7 +62,7 @@ class SegmentsController(wsgi.Controller):
 
         return {'segments': segments}
 
-    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND))
+    @extensions.expected_errors((HTTPStatus.FORBIDDEN, HTTPStatus.NOT_FOUND))
     def show(self, req, id):
         """Return data about the given segment id."""
         context = req.environ['masakari.context']
@@ -74,8 +74,8 @@ class SegmentsController(wsgi.Controller):
             raise exc.HTTPNotFound(explanation=e.format_message())
         return {'segment': segment}
 
-    @wsgi.response(http.CREATED)
-    @extensions.expected_errors((http.FORBIDDEN, http.CONFLICT))
+    @wsgi.response(HTTPStatus.CREATED)
+    @extensions.expected_errors((HTTPStatus.FORBIDDEN, HTTPStatus.CONFLICT))
     @validation.schema(schema.create, '1.0', '1.1')
     @validation.schema(schema.create_v12, '1.2')
     def create(self, req, body):
@@ -90,8 +90,8 @@ class SegmentsController(wsgi.Controller):
             raise exc.HTTPConflict(explanation=e.format_message())
         return {'segment': segment}
 
-    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND,
-                                 http.CONFLICT))
+    @extensions.expected_errors((HTTPStatus.FORBIDDEN, HTTPStatus.NOT_FOUND,
+                                 HTTPStatus.CONFLICT))
     @validation.schema(schema.update, '1.0', '1.1')
     @validation.schema(schema.update_v12, '1.2')
     def update(self, req, id, body):
@@ -109,9 +109,9 @@ class SegmentsController(wsgi.Controller):
 
         return {'segment': segment}
 
-    @wsgi.response(http.NO_CONTENT)
-    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND,
-                                 http.CONFLICT))
+    @wsgi.response(HTTPStatus.NO_CONTENT)
+    @extensions.expected_errors((HTTPStatus.FORBIDDEN, HTTPStatus.NOT_FOUND,
+                                 HTTPStatus.CONFLICT))
     def delete(self, req, id):
         """Removes a segment by uuid."""
         context = req.environ['masakari.context']

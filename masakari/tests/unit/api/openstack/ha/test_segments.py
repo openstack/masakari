@@ -15,7 +15,7 @@
 
 """Tests for the failover segment api."""
 
-from http import client as http
+from http import HTTPStatus
 from unittest import mock
 
 import ddt
@@ -214,7 +214,7 @@ class FailoverSegmentTestCase(test.TestCase):
         fake_req.method = 'POST'
         fake_req.body = jsonutils.dump_as_bytes(body)
         resp = fake_req.get_response(self.app)
-        self.assertEqual(http.CREATED, resp.status_code)
+        self.assertEqual(HTTPStatus.CREATED, resp.status_code)
 
     @ddt.data(
         # no segment
@@ -407,7 +407,7 @@ class FailoverSegmentTestCase(test.TestCase):
         fake_req.headers['Content-Type'] = 'application/json'
         fake_req.method = 'DELETE'
         resp = fake_req.get_response(self.app)
-        self.assertEqual(http.NO_CONTENT, resp.status_code)
+        self.assertEqual(HTTPStatus.NO_CONTENT, resp.status_code)
 
 
 class FailoverSegmentTestCasePolicyNotAuthorized(test.NoDBTestCase):

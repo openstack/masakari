@@ -15,7 +15,7 @@
 
 """The Host API extension."""
 
-from http import client as http
+from http import HTTPStatus
 
 from oslo_utils import encodeutils
 from oslo_utils import strutils
@@ -42,8 +42,8 @@ class HostsController(wsgi.Controller):
     def __init__(self):
         self.api = host_api.HostAPI()
 
-    @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN,
-                                 http.NOT_FOUND))
+    @extensions.expected_errors((HTTPStatus.BAD_REQUEST, HTTPStatus.FORBIDDEN,
+                                 HTTPStatus.NOT_FOUND))
     def index(self, req, segment_id):
         """Returns a list a hosts."""
         context = req.environ['masakari.context']
@@ -99,9 +99,9 @@ class HostsController(wsgi.Controller):
         builder = views_hosts.get_view_builder(req)
         return builder.build_hosts(hosts)
 
-    @wsgi.response(http.CREATED)
-    @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN,
-                                 http.NOT_FOUND, http.CONFLICT))
+    @wsgi.response(HTTPStatus.CREATED)
+    @extensions.expected_errors((HTTPStatus.BAD_REQUEST, HTTPStatus.FORBIDDEN,
+                                 HTTPStatus.NOT_FOUND, HTTPStatus.CONFLICT))
     @validation.schema(schema.create)
     def create(self, req, segment_id, body):
         """Creates a host."""
@@ -120,7 +120,7 @@ class HostsController(wsgi.Controller):
         builder = views_hosts.get_view_builder(req)
         return {'host': builder.build_host(host)}
 
-    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND))
+    @extensions.expected_errors((HTTPStatus.FORBIDDEN, HTTPStatus.NOT_FOUND))
     def show(self, req, segment_id, id):
         """Shows the details of a host."""
         context = req.environ['masakari.context']
@@ -135,8 +135,8 @@ class HostsController(wsgi.Controller):
         builder = views_hosts.get_view_builder(req)
         return {'host': builder.build_host(host)}
 
-    @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN,
-                                 http.NOT_FOUND, http.CONFLICT))
+    @extensions.expected_errors((HTTPStatus.BAD_REQUEST, HTTPStatus.FORBIDDEN,
+                                 HTTPStatus.NOT_FOUND, HTTPStatus.CONFLICT))
     @validation.schema(schema.update)
     def update(self, req, segment_id, id, body):
         """Updates the existing host."""
@@ -157,9 +157,9 @@ class HostsController(wsgi.Controller):
         builder = views_hosts.get_view_builder(req)
         return {'host': builder.build_host(host)}
 
-    @wsgi.response(http.NO_CONTENT)
-    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND,
-                                 http.CONFLICT))
+    @wsgi.response(HTTPStatus.NO_CONTENT)
+    @extensions.expected_errors((HTTPStatus.FORBIDDEN, HTTPStatus.NOT_FOUND,
+                                 HTTPStatus.CONFLICT))
     def delete(self, req, segment_id, id):
         """Removes a host by id."""
         context = req.environ['masakari.context']

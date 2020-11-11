@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from http import client as http
+from http import HTTPStatus
 import inspect
 
 from webob.util import status_reasons
@@ -39,7 +39,7 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
         class FakeMasakariException(exception.MasakariException):
             msg_fmt = "default message: %(code)s"
 
-        exc = FakeMasakariException(code=int(http.INTERNAL_SERVER_ERROR))
+        exc = FakeMasakariException(code=int(HTTPStatus.INTERNAL_SERVER_ERROR))
         self.assertEqual('default message: 500', str(exc))
         self.assertEqual('default message: 500', exc.message)
 
@@ -47,24 +47,24 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
         class FakeMasakariException(exception.MasakariException):
             msg_fmt = "default message: %(misspelled_code)s"
 
-        exc = FakeMasakariException(code=int(http.INTERNAL_SERVER_ERROR),
+        exc = FakeMasakariException(code=int(HTTPStatus.INTERNAL_SERVER_ERROR),
                                     misspelled_code='blah')
         self.assertEqual('default message: blah', str(exc))
         self.assertEqual('default message: blah', exc.message)
 
     def test_default_error_code(self):
         class FakeMasakariException(exception.MasakariException):
-            code = http.NOT_FOUND
+            code = HTTPStatus.NOT_FOUND
 
         exc = FakeMasakariException()
-        self.assertEqual(http.NOT_FOUND, exc.kwargs['code'])
+        self.assertEqual(HTTPStatus.NOT_FOUND, exc.kwargs['code'])
 
     def test_error_code_from_kwarg(self):
         class FakeMasakariException(exception.MasakariException):
-            code = http.INTERNAL_SERVER_ERROR
+            code = HTTPStatus.INTERNAL_SERVER_ERROR
 
-        exc = FakeMasakariException(code=http.NOT_FOUND)
-        self.assertEqual(exc.kwargs['code'], http.NOT_FOUND)
+        exc = FakeMasakariException(code=HTTPStatus.NOT_FOUND)
+        self.assertEqual(exc.kwargs['code'], HTTPStatus.NOT_FOUND)
 
     def test_format_message_local(self):
         class FakeMasakariException(exception.MasakariException):
@@ -98,15 +98,17 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
 
 class ConvertedExceptionTestCase(test.NoDBTestCase):
     def test_instantiate(self):
-        exc = exception.ConvertedException(int(http.BAD_REQUEST),
+        exc = exception.ConvertedException(int(HTTPStatus.BAD_REQUEST),
                                            'Bad Request', 'reason')
-        self.assertEqual(exc.code, http.BAD_REQUEST)
+        self.assertEqual(exc.code, HTTPStatus.BAD_REQUEST)
         self.assertEqual(exc.title, 'Bad Request')
         self.assertEqual(exc.explanation, 'reason')
 
     def test_instantiate_without_title_known_code(self):
-        exc = exception.ConvertedException(int(http.INTERNAL_SERVER_ERROR))
-        self.assertEqual(exc.title, status_reasons[http.INTERNAL_SERVER_ERROR])
+        exc = exception.ConvertedException(
+            int(HTTPStatus.INTERNAL_SERVER_ERROR))
+        self.assertEqual(exc.title,
+                         status_reasons[HTTPStatus.INTERNAL_SERVER_ERROR])
 
     def test_instantiate_without_title_unknown_code(self):
         exc = exception.ConvertedException(499)
@@ -119,7 +121,7 @@ class ConvertedExceptionTestCase(test.NoDBTestCase):
 class ExceptionTestCase(test.NoDBTestCase):
     @staticmethod
     def _raise_exc(exc):
-        raise exc(int(http.INTERNAL_SERVER_ERROR))
+        raise exc(int(HTTPStatus.INTERNAL_SERVER_ERROR))
 
     def test_exceptions_raise(self):
         # NOTE(Dinesh_Bhor): disable format errors since we are not passing
@@ -127,7 +129,9 @@ class ExceptionTestCase(test.NoDBTestCase):
         self.flags(fatal_exception_format_errors=False)
         for name in dir(exception):
             exc = getattr(exception, name)
-            if isinstance(exc, type):
+            # NOTE(yoctozepto): we skip HTTPStatus as it is not an exception
+            # but a type also present in that module.
+            if isinstance(exc, type) and name != 'HTTPStatus':
                 self.assertRaises(exc, self._raise_exc, exc)
 
 

@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from http import client as http
+from http import HTTPStatus
 from unittest import mock
 
 from keystoneauth1 import exceptions as keystone_exception
@@ -164,7 +164,7 @@ class NovaApiTestCase(test.TestCase):
     @mock.patch('masakari.compute.nova.novaclient')
     def test_get_failed_not_found(self, mock_novaclient):
         mock_novaclient.return_value.servers.get.side_effect = (
-            nova_exception.NotFound(http.NOT_FOUND, '404'))
+            nova_exception.NotFound(HTTPStatus.NOT_FOUND, '404'))
 
         self.assertRaises(exception.NotFound,
                   self.api.get_server, self.ctx, uuidsentinel.fake_server)
@@ -172,7 +172,7 @@ class NovaApiTestCase(test.TestCase):
     @mock.patch('masakari.compute.nova.novaclient')
     def test_get_failed_bad_request(self, mock_novaclient):
         mock_novaclient.return_value.servers.get.side_effect = (
-            nova_exception.BadRequest(http.BAD_REQUEST, '400'))
+            nova_exception.BadRequest(HTTPStatus.BAD_REQUEST, '400'))
 
         self.assertRaises(exception.InvalidInput,
                   self.api.get_server, self.ctx, uuidsentinel.fake_server)

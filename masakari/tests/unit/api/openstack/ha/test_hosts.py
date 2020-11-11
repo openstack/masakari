@@ -15,7 +15,7 @@
 
 """Tests for the hosts api."""
 
-from http import client as http
+from http import HTTPStatus
 from unittest import mock
 
 import ddt
@@ -254,7 +254,7 @@ class HostTestCase(test.TestCase):
         fake_req.method = 'POST'
         fake_req.body = jsonutils.dump_as_bytes(body)
         resp = fake_req.get_response(self.app)
-        self.assertEqual(http.CREATED, resp.status_code)
+        self.assertEqual(HTTPStatus.CREATED, resp.status_code)
 
     @mock.patch.object(ha_api.HostAPI, 'create_host')
     def test_create_with_duplicate_host_name(self, mock_create):
@@ -465,7 +465,7 @@ class HostTestCase(test.TestCase):
         fake_req.headers['Content-Type'] = 'application/json'
         fake_req.method = 'DELETE'
         resp = fake_req.get_response(self.app)
-        self.assertEqual(http.NO_CONTENT, resp.status_code)
+        self.assertEqual(HTTPStatus.NO_CONTENT, resp.status_code)
 
     @mock.patch.object(ha_api.HostAPI, 'delete_host')
     def test_delete_host_not_found(self, mock_delete):

@@ -14,7 +14,7 @@
 #    under the License.
 
 import copy
-from http import client as http
+from http import HTTPStatus
 from unittest import mock
 
 from oslo_serialization import jsonutils
@@ -262,4 +262,4 @@ class VersionsTest(test.NoDBTestCase):
         req = webob.Request.blank('/v1/versions/1234/foo')
         req.accept = "application/json"
         res = req.get_response(self.wsgi_app)
-        self.assertEqual(http.NOT_FOUND, res.status_int)
+        self.assertEqual(HTTPStatus.NOT_FOUND, res.status_int)

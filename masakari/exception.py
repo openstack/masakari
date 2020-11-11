@@ -22,7 +22,7 @@ SHOULD include dedicated exception logging.
 """
 
 import functools
-from http import client as http
+from http import HTTPStatus
 import inspect
 import sys
 
@@ -116,7 +116,7 @@ class MasakariException(Exception):
 
     """
     msg_fmt = _("An unknown exception occurred.")
-    code = http.INTERNAL_SERVER_ERROR
+    code = HTTPStatus.INTERNAL_SERVER_ERROR
     headers = {}
     safe = False
 
@@ -171,12 +171,12 @@ class APITimeout(APIException):
 
 class Conflict(MasakariException):
     msg_fmt = _("Conflict")
-    code = http.CONFLICT
+    code = HTTPStatus.CONFLICT
 
 
 class Invalid(MasakariException):
     msg_fmt = _("Bad Request - Invalid Parameters")
-    code = http.BAD_REQUEST
+    code = HTTPStatus.BAD_REQUEST
 
 
 class InvalidName(Invalid):
@@ -201,7 +201,7 @@ class MalformedRequestBody(MasakariException):
 # appropriate to be returned
 class NotFound(MasakariException):
     msg_fmt = _("Resource could not be found.")
-    code = http.NOT_FOUND
+    code = HTTPStatus.NOT_FOUND
 
 
 class ConfigNotFound(NotFound):
@@ -210,7 +210,7 @@ class ConfigNotFound(NotFound):
 
 class Forbidden(MasakariException):
     msg_fmt = _("Forbidden")
-    code = http.FORBIDDEN
+    code = HTTPStatus.FORBIDDEN
 
 
 class AdminRequired(Forbidden):
@@ -291,7 +291,7 @@ class HostExists(MasakariException):
 
 class Unauthorized(MasakariException):
     msg_fmt = _("Not authorized.")
-    code = http.UNAUTHORIZED
+    code = HTTPStatus.UNAUTHORIZED
 
 
 class ObjectActionError(MasakariException):
@@ -304,12 +304,12 @@ class OrphanedObjectError(MasakariException):
 
 class DuplicateNotification(Invalid):
     msg_fmt = _('Duplicate notification received for type: %(type)s')
-    code = http.CONFLICT
+    code = HTTPStatus.CONFLICT
 
 
 class HostOnMaintenanceError(Invalid):
     msg_fmt = _('Host %(host_name)s is already under maintenance.')
-    code = http.CONFLICT
+    code = HTTPStatus.CONFLICT
 
 
 class HostRecoveryFailureException(MasakariException):

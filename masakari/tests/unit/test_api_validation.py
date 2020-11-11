@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from http import client as http
+from http import HTTPStatus
 import re
 
 import fixtures
@@ -99,7 +99,7 @@ class APIValidationTestCase(test.NoDBTestCase):
         try:
             method(body=body, req=req,)
         except exception.ValidationError as ex:
-            self.assertEqual(http.BAD_REQUEST, ex.kwargs['code'])
+            self.assertEqual(HTTPStatus.BAD_REQUEST, ex.kwargs['code'])
             if isinstance(expected_detail, list):
                 self.assertIn(ex.kwargs['detail'], expected_detail,
                               'Exception details did not match expected')
@@ -595,7 +595,7 @@ class VersionedApiValidationTestCase(APIValidationTestCase):
         try:
             self.post(body=body, req=req)
         except exception.ValidationError as ex:
-            self.assertEqual(http.BAD_REQUEST, ex.kwargs['code'])
+            self.assertEqual(HTTPStatus.BAD_REQUEST, ex.kwargs['code'])
         except Exception as ex:
             self.fail('An unexpected exception happens: %s' % ex)
         else:

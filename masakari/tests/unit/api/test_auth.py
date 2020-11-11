@@ -11,7 +11,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from http import client as http
+from http import HTTPStatus
 
 from oslo_middleware import request_id
 from oslo_serialization import jsonutils
@@ -44,32 +44,32 @@ class TestMasakariKeystoneContextMiddleware(test.NoDBTestCase):
 
     def test_no_user_or_user_id(self):
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status_int, http.UNAUTHORIZED)
+        self.assertEqual(response.status_int, HTTPStatus.UNAUTHORIZED)
 
     def test_user_id_only(self):
         self.request.headers['X_USER_ID'] = 'testuserid'
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status_int, http.OK)
+        self.assertEqual(response.status_int, HTTPStatus.OK)
         self.assertEqual(self.context.user_id, 'testuserid')
 
     def test_user_only(self):
         self.request.headers['X_USER'] = 'testuser'
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status_int, http.OK)
+        self.assertEqual(response.status_int, HTTPStatus.OK)
         self.assertEqual(self.context.user_id, 'testuser')
 
     def test_user_id_trumps_user(self):
         self.request.headers['X_USER_ID'] = 'testuserid'
         self.request.headers['X_USER'] = 'testuser'
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status_int, http.OK)
+        self.assertEqual(response.status_int, HTTPStatus.OK)
         self.assertEqual(self.context.user_id, 'testuserid')
 
     def test_invalid_service_catalog(self):
         self.request.headers['X_USER'] = 'testuser'
         self.request.headers['X_SERVICE_CATALOG'] = "bad json"
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status_int, http.INTERNAL_SERVER_ERROR)
+        self.assertEqual(response.status_int, HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def test_request_id_extracted_from_env(self):
         req_id = 'dummy-request-id'
@@ -97,32 +97,32 @@ class TestNoAuthMiddleware(test.NoDBTestCase):
 
     def test_no_user_or_user_id(self):
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status_int, http.OK)
+        self.assertEqual(response.status_int, HTTPStatus.OK)
 
     def test_user_id_only(self):
         self.request.headers['X_USER_ID'] = 'testuserid'
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status_int, http.OK)
+        self.assertEqual(response.status_int, HTTPStatus.OK)
         self.assertEqual(self.context.user_id, 'testuserid')
 
     def test_user_only(self):
         self.request.headers['X_USER'] = 'testuser'
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status_int, http.OK)
+        self.assertEqual(response.status_int, HTTPStatus.OK)
         self.assertEqual(self.context.user_id, 'testuser')
 
     def test_user_id_trumps_user(self):
         self.request.headers['X_USER_ID'] = 'testuserid'
         self.request.headers['X_USER'] = 'testuser'
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status_int, http.OK)
+        self.assertEqual(response.status_int, HTTPStatus.OK)
         self.assertEqual(self.context.user_id, 'testuserid')
 
     def test_invalid_service_catalog(self):
         self.request.headers['X_USER'] = 'testuser'
         self.request.headers['X_SERVICE_CATALOG'] = "bad json"
         response = self.request.get_response(self.middleware)
-        self.assertEqual(response.status_int, http.INTERNAL_SERVER_ERROR)
+        self.assertEqual(response.status_int, HTTPStatus.INTERNAL_SERVER_ERROR)
 
     def test_request_id_extracted_from_env(self):
         req_id = 'dummy-request-id'

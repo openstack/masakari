@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from http import client as http
+from http import HTTPStatus
 from unittest import mock
 
 from oslo_config import cfg
@@ -56,36 +56,37 @@ class ExtensionLoadingTestCase(test.NoDBTestCase):
         self.assertIn('extensions', name_list)
 
     def test_extensions_expected_error(self):
-        @extensions.expected_errors(http.NOT_FOUND)
+        @extensions.expected_errors(HTTPStatus.NOT_FOUND)
         def fake_func():
             raise webob.exc.HTTPNotFound()
 
         self.assertRaises(webob.exc.HTTPNotFound, fake_func)
 
     def test_extensions_expected_error_from_list(self):
-        @extensions.expected_errors((http.NOT_FOUND, http.FORBIDDEN))
+        @extensions.expected_errors((HTTPStatus.NOT_FOUND,
+                                     HTTPStatus.FORBIDDEN))
         def fake_func():
             raise webob.exc.HTTPNotFound()
 
         self.assertRaises(webob.exc.HTTPNotFound, fake_func)
 
     def test_extensions_unexpected_error(self):
-        @extensions.expected_errors(http.NOT_FOUND)
+        @extensions.expected_errors(HTTPStatus.NOT_FOUND)
         def fake_func():
             raise webob.exc.HTTPConflict()
 
         self.assertRaises(webob.exc.HTTPInternalServerError, fake_func)
 
     def test_extensions_unexpected_error_from_list(self):
-        @extensions.expected_errors((http.NOT_FOUND,
-                                     http.REQUEST_ENTITY_TOO_LARGE))
+        @extensions.expected_errors((HTTPStatus.NOT_FOUND,
+                                     HTTPStatus.REQUEST_ENTITY_TOO_LARGE))
         def fake_func():
             raise webob.exc.HTTPConflict()
 
         self.assertRaises(webob.exc.HTTPInternalServerError, fake_func)
 
     def test_extensions_unexpected_policy_not_authorized_error(self):
-        @extensions.expected_errors(http.NOT_FOUND)
+        @extensions.expected_errors(HTTPStatus.NOT_FOUND)
         def fake_func():
             raise exception.PolicyNotAuthorized(action="foo")
 
