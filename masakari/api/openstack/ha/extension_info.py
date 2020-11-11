@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from http import client as http_client
+from http import HTTPStatus
 
 from oslo_log import log as logging
 import webob.exc
@@ -79,7 +79,7 @@ class ExtensionInfoController(wsgi.Controller):
 
         return dict(extensions=extensions)
 
-    @extensions.expected_errors(http_client.NOT_FOUND)
+    @extensions.expected_errors(HTTPStatus.NOT_FOUND)
     def show(self, req, id):
         context = req.environ['masakari.context']
         context.can(extension_policies.EXTENSIONS % 'detail')

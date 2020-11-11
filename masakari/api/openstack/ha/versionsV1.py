@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from http import client as http_client
+from http import HTTPStatus
 
 import webob.exc
 
@@ -27,7 +27,7 @@ ALIAS = "versions"
 
 
 class VersionsController(wsgi.Controller):
-    @extensions.expected_errors(http_client.NOT_FOUND)
+    @extensions.expected_errors(HTTPStatus.NOT_FOUND)
     def show(self, req, id='v1'):
         builder = views_versions.get_view_builder(req)
         if id not in versions.VERSIONS:

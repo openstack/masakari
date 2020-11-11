@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from http import client as http_client
+from http import HTTPStatus
 
 from oslo_config import cfg
 
@@ -62,7 +62,7 @@ class Versions(wsgi.Resource):
         builder = views_versions.get_view_builder(req)
         return builder.build_versions(VERSIONS)
 
-    @wsgi.response(http_client.MULTIPLE_CHOICES)
+    @wsgi.response(HTTPStatus.MULTIPLE_CHOICES)
     def multi(self, req, body=None):
         """Return multiple choices."""
         builder = views_versions.get_view_builder(req)
