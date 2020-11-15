@@ -139,6 +139,8 @@
       - openstack-python3-wallaby-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
+      - periodic-stable-jobs
+      - periodic-jobs-with-oslo-master
     check:
       jobs:
         - openstack-tox-linters
