@@ -53,6 +53,8 @@ nova_opts = [
                default="default",
                help='Project domain name associated with the OpenStack '
                     'privileged account.'),
+    cfg.StrOpt('os_system_scope',
+               help='Scope for system operations.'),
 ]
 
 
