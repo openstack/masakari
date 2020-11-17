@@ -296,3 +296,17 @@ admitted to the mentoring program no way guarantees you will become a
 member of masakari-core eventually, it's here to help you improve, and help
 you have the sort of involvement and conversations that can lead to
 becoming a member of masakari-core.
+
+.. note::
+
+   You can try using ``masakari-ptl`` and/or ``masakari-core`` in
+   your IRC message to get a response from the desired people.
+
+.. note::
+
+   For basic information on Masakari's governance, including the current PTL
+   (Project Team Lead), please visit
+   `Masakari's governance page <https://governance.openstack.org/tc/reference/projects/masakari.html>`__.
+
+   To see the current list of Masakari core reviewers (aka cores), see the
+   `masakari-core group on Gerrit <https://review.opendev.org/#/admin/groups/1448,members>`__.
