@@ -79,7 +79,7 @@ But here is the rough idea:
    with limited deployer and doc impact, it probably doesn't need a
    spec.
 
-If you are unsure, please ask PTL or one of the other
+If you are unsure, please ask the PTL (masakari-ptl) or one of the other
 masakari-core on IRC.
 
 How do I get my blueprint approved?
@@ -96,10 +96,10 @@ So you need your blueprint approved? Here is how:
 
 -  if you need a spec, then please submit a masakari-spec for review.
 
-Got any more questions? Contact samP or one of the other
+Got any more questions? Contact the PTL (masakari-ptl) or one of the other
 masakari-core who are awake at the same time as you. IRC is best as
-you will often get an immediate response, if they are too busy send
-him/her an email.
+you will often get an immediate response. If they are too busy, send
+them an email.
 
 How do I get a procedural -2 removed from my patch?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
