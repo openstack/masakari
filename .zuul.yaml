@@ -60,7 +60,6 @@
       - ^\.mailmap$
       - ^\.zuul.yaml$
       - ^LICENSE$
-      - ^lower-constraints.txt$
       - \.rst$
     vars:
       test_matrix_configs: [neutron]
@@ -137,7 +136,6 @@
     templates:
       - check-requirements
       - openstack-cover-jobs
-      - openstack-lower-constraints-jobs
       - openstack-python3-victoria-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
