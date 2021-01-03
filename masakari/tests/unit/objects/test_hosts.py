@@ -134,9 +134,9 @@ class TestHostObject(test_objects._LocalTest):
         mock_db_create.assert_called_once_with(self.context, {
             'failover_segment_id': uuidsentinel.fake_segment,
             'on_maintenance': False, 'uuid': uuidsentinel.fake_host,
-            'reserved': False, 'name': u'foo-host',
-            'control_attributes': u'fake_attributes',
-            'type': u'fake-type'})
+            'reserved': False, 'name': 'foo-host',
+            'control_attributes': 'fake_attributes',
+            'type': 'fake-type'})
         action = fields.EventNotificationAction.HOST_CREATE
         phase_start = fields.EventNotificationPhase.START
         phase_end = fields.EventNotificationPhase.END

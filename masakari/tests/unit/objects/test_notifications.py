@@ -260,6 +260,6 @@ class TestNotificationObject(test_objects._LocalTest):
                                   'notificati'
                                   'on_uuid': uuidsentinel.fake_notification,
                                   'status': 'new', 'generated_time': NOW,
-                                  'payload': {'fake_key': u'fake_value'},
+                                  'payload': {'fake_key': 'fake_value'},
                                   'type': 'COMPUTE_HOST'}
                                  ))

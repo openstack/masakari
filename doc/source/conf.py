@@ -55,8 +55,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'masakari'
-copyright = u'2016, OpenStack Foundation'
+project = 'masakari'
+copyright = '2016, OpenStack Foundation'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = True
@@ -91,8 +91,8 @@ htmlhelp_basename = '%sdoc' % project
 latex_documents = [
     ('index',
      '%s.tex' % project,
-     u'%s Documentation' % project,
-     u'OpenStack Foundation', 'manual'),
+     '%s Documentation' % project,
+     'OpenStack Foundation', 'manual'),
 ]
 
 # Example configuration for intersphinx: refer to the Python standard library.
