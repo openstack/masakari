@@ -235,7 +235,7 @@ class TestNotificationBase(test.NoDBTestCase):
             expected_event_type='segment.create',
             expected_payload={
                 'masakari_object.name': 'TestNotificationPayloadEmptySchema',
-                'masakari_object.data': {'extra_field': u'test string'},
+                'masakari_object.data': {'extra_field': 'test string'},
                 'masakari_object.version': '1.0',
                 'masakari_object.namespace': 'masakari'})
 

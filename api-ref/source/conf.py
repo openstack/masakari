@@ -63,8 +63,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Masakari API Reference'
-copyright = u'2017-present, OpenStack Foundation'
+project = 'Masakari API Reference'
+copyright = '2017-present, OpenStack Foundation'
 
 # openstackdocstheme optionns
 openstackdocs_repo_name = 'openstack/masakari'
@@ -104,7 +104,7 @@ pygments_style = 'native'
 # ----------------------------------------------
 
 # Grouping the document tree for man pages.
-# List of tuples 'sourcefile', 'target', u'title', u'Authors name', 'manual'
+# List of tuples 'sourcefile', 'target', 'title', 'Authors name', 'manual'
 
 
 # -- Options for HTML output
@@ -195,8 +195,8 @@ htmlhelp_basename = 'masakaridoc'
 # (source start file, target name, title, author, documentclass
 # [howto/manual]).
 latex_documents = [('index', 'Masakari.tex',
-                    u'OpenStack Masakari API Documentation',
-                    u'OpenStack Foundation', 'manual'),
+                    'OpenStack Masakari API Documentation',
+                    'OpenStack Foundation', 'manual'),
                    ]
 
 # The name of an image file (relative to this directory) to place at

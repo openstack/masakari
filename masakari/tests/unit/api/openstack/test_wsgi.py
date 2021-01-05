@@ -202,10 +202,10 @@ class JSONDeserializerTest(test.NoDBTestCase):
                 }} """
         as_dict = {
             'body': {
-                u'segment': {u'recovery_method': 'auto',
-                             u'name': u'\u6982\u5ff5',
-                             u'service_type': u'COMPUTE_HOST'
-                             }
+                'segment': {'recovery_method': 'auto',
+                            'name': '\u6982\u5ff5',
+                            'service_type': 'COMPUTE_HOST'
+                            }
             }
         }
         deserializer = wsgi.JSONDeserializer()
@@ -874,8 +874,8 @@ class ResourceTest(MicroversionedTest):
     def test_resource_headers_py2_are_utf8(self):
         resp = webob.Response(status_int=http.ACCEPTED)
         resp.headers['x-header1'] = 1
-        resp.headers['x-header2'] = u'header2'
-        resp.headers['x-header3'] = u'header3'
+        resp.headers['x-header2'] = 'header2'
+        resp.headers['x-header3'] = 'header3'
 
         class Controller(object):
             def index(self, req):
@@ -886,8 +886,8 @@ class ResourceTest(MicroversionedTest):
         response = req.get_response(app)
 
         self.assertEqual('1', response.headers['x-header1'])
-        self.assertEqual(u'header2', response.headers['x-header2'])
-        self.assertEqual(u'header3', response.headers['x-header3'])
+        self.assertEqual('header2', response.headers['x-header2'])
+        self.assertEqual('header3', response.headers['x-header3'])
 
     def test_resource_valid_utf8_body(self):
         class Controller(object):

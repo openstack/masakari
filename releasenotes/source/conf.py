@@ -55,8 +55,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Masakari Release Notes'
-copyright = u'2016, OpenStack Foundation'
+project = 'Masakari Release Notes'
+copyright = '2016, OpenStack Foundation'
 
 # Release notes are version independent.
 # The short X.Y version.
@@ -206,7 +206,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     ('index', 'MasakariReleaseNotes.tex',
-     u'Masakari Release Notes Documentation', u'Masakari Developers',
+     'Masakari Release Notes Documentation', 'Masakari Developers',
      'manual'),
 ]
 
@@ -236,8 +236,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'masakarireleasenotes', u'Masakari Release Notes Documentation',
-     [u'Masakari Developers'], 1)
+    ('index', 'masakarireleasenotes', 'Masakari Release Notes Documentation',
+     ['Masakari Developers'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -250,8 +250,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'MasakariReleaseNotes', u'Masakari Release Notes Documentation',
-     u'Masakari Developers', 'MasakariReleaseNotes',
+    ('index', 'MasakariReleaseNotes', 'Masakari Release Notes Documentation',
+     'Masakari Developers', 'MasakariReleaseNotes',
      'One line description of project.',
      'Miscellaneous'),
 ]

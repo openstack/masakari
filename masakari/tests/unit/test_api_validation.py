@@ -504,9 +504,9 @@ class NameTestCase(APIValidationTestCase):
         self.assertEqual('Validation succeeded.',
                          self.post(body={'foo': 'a'}, req=FakeRequest()))
         self.assertEqual('Validation succeeded.',
-                         self.post(body={'foo': u'\u0434'}, req=FakeRequest()))
+                         self.post(body={'foo': '\u0434'}, req=FakeRequest()))
         self.assertEqual('Validation succeeded.',
-                         self.post(body={'foo': u'\u0434\u2006\ufffd'},
+                         self.post(body={'foo': '\u0434\u2006\ufffd'},
                                    req=FakeRequest()))
 
     def test_validate_name_fails(self):
@@ -517,8 +517,8 @@ class NameTestCase(APIValidationTestCase):
         should_fail = (' ',
                        ' segment',
                        'segment ',
-                       u'a\xa0',  # trailing unicode space
-                       u'\uffff',  # non-printable unicode
+                       'a\xa0',  # trailing unicode space
+                       '\uffff',  # non-printable unicode
                        )
 
         for item in should_fail:
@@ -527,7 +527,7 @@ class NameTestCase(APIValidationTestCase):
 
         # four-byte unicode, if supported by this python build
         try:
-            self.check_validation_error(self.post, body={'foo': u'\U00010000'},
+            self.check_validation_error(self.post, body={'foo': '\U00010000'},
                                         expected_detail=error)
         except ValueError:
             pass
