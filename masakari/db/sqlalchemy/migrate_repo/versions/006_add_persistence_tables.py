@@ -17,8 +17,6 @@ import masakari.conf
 from masakari.engine import driver
 
 CONF = masakari.conf.CONF
-NOTIFICATION_DRIVER = CONF.notification_driver
-PERSISTENCE_BACKEND = CONF.taskflow.connection
 
 
 def upgrade(migrate_engine):
@@ -26,7 +24,7 @@ def upgrade(migrate_engine):
 
     # Get the taskflow driver configured, default is 'taskflow_driver',
     # to load persistence tables to store progress details.
-    taskflow_driver = driver.load_masakari_driver(NOTIFICATION_DRIVER)
+    taskflow_driver = driver.load_masakari_driver(CONF.notification_driver)
 
-    if PERSISTENCE_BACKEND:
-        taskflow_driver.upgrade_backend(PERSISTENCE_BACKEND)
+    if CONF.taskflow.connection:
+        taskflow_driver.upgrade_backend(CONF.taskflow.connection)
