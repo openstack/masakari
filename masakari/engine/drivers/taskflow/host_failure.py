@@ -199,6 +199,12 @@ class EvacuateInstancesTask(base.MasakariTask):
         def _wait_for_evacuation_confirmation():
             old_vm_state, new_vm_state, instance_host = (
                 self._get_state_and_host_of_instance(context, instance))
+
+            if (new_vm_state == 'error' and
+                    new_vm_state != old_vm_state):
+                raise exception.InstanceEvacuateFailed(
+                    instance_uuid=instance.id)
+
             if instance_host != host_name:
                 if ((old_vm_state == 'error' and
                     new_vm_state == 'active') or
