@@ -365,3 +365,7 @@ class IgnoreInstanceRecoveryException(MasakariException):
 class HostNotFoundUnderFailoverSegment(HostNotFound):
     msg_fmt = _("Host '%(host_uuid)s' under failover_segment "
                 "'%(segment_uuid)s' could not be found.")
+
+
+class InstanceEvacuateFailed(MasakariException):
+    msg_fmt = _("Failed to evacuate instance %(instance_uuid)s")

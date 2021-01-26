@@ -130,6 +130,38 @@ class HostFailureTestCase(test.TestCase):
         # make sure instance is active and has different host
         self._verify_instance_evacuated(old_instance_list)
 
+    @mock.patch.object(nova.API, "get_server")
+    @mock.patch.object(nova.API, "evacuate_instance")
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.LOG')
+    def test_instance_evacute_error(self, _mock_log, _mock_evacuate,
+            _mock_get, mock_unlock, mock_lock, mock_enable_disable):
+        task = host_failure.EvacuateInstancesTask(
+            self.ctxt, self.novaclient,
+            update_host_method=manager.update_host_method)
+
+        def get_fake_server(server, status):
+            fake_server = copy.deepcopy(server)
+            setattr(fake_server, 'OS-EXT-SRV-ATTR:hypervisor_hostname',
+                    self.instance_host)
+            setattr(fake_server, 'OS-EXT-STS:vm_state', status)
+
+            return fake_server
+
+        failed_evacuation_instances = []
+        fake_instance = self.fake_client.servers.create(
+            id="1", host=self.instance_host, ha_enabled=True)
+
+        _mock_get.side_effect = [
+            get_fake_server(fake_instance, 'active'),
+            get_fake_server(fake_instance, 'error'),
+        ]
+        task._evacuate_and_confirm(self.ctxt, fake_instance,
+                                   self.instance_host,
+                                   failed_evacuation_instances)
+        self.assertIn(fake_instance.id, failed_evacuation_instances)
+        expected_log = 'Failed to evacuate instance %s' % fake_instance.id
+        _mock_log.warning.assert_called_once_with(expected_log)
+
     @mock.patch('masakari.compute.nova.novaclient')
     @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
                 'update_details')
