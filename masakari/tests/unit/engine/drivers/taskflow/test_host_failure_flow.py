@@ -269,6 +269,77 @@ class HostFailureTestCase(test.TestCase):
             mock.call('Evacuation process completed!', 1.0)
         ])
 
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_host_failure_flow_for_multiple_aggregates(
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
+            mock_enable_disable):
+        _mock_novaclient.return_value = self.fake_client
+        self.override_config("evacuate_all_instances",
+                             True, "host_failure")
+        self.override_config("add_reserved_host_to_aggregate",
+                             True, "host_failure")
+
+        # create test data
+        self.fake_client.servers.create(id="1", host=self.instance_host,
+                                        ha_enabled=True)
+        self.fake_client.servers.create(id="2", host=self.instance_host)
+        reserved_host = fakes.create_fake_host(name="fake-reserved-host",
+                                               reserved=True)
+        # Set multiple aggregates to the failure host
+        self.fake_client.aggregates.create(id="1", name='fake_agg_1',
+                                           hosts=[self.instance_host])
+        self.fake_client.aggregates.create(id="2", name='fake_agg_2',
+                                           hosts=[self.instance_host])
+
+        # execute DisableComputeServiceTask
+        self._test_disable_compute_service(mock_enable_disable)
+
+        # execute PrepareHAEnabledInstancesTask
+        instance_list = self._test_instance_list(2)
+
+        # execute EvacuateInstancesTask
+        with mock.patch.object(manager, "update_host_method") as mock_save:
+            self._evacuate_instances(
+                instance_list, mock_enable_disable,
+                reserved_host=reserved_host.name)
+            self.assertEqual(1, mock_save.call_count)
+            self.assertIn(reserved_host.name,
+                          self.fake_client.aggregates.get('1').hosts)
+            self.assertIn(reserved_host.name,
+                          self.fake_client.aggregates.get('2').hosts)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call("Disabling compute service on host: 'fake-host'"),
+            mock.call("Disabled compute service on host: 'fake-host'", 1.0),
+            mock.call('Preparing instances for evacuation'),
+            mock.call("Total instances running on failed host 'fake-host' is 2"
+                      "", 0.3),
+            mock.call("Total HA Enabled instances count: '1'", 0.6),
+            mock.call("Total Non-HA Enabled instances count: '1'", 0.7),
+            mock.call("All instances (HA Enabled/Non-HA Enabled) should be "
+                      "considered for evacuation. Total count is: '2'", 0.8),
+            mock.call("Instances to be evacuated are: '1,2'", 1.0),
+            mock.call("Start evacuation of instances from failed host "
+                      "'fake-host', instance uuids are: '1,2'"),
+            mock.call("Enabling reserved host: 'fake-reserved-host'", 0.1),
+            mock.call('Add host fake-reserved-host to aggregate fake_agg_1',
+                      0.2),
+            mock.call('Added host fake-reserved-host to aggregate fake_agg_1',
+                      0.3),
+            mock.call('Add host fake-reserved-host to aggregate fake_agg_2',
+                      0.2),
+            mock.call('Added host fake-reserved-host to aggregate fake_agg_2',
+                      0.3),
+            mock.call("Evacuation of instance started: '1'", 0.5),
+            mock.call("Evacuation of instance started: '2'", 0.5),
+            mock.call("Successfully evacuate instances '1,2' from host "
+                      "'fake-host'", 0.7),
+            mock.call('Evacuation process completed!', 1.0)
+        ])
+
     @mock.patch.object(nova.API, 'add_host_to_aggregate')
     @mock.patch('masakari.compute.nova.novaclient')
     @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
