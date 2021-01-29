@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    Fixes Masakari Engine not to wait for timeout when it's known that
+    the evacuation has failed.
+    `LP#1859406 <https://launchpad.net/bugs/1859406>`__
+    (This fix has already been included in the first Victoria release,
+    10.0.0, but it was not mentioned in the release notes previously.)
