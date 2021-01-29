@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes Masakari Engine not to try to stop an already stopped instance
+    and fail with 409 from Nova.
+    `LP#1782517 <https://launchpad.net/bugs/1782517>`__
