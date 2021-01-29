@@ -93,6 +93,7 @@ Contributor Guide
    user/process
    install/development.environment
    contributor/code_structure
+   contributor/release_notes
 
 Search
 ======
