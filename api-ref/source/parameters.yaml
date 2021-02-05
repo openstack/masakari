@@ -343,7 +343,7 @@ segment_recovery_method:
   required: true
   description: |
     Type of recovery if any host in this segment goes down. User can mention
-    either 'AUTO', 'RESERVED_HOST', 'AUTO_PRIORITY' or 'RH_PRIORITY'.
+    either 'auto', 'reserved_host', 'auto_priority' or 'rh_priority'.
 segment_service_type:
   type: string
   in: body
