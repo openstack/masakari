@@ -36,12 +36,12 @@ recovery action to be followed when any host in a segment goes down. `enabled`
 attribute indicates whether notifications which belong to this segment will
 be dealt with. The possible `recovery_method` values are:
 
-- ``AUTO``. Auto recovery action.
-- ``RESERVED_HOST``. Reserved host recovery action.
-- ``AUTO_PRIORITY``. First executes auto and if auto fails then retried with
-  reserved host recover action.
-- ``RH_PRIORITY``. First executes reserved host and if it fails then retried
-  with reserved host recover action.
+- ``auto``. Auto recovery action.
+- ``reserved_host``. Reserved host recovery action.
+- ``auto_priority``. First executes auto and if auto fails then retried with
+  reserved host recovery action.
+- ``rh_priority``. First executes reserved host and if it fails then retried
+  with auto recovery action.
 
 You can filter on the `service_type`, `recovery_method` and `enabled` when you
 complete a list segments request.
@@ -98,8 +98,8 @@ Creates a segment.
 Creates a FailoverSegment with name, description, service_type, enabled and
 recovery_method. For `service_type` user can mention the name of service for
 which this segment is created. As of now user can mention `COMPUTE` as
-`service_type`. For `recovery_method` user can mention either `AUTO`,
-`RESERVED_HOST`, `AUTO_PRIORITY` or `RH_PRIORITY`. Segment name should be
+`service_type`. For `recovery_method` user can mention either `auto`,
+`reserved_host`, `auto_priority` or `rh_priority`. Segment name should be
 unique. For `enabled` user can mention `True` or `False` to enable/disable
 this segment.
 
