@@ -4,7 +4,7 @@
         "deleted": false,
         "created_at": "2017-04-21T08:59:53.991030",
         "description": null,
-        "recovery_method": "AUTO",
+        "recovery_method": "auto",
         "updated_at": null,
         "service_type": "COMPUTE",
         "deleted_at": null,
