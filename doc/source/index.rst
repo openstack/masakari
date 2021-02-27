@@ -60,8 +60,6 @@ Reference Material
   reference for Masakari.
 * :doc:`Versioned Notifications </user/notifications>`: This provides the list
   of existing versioned notifications with sample payloads.
-* :doc:`Masakari team process <user/process>`
-* :doc:`Getting started with Masakari  <user/how_to_get_involved>`:
   This will help newcomers understand basics of Masakari
 * `Nova Docs <https://docs.openstack.org/nova/latest/index.html>`_: A collection of guides for Nova.
 
@@ -82,11 +80,19 @@ Reference Material
    configuration/recovery_workflow_sample_config.rst
    configuration/sample_config.rst
    configuration/sample_policy.rst
-   install/development.environment.rst
    user/architecture.rst
-   user/how_to_get_involved.rst
    user/notifications.rst
-   user/process.rst
+
+Contributor Guide
+=================
+
+.. toctree::
+   :maxdepth: 2
+
+   user/how_to_get_involved
+   user/process
+   install/development.environment
+   contributor/code_structure
 
 Search
 ======
