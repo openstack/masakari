@@ -278,7 +278,7 @@ function install_masakaridashboard {
     $HORIZON_DIR/openstack_dashboard/local/enabled
     ln -fs $MASAKARI_DASHBOARD_DIR/masakaridashboard/local/local_settings.d/_50_masakari.py \
     $HORIZON_DIR/openstack_dashboard/local/local_settings.d
-    ln -fs $MASAKARI_DASHBOARD_DIR/masakaridashboard/conf/masakari_policy.json \
+    ln -fs $MASAKARI_DASHBOARD_DIR/masakaridashboard/conf/masakari_policy.yaml \
     $HORIZON_DIR/openstack_dashboard/conf
 }
 
@@ -286,7 +286,7 @@ function install_masakaridashboard {
 function uninstall_masakaridashboard {
     sudo rm -f  $DEST/horizon/openstack_dashboard/local/enabled/_50_masakaridashboard.py
     sudo rm -f  $DEST/horizon/openstack_dashboard/local/local_settings.d/_50_masakari.py
-    sudo rm -f  $DEST/horizon/openstack_dashboard/conf/masakari_policy.json
+    sudo rm -f  $DEST/horizon/openstack_dashboard/conf/masakari_policy.yaml
     restart_apache_server
 }
 

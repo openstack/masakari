@@ -76,7 +76,7 @@ Configure masakari-api
 
 #. Create directory ``/etc/masakari``
 
-#. Copy ``masakari.conf``, ``api-paste.ini`` and ``policy.json`` file
+#. Copy ``masakari.conf``, ``api-paste.ini`` and ``policy.yaml`` file
    from ``masakari/etc/`` to ``/etc/masakari`` folder
 
 #. To run masakari-api simply use following binary:
