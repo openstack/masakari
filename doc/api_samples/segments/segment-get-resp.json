@@ -9,6 +9,7 @@
         "service_type": "COMPUTE",
         "deleted_at": null,
         "id": 4,
-        "name": "new_segment"
+        "name": "new_segment",
+        "enabled": True
     }
 }
