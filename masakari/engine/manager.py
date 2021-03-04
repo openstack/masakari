@@ -328,6 +328,20 @@ class MasakariManager(manager.Manager):
 
     def process_notification(self, context, notification=None):
         """Processes the notification"""
+        host = objects.Host.get_by_uuid(
+            context, notification.source_host_uuid)
+        if not host.failover_segment.enabled:
+            update_data = {
+                'status': fields.NotificationStatus.IGNORED,
+            }
+            notification.update(update_data)
+            notification.save()
+            msg = ('Notification %(notification_uuid)s of type: %(type)s '
+                   'is ignored, because the failover segment is disabled.',
+                   {'notification_uuid': notification.notification_uuid,
+                    'type': notification.type})
+            raise exception.FailoverSegmentDisabled(msg)
+
         self._process_notification(context, notification)
 
     @periodic_task.periodic_task(

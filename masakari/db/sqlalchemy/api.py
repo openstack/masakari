@@ -208,6 +208,9 @@ def failover_segment_get_all_by_filters(
     if 'service_type' in filters:
         query = query.filter(models.FailoverSegment.service_type == filters[
             'service_type'])
+    if 'enabled' in filters:
+        query = query.filter(models.FailoverSegment.enabled == filters[
+            'enabled'])
 
     marker_row = None
     if marker is not None:

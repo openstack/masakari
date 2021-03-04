@@ -27,9 +27,11 @@ class SegmentApiPayloadBase(base.NotificationPayloadBase):
         'service_type': ('segment', 'service_type'),
         'description': ('segment', 'description'),
         'recovery_method': ('segment', 'recovery_method'),
+        'enabled': ('segment', 'enabled'),
     }
     # Version 1.0: Initial version
-    VERSION = '1.0'
+    # Version 1.1: Add 'enabled' field
+    VERSION = '1.1'
     fields = {
         'id': fields.IntegerField(),
         'uuid': fields.UUIDField(),
@@ -37,6 +39,7 @@ class SegmentApiPayloadBase(base.NotificationPayloadBase):
         'service_type': fields.StringField(),
         'description': fields.StringField(nullable=True),
         'recovery_method': fields.FailoverSegmentRecoveryMethodField(),
+        'enabled': fields.BooleanField(),
         }
 
     def __init__(self, segment, **kwargs):
@@ -48,7 +51,7 @@ class SegmentApiPayloadBase(base.NotificationPayloadBase):
 class SegmentApiPayload(SegmentApiPayloadBase):
     # No SCHEMA as all the additional fields are calculated
 
-    VERSION = '1.0'
+    VERSION = '1.1'
     fields = {
         'fault': fields.ObjectField('ExceptionPayload', nullable=True),
     }

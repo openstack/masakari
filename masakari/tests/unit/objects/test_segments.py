@@ -38,7 +38,8 @@ fake_segment = {
     'name': 'foo-segment',
     'service_type': 'COMPUTE',
     'description': 'fake-description',
-    'recovery_method': 'auto'
+    'recovery_method': 'auto',
+    'enabled': True
     }
 
 
@@ -282,3 +283,14 @@ class TestFailoverSegmentObject(test_objects._LocalTest):
             mock.call(self.context, segment_object, action=action,
                       phase=phase_start)]
         mock_notify_about_segment_api.assert_has_calls(notify_calls)
+
+    def test_obj_make_compatible(self):
+        segment_obj = segment.FailoverSegment(context=self.context)
+        segment_obj.name = "foo-segment"
+        segment_obj.id = 123
+        segment_obj.uuid = uuidsentinel.fake_segment
+        segment_obj.enabled = True
+        primitive = segment_obj.obj_to_primitive('1.1')
+        self.assertIn('enabled', primitive['masakari_object.data'])
+        primitive = segment_obj.obj_to_primitive('1.0')
+        self.assertNotIn('enabled', primitive['masakari_object.data'])

@@ -62,7 +62,8 @@ class FailoverSegmentsTestCase(test.TestCase, ModelsObjectComparatorMixin):
             'name': 'fake_name',
             'service_type': 'fake_service_type',
             'description': 'fake_description',
-            'recovery_method': 'auto'
+            'recovery_method': 'auto',
+            'enabled': True
         }
 
     def _get_fake_values_list(self):
@@ -105,12 +106,15 @@ class FailoverSegmentsTestCase(test.TestCase, ModelsObjectComparatorMixin):
             db.failover_segment_get_by_name, 'name')
 
     def test_failover_segment_update(self):
-        update = {'name': 'updated_name', 'description': 'updated_desc'}
+        update = {'name': 'updated_name',
+                  'description': 'updated_desc',
+                  'enabled': False}
         updated = {'uuid': uuidsentinel.fake_uuid,
                    'name': 'updated_name',
                    'service_type': 'fake_service_type',
                    'description': 'updated_desc',
-                   'recovery_method': 'auto'}
+                   'recovery_method': 'auto',
+                   'enabled': False}
         ignored_keys = ['deleted', 'created_at', 'updated_at', 'deleted_at',
                         'id']
         self._create_failover_segment(self._get_fake_values())

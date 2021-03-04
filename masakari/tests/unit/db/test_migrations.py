@@ -210,6 +210,9 @@ class MasakariMigrationsCheckers(test_migrations.WalkVersionsMixin):
         self.assertColumnExists(engine, 'atomdetails', 'revert_results')
         self.assertColumnExists(engine, 'atomdetails', 'revert_failure')
 
+    def _check_007(self, engine, data):
+        self.assertColumnExists(engine, 'failover_segments', 'enabled')
+
 
 class TestMasakariMigrationsSQLite(MasakariMigrationsCheckers,
                                    test_base.DbTestCase):

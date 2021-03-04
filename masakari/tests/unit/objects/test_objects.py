@@ -653,7 +653,7 @@ class TestRegistry(test.NoDBTestCase):
 # they come with a corresponding version bump in the affected
 # objects
 object_data = {
-    'FailoverSegment': '1.0-5e8b8bc8840b35439b5f2b621482d15d',
+    'FailoverSegment': '1.1-9cecc07c111f647b32d560f19f1f5db9',
     'FailoverSegmentList': '1.0-dfc5c6f5704d24dcaa37b0bbb03cbe60',
     'Host': '1.2-f05735b156b687bc916d46b551bc45e3',
     'HostList': '1.0-25ebe1b17fbd9f114fae8b6a10d198c0',
@@ -673,8 +673,8 @@ object_data = {
     'MyObj': '1.6-ee7b607402fbfb3390a92ab7199e0d88',
     'MyOwnedObject': '1.0-fec853730bd02d54cc32771dd67f08a0',
     'SegmentApiNotification': '1.0-1187e93f564c5cca692db76a66cda2a6',
-    'SegmentApiPayload': '1.0-4c85836a1c2e4069b9dc84fa029a4657',
-    'SegmentApiPayloadBase': '1.0-93a7c8b78d0e9ea3f6811d4ed75fa799'
+    'SegmentApiPayload': '1.1-e34e1c772e16e9ad492067ee98607b1d',
+    'SegmentApiPayloadBase': '1.1-6a1db76f3e825f92196fc1a11508d886'
 }
 
 

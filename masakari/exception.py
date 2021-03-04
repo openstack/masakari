@@ -370,3 +370,7 @@ class HostNotFoundUnderFailoverSegment(HostNotFound):
 
 class InstanceEvacuateFailed(MasakariException):
     msg_fmt = _("Failed to evacuate instance %(instance_uuid)s")
+
+
+class FailoverSegmentDisabled(MasakariException):
+    msg_fmt = _('Failover segment is disabled.')

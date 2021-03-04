@@ -1,0 +1,8 @@
+---
+
+features:
+  - |
+    Sometimes, operators want to temporarily disable instance-ha function.
+    This version adds 'enabled' to segment. If the segment 'enabled' value
+    is set False, all notifications of this segment will be ignored
+    and no recovery methods will execute.

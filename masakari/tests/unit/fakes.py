@@ -206,10 +206,11 @@ def create_fake_host(**updates):
 def create_fake_failover_segment(name='fake_segment', id=1, description=None,
                                  service_type='COMPUTE',
                                  recovery_method="auto",
-                                 uuid=uuidsentinel.fake_segment):
+                                 uuid=uuidsentinel.fake_segment,
+                                 enabled=True):
     return objects.FailoverSegment(
         name=name, id=id, description=description, service_type=service_type,
-        recovery_method=recovery_method, uuid=uuid)
+        recovery_method=recovery_method, uuid=uuid, enabled=enabled)
 
 
 def create_fake_notification_progress_details(
