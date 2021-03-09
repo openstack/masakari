@@ -64,7 +64,8 @@ function create_masakari_accounts {
 
         create_service_user "$USERNAME" "admin"
 
-        local masakari_service=$(get_or_create_service "masakari" \
+        local masakari_service
+        masakari_service=$(get_or_create_service "masakari" \
             "instance-ha" "OpenStack High Availability")
         if [ "$MASAKARI_USE_MOD_WSGI" == "False" ]; then
             get_or_create_endpoint $masakari_service \
@@ -129,9 +130,9 @@ function configure_masakari {
     # (Re)create masakari api conf file if needed
     if is_service_enabled masakari-api; then
         oslo-config-generator --namespace keystonemiddleware.auth_token \
-                          --namespace masakari \
-                          --namespace oslo.db \
-                          > $MASAKARI_CONF
+            --namespace masakari \
+            --namespace oslo.db \
+            > $MASAKARI_CONF
 
         # Set common configuration values (but only if they're defined)
         iniset $MASAKARI_CONF DEFAULT masakari_api_workers "$API_WORKERS"
@@ -175,9 +176,9 @@ function configure_masakarimonitors {
 
     # (Re)create masakarimonitors api conf file if needed
     oslo-config-generator --namespace masakarimonitors.conf \
-                      --namespace oslo.log \
-                      --namespace oslo.middleware \
-                      > $MASAKARI_MONITORS_CONF
+        --namespace oslo.log \
+        --namespace oslo.middleware \
+        > $MASAKARI_MONITORS_CONF
 
     iniset $MASAKARI_MONITORS_CONF api auth_url "${KEYSTONE_AUTH_PROTOCOL}://${KEYSTONE_AUTH_HOST}/identity"
     iniset $MASAKARI_MONITORS_CONF api password "$SERVICE_PASSWORD"
