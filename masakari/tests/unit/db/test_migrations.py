@@ -62,7 +62,8 @@ class MasakariMigrationsCheckers(test_migrations.WalkVersionsMixin):
         old_level = migrate_log.level
         migrate_log.setLevel(logging.WARN)
         self.addCleanup(migrate_log.setLevel, old_level)
-
+        CONF.set_override('connection', str(self.migrate_engine.url),
+                          group='taskflow')
         self.useFixture(masakari_fixtures.Timeout(
             os.environ.get('OS_TEST_TIMEOUT', 0),
             self.TIMEOUT_SCALING_FACTOR))
