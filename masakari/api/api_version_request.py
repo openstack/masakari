@@ -50,6 +50,7 @@ REST_API_VERSION_HISTORY = """REST API Version History:
 # support is fully merged.
 _MIN_API_VERSION = "1.0"
 _MAX_API_VERSION = "1.2"
+# The default api version request if none is requested in the headers
 DEFAULT_API_VERSION = _MIN_API_VERSION
 
 
