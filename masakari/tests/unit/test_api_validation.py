@@ -28,8 +28,10 @@ from masakari import test
 
 
 class FakeRequest(object):
-    api_version_request = api_version.APIVersionRequest("1.0")
-    environ = {}
+    def __init__(self, version=None):
+        if version is None:
+            version = '1.0'
+        self.api_version_request = api_version.APIVersionRequest(version)
 
 
 class ValidationRegex(test.NoDBTestCase):
@@ -552,3 +554,83 @@ class DatetimeTestCase(APIValidationTestCase):
                          self.post(body={
                              'foo': '2016-01-14T01:00:00Z'}, req=FakeRequest()
                          ))
+
+
+class VersionedApiValidationTestCase(APIValidationTestCase):
+
+    def setUp(self):
+        super(__class__, self).setUp()
+
+        schema_pre13 = {
+            'type': 'object',
+            'properties': {
+                'foo': {
+                    'type': 'string',
+                },
+            },
+            'additionalProperties': False,
+        }
+
+        schema_post13 = {
+            'type': 'object',
+            'properties': {
+                'bar': {
+                    'type': 'boolean',
+                },
+            },
+            'additionalProperties': False,
+        }
+
+        @validation.schema(request_body_schema=schema_pre13,
+                           min_version='1.1',
+                           max_version='1.2')
+        @validation.schema(request_body_schema=schema_post13,
+                           min_version='1.3')
+        def post(req, body):
+            return 'Validation succeeded.'
+
+        self.post = post
+
+    def check_validation_error(self, body, req):
+        try:
+            self.post(body=body, req=req)
+        except exception.ValidationError as ex:
+            self.assertEqual(http.BAD_REQUEST, ex.kwargs['code'])
+        except Exception as ex:
+            self.fail('An unexpected exception happens: %s' % ex)
+        else:
+            self.fail('Any exception does not happen.')
+
+    def test_validate_with_proper_microversions(self):
+        self.assertEqual('Validation succeeded.',
+                         self.post(body={
+                             'foo': 'ahappystring'}, req=FakeRequest('1.1')
+                         ))
+        self.assertEqual('Validation succeeded.',
+                         self.post(body={
+                             'foo': 'ahappystring'}, req=FakeRequest('1.2')
+                         ))
+        self.assertEqual('Validation succeeded.',
+                         self.post(body={
+                             'bar': True}, req=FakeRequest('1.3')
+                         ))
+        self.assertEqual('Validation succeeded.',
+                         self.post(body={
+                             'bar': True}, req=FakeRequest('1.10')
+                         ))
+        self.assertEqual('Validation succeeded.',
+                         self.post(body={
+                             'whatever': None}, req=FakeRequest('1.0')
+                         ))
+
+    def test_validate_with_improper_microversions(self):
+        self.check_validation_error(body={'bar': False},
+                                    req=FakeRequest('1.1'))
+        self.check_validation_error(body={'bar': False},
+                                    req=FakeRequest('1.2'))
+        self.check_validation_error(body={'foo': 'asadstring'},
+                                    req=FakeRequest('1.3'))
+        self.check_validation_error(body={'foo': 'asadstring'},
+                                    req=FakeRequest('1.10'))
+        self.check_validation_error(body={'foo': 'asadstring'},
+                                    req=FakeRequest('2.0'))
