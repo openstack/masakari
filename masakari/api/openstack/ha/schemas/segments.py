@@ -57,4 +57,6 @@ update['properties']['segment']['anyOf'] = [{'required': ['name']},
                                             ]
 
 update_v12 = copy.deepcopy(update)
+update_v12['properties']['segment']['properties']['enabled'] = \
+    parameter_types.boolean
 update_v12['properties']['segment']['anyOf'].append({'required': ['enabled']})
