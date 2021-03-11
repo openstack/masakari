@@ -242,24 +242,6 @@ def obj_make_list(context, list_obj, item_cls, db_list, **extra_args):
     return list_obj
 
 
-def obj_to_primitive(obj):
-    """Recursively turn an object into a python primitive.
-
-    A MasakariObject becomes a dict, and anything that implements
-    ObjectListBase becomes a list.
-    """
-    if isinstance(obj, ObjectListBase):
-        return [obj_to_primitive(x) for x in obj]
-    elif isinstance(obj, MasakariObject):
-        result = {}
-        for key in obj.obj_fields:
-            if obj.obj_attr_is_set(key) or key in obj.obj_extra_fields:
-                result[key] = obj_to_primitive(getattr(obj, key))
-        return result
-    else:
-        return obj
-
-
 def obj_equal_prims(obj_1, obj_2, ignore=None):
     """Compare two primitives for equivalence ignoring some keys.
 

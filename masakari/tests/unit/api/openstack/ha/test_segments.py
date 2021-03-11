@@ -24,8 +24,6 @@ from webob import exc
 
 from masakari.api.openstack.ha import segments
 from masakari import exception
-from masakari.ha import api as ha_api
-from masakari.objects import base as obj_base
 from masakari.objects import segment as segment_obj
 from masakari import test
 from masakari.tests.unit.api.openstack import fakes
@@ -78,21 +76,16 @@ class FailoverSegmentTestCase(test.TestCase):
     def app(self):
         return fakes.wsgi_app_v1(init_only='segments')
 
-    def _assert_segment_data(self, expected, actual):
-        self.assertTrue(obj_base.obj_equal_prims(expected, actual),
-                        "The failover segment objects were not equal")
-
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'get_all')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.get_all')
     def test_index(self, mock_get_all):
 
         mock_get_all.return_value = FAILOVER_SEGMENT_LIST
 
         result = self.controller.index(self.req)
         result = result['segments']
-        self._assert_segment_data(FAILOVER_SEGMENT_LIST,
-                                  _make_segments_list(result))
+        self.assertEqual(FAILOVER_SEGMENT_LIST, result)
 
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'get_all')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.get_all')
     def test_index_marker_not_found(self, mock_get_all):
         fake_request = fakes.HTTPRequest.blank('/v1/segments?marker=12345',
                                                use_admin_context=True)
@@ -115,7 +108,7 @@ class FailoverSegmentTestCase(test.TestCase):
 
         self.assertRaises(exc.HTTPBadRequest, self.controller.index, req)
 
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'create_segment')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.create_segment')
     def test_create(self, mock_create):
         body = {
             "segment": {
@@ -128,9 +121,9 @@ class FailoverSegmentTestCase(test.TestCase):
         mock_create.return_value = FAILOVER_SEGMENT
         result = self.controller.create(self.req, body=body)
         result = result['segment']
-        self._assert_segment_data(FAILOVER_SEGMENT, _make_segment_obj(result))
+        self.assertEqual(FAILOVER_SEGMENT, result)
 
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'create_segment')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.create_segment')
     def test_create_with_multiline_description(self, mock_create):
         body = {
             "segment": {
@@ -143,9 +136,9 @@ class FailoverSegmentTestCase(test.TestCase):
         mock_create.return_value = FAILOVER_SEGMENT
         result = self.controller.create(self.req, body=body)
         result = result['segment']
-        self._assert_segment_data(FAILOVER_SEGMENT, _make_segment_obj(result))
+        self.assertEqual(FAILOVER_SEGMENT, result)
 
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'create_segment')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.create_segment')
     def test_create_with_duplicate_segment_name(self, mock_create):
         body = {
             "segment": {
@@ -161,7 +154,7 @@ class FailoverSegmentTestCase(test.TestCase):
                           self.req, body=body)
 
     @mock.patch('masakari.rpc.get_client')
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'create_segment')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.create_segment')
     def test_create_success_with_201_response_code(
         self, mock_client, mock_create):
         body = {
@@ -232,16 +225,16 @@ class FailoverSegmentTestCase(test.TestCase):
         self.assertRaises(self.bad_request, self.controller.create,
                           self.req, body=body)
 
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'get_segment')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.get_segment')
     def test_show(self, mock_get_segment):
 
         mock_get_segment.return_value = FAILOVER_SEGMENT
 
         result = self.controller.show(self.req, uuidsentinel.fake_segment)
         result = result['segment']
-        self._assert_segment_data(FAILOVER_SEGMENT, _make_segment_obj(result))
+        self.assertEqual(FAILOVER_SEGMENT, result)
 
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'get_segment')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.get_segment')
     def test_show_with_non_existing_id(self, mock_get_segment):
 
         mock_get_segment.side_effect = exception.FailoverSegmentNotFound(
@@ -258,7 +251,7 @@ class FailoverSegmentTestCase(test.TestCase):
 
     )
     @ddt.unpack
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'update_segment')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.update_segment')
     def test_update(self, mock_update_segment, body):
         mock_update_segment.return_value = FAILOVER_SEGMENT
 
@@ -266,7 +259,7 @@ class FailoverSegmentTestCase(test.TestCase):
                                         body=body)
 
         result = result['segment']
-        self._assert_segment_data(FAILOVER_SEGMENT, _make_segment_obj(result))
+        self.assertEqual(FAILOVER_SEGMENT, result)
 
     @ddt.data(
         # no updates
@@ -289,7 +282,7 @@ class FailoverSegmentTestCase(test.TestCase):
         self.assertRaises(self.bad_request, self.controller.update,
                           self.req, uuidsentinel.fake_segment, body=test_data)
 
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'update_segment')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.update_segment')
     def test_update_with_non_exising_segment(self, mock_update_segment):
 
         test_data = {"segment": {"name": "segment11"}}
@@ -298,7 +291,7 @@ class FailoverSegmentTestCase(test.TestCase):
         self.assertRaises(exc.HTTPNotFound, self.controller.update,
                 self.req, "2", body=test_data)
 
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'update_segment')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.update_segment')
     def test_update_with_duplicated_name(self, mock_update_segment):
         test_data = {"segment": {"name": "segment1"}}
         mock_update_segment.side_effect = exception.FailoverSegmentExists(
@@ -306,13 +299,13 @@ class FailoverSegmentTestCase(test.TestCase):
         self.assertRaises(exc.HTTPConflict, self.controller.update,
                 self.req, uuidsentinel.fake_segment, body=test_data)
 
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'delete_segment')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.delete_segment')
     def test_delete_segment(self, mock_delete):
 
         self.controller.delete(self.req, uuidsentinel.fake_segment)
         self.assertTrue(mock_delete.called)
 
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'delete_segment')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.delete_segment')
     def test_delete_segment_not_found(self, mock_delete):
 
         mock_delete.side_effect = exception.FailoverSegmentNotFound(
@@ -321,7 +314,7 @@ class FailoverSegmentTestCase(test.TestCase):
                 self.req, uuidsentinel.fake_segment)
 
     @mock.patch('masakari.rpc.get_client')
-    @mock.patch.object(ha_api.FailoverSegmentAPI, 'delete_segment')
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.delete_segment')
     def test_delete_segment_with_204_status(self, mock_client, mock_delete):
         url = '/v1/segments/%s' % uuidsentinel.fake_segment
         fake_req = fakes.HTTPRequest.blank(url, use_admin_context=True)
