@@ -159,6 +159,44 @@ class FailoverSegmentTestCase(test.TestCase):
         self.assertRaises(exc.HTTPConflict, self.controller.create,
                           self.req, body=body)
 
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.create_segment')
+    def test_create_with_enabled_pre12(self, mock_create):
+        body = {
+            "segment": {
+                "name": "segment1",
+                "service_type": "COMPUTE",
+                "recovery_method": "auto",
+                "description": "failover_segment for compute",
+                "enabled": False
+            }
+        }
+        mock_create.return_value = FAILOVER_SEGMENT
+        self.assertRaises(self.bad_request, self.controller.create,
+                          self.req, body=body)
+        mock_create.assert_not_called()
+
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.create_segment')
+    def test_create_with_enabled_post12(self, mock_create):
+        body = {
+            "segment": {
+                "name": "segment1",
+                "service_type": "COMPUTE",
+                "recovery_method": "auto",
+                "description": "failover_segment for compute",
+                "enabled": False
+            }
+        }
+        req = fakes.HTTPRequest.blank('/v1/segments',
+                                      use_admin_context=True,
+                                      version='1.2')
+        mock_create.return_value = FAILOVER_SEGMENT
+        result = self.controller.create(req, body=body)
+        mock_create.assert_called_once()
+        args, kwargs = mock_create.call_args
+        self.assertIn(body['segment'], args + tuple(kwargs.values()))
+        result = result['segment']
+        self.assertEqual(FAILOVER_SEGMENT, result)
+
     @mock.patch('masakari.rpc.get_client')
     @mock.patch('masakari.ha.api.FailoverSegmentAPI.create_segment')
     def test_create_success_with_201_response_code(
@@ -315,6 +353,37 @@ class FailoverSegmentTestCase(test.TestCase):
             name="segment1")
         self.assertRaises(exc.HTTPConflict, self.controller.update,
                 self.req, uuidsentinel.fake_segment, body=test_data)
+
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.update_segment')
+    def test_update_with_enabled_pre12(self, mock_update_segment):
+        body = {
+            "segment": {
+                "enabled": False
+            }
+        }
+        mock_update_segment.return_value = FAILOVER_SEGMENT
+        self.assertRaises(self.bad_request, self.controller.create,
+                          self.req, body=body)
+        mock_update_segment.assert_not_called()
+
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.update_segment')
+    def test_update_with_enabled_post12(self, mock_update_segment):
+        body = {
+            "segment": {
+                "enabled": False
+            }
+        }
+        req = fakes.HTTPRequest.blank('/v1/segments',
+                                      use_admin_context=True,
+                                      version='1.2')
+        mock_update_segment.return_value = FAILOVER_SEGMENT
+        result = self.controller.update(req, uuidsentinel.fake_segment,
+                                        body=body)
+        mock_update_segment.assert_called_once()
+        args, kwargs = mock_update_segment.call_args
+        self.assertIn(body['segment'], args + tuple(kwargs.values()))
+        result = result['segment']
+        self.assertEqual(FAILOVER_SEGMENT, result)
 
     @mock.patch('masakari.ha.api.FailoverSegmentAPI.delete_segment')
     def test_delete_segment(self, mock_delete):
