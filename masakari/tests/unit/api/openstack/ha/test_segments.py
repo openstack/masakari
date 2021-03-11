@@ -108,33 +108,39 @@ class FailoverSegmentTestCase(test.TestCase):
 
         self.assertRaises(exc.HTTPBadRequest, self.controller.index, req)
 
-    @mock.patch('masakari.ha.api.FailoverSegmentAPI.create_segment')
-    def test_create(self, mock_create):
-        body = {
+    @ddt.data(
+        # simple case
+        {"body": {
             "segment": {
                 "name": "segment1",
                 "service_type": "COMPUTE",
                 "recovery_method": "auto",
-                "description": "failover_segment for compute"
-            }
-        }
-        mock_create.return_value = FAILOVER_SEGMENT
-        result = self.controller.create(self.req, body=body)
-        result = result['segment']
-        self.assertEqual(FAILOVER_SEGMENT, result)
+                "description": "failover_segment for compute"}}},
 
-    @mock.patch('masakari.ha.api.FailoverSegmentAPI.create_segment')
-    def test_create_with_multiline_description(self, mock_create):
-        body = {
+        # empty description
+        {"body": {
             "segment": {
                 "name": "segment1",
                 "service_type": "COMPUTE",
                 "recovery_method": "auto",
-                "description": "failover_segment\nfor\ncompute"
-            }
-        }
+                "description": ""}}},
+
+        # multiline description
+        {"body": {
+            "segment": {
+                "name": "segment1",
+                "service_type": "COMPUTE",
+                "recovery_method": "auto",
+                "description": "failover_segment\nfor\ncompute"}}},
+    )
+    @ddt.unpack
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.create_segment')
+    def test_create(self, mock_create, body):
         mock_create.return_value = FAILOVER_SEGMENT
         result = self.controller.create(self.req, body=body)
+        mock_create.assert_called_once()
+        args, kwargs = mock_create.call_args
+        self.assertIn(body['segment'], args + tuple(kwargs.values()))
         result = result['segment']
         self.assertEqual(FAILOVER_SEGMENT, result)
 
@@ -218,12 +224,23 @@ class FailoverSegmentTestCase(test.TestCase):
                 "service_type": "COMPUTE",
                 "recovery_method": "auto",
                 "description": "failover_segment for compute",
-                "foo": "fake_foo"}}}
+                "foo": "fake_foo"}}},
+
+        # description with invalid chars
+        {"body": {
+            "segment": {
+                "name": "segment1",
+                "service_type": "COMPUTE",
+                "recovery_method": "auto",
+                "description": "\x00"}}},
     )
     @ddt.unpack
-    def test_create_failure(self, body):
+    @mock.patch('masakari.ha.api.FailoverSegmentAPI.create_segment')
+    def test_create_failure(self, mock_create, body):
+        mock_create.return_value = FAILOVER_SEGMENT
         self.assertRaises(self.bad_request, self.controller.create,
                           self.req, body=body)
+        mock_create.assert_not_called()
 
     @mock.patch('masakari.ha.api.FailoverSegmentAPI.get_segment')
     def test_show(self, mock_get_segment):
