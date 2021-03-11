@@ -76,7 +76,7 @@ class HTTPRequest(os_wsgi.Request):
         kwargs['base_url'] = 'http://localhost/v1'
         use_admin_context = kwargs.pop('use_admin_context', False)
         project_id = kwargs.pop('project_id', uuidsentinel.fake_project_id)
-        version = kwargs.pop('version', os_wsgi.DEFAULT_API_VERSION)
+        version = kwargs.pop('version', api_version.DEFAULT_API_VERSION)
         out = os_wsgi.Request.blank(*args, **kwargs)
         out.environ['masakari.context'] = FakeRequestContext(
             user_id=uuidsentinel.fake_user_id,
