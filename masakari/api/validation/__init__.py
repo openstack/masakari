@@ -21,7 +21,7 @@ Request Body validating middleware.
 import functools
 
 from masakari.api import api_version_request as api_version
-from masakari.api.validation import validators
+from masakari.api.validation.validators import _SchemaValidator
 
 
 def schema(request_body_schema, min_version=None, max_version=None):
@@ -45,13 +45,13 @@ def schema(request_body_schema, min_version=None, max_version=None):
             else:
                 ver = args[1].api_version_request
 
-            ver.matches(min_ver, max_ver)
             # Only validate against the schema if it lies within
-            # the version range specified. Note that if both min
-            # and max are not specified the validator will always
+            # the version range specified. Note that, if both min
+            # and max are not specified, the validator will always
             # be run.
-            schema_validator = validators._SchemaValidator(request_body_schema)
-            schema_validator.validate(kwargs['body'])
+            if ver.matches(min_ver, max_ver):
+                schema_validator = _SchemaValidator(request_body_schema)
+                schema_validator.validate(kwargs['body'])
 
             return func(*args, **kwargs)
         return wrapper
