@@ -64,21 +64,35 @@ class TestHosts(base.BaseFunctionalTest):
 
         expected_hosts = []
         for host in self.hypervisors:
-            host_obj = self.admin_conn.ha.create_host(
+            host_data = {
+                'name': host.name,
+                'type': 'COMPUTE',
+                'on_maintenance': False,
+                'reserved': False,
+                'control_attributes': 'SSH',
+            }
+            self.admin_conn.ha.create_host(
                 segment_id=self.segment.uuid,
-                name=host.name,
-                type='COMPUTE',
-                on_maintenance=False,
-                reserved=False,
-                control_attributes='SSH')
+                **host_data)
 
-            # Deleting 'segment_id' as in GET list call of host 'segment_id'
-            # is not there in response
-            del host_obj['segment_id']
-            expected_hosts.append(host_obj)
+            # NOTE(yoctozepto): 'failover_segment_id' is added in the API
+            # response. We can verify it here.
+            host_data['failover_segment_id'] = self.segment.uuid
+
+            expected_hosts.append(host_data)
 
         hosts = self.admin_conn.ha.hosts(self.segment.uuid)
-        self.assertCountEqual(expected_hosts, hosts)
+        # NOTE(yoctozepto): We are saving the generator values to a list to
+        # compare the length and then iterate over the elements for comparison.
+        hosts = list(hosts)
+        self.assertEqual(len(expected_hosts), len(hosts))
+        for expected_host in expected_hosts:
+            found = False
+            for host in hosts:
+                found = found or (dict(host, **expected_host) == dict(host))
+            self.assertEqual(True, found,
+                'Host not found: {expected_host}'.format(
+                    expected_host=expected_host))
 
     @ddt.data(
         {'on_maintenance': False, 'host_type': 'COMPUTE', 'reserved': False,
