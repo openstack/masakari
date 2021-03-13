@@ -190,13 +190,7 @@ function configure_masakarimonitors {
     iniset $MASAKARI_MONITORS_CONF process process_list_path "/etc/masakarimonitors/process_list.yaml"
 
     cp $DEST/masakari-monitors/etc/masakarimonitors/process_list.yaml.sample \
-       $DEST/masakari-monitors/etc/masakarimonitors/process_list.yaml
-    cp $DEST/masakari-monitors/etc/masakarimonitors/process_list.yaml \
-       $MASAKARI_MONITORS_CONF_DIR
-
-    cp $DEST/masakari-monitors/etc/masakarimonitors/processmonitor.conf.sample \
-       $DEST/masakari-monitors/etc/masakarimonitors/processmonitor.conf
-    cp $DEST/masakari-monitors/etc/masakarimonitors/processmonitor.conf $MASAKARI_MONITORS_CONF_DIR
+       $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
 
     sed -i 's/start nova-compute/start devstack@n-cpu/g' $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
     sed -i 's/restart nova-compute/restart devstack@n-cpu/g' $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
