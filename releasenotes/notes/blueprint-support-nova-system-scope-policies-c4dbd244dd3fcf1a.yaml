@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Allows to use system-scoped tokens when contacting Nova.
+    `Blueprint support-nova-system-scope-policies <https://blueprints.launchpad.net/masakari/+spec/support-nova-system-scope-policies>`__

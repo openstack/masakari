@@ -52,7 +52,8 @@ class NovaClientTestCase(test.TestCase):
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
             auth_url='http://keystonehost/identity',
             password='strongpassword', project_domain_name='default',
-            project_name=None, user_domain_name='default', username='adminuser'
+            project_name=None, user_domain_name='default',
+            system_scope=None, username='adminuser'
         )
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
@@ -72,7 +73,8 @@ class NovaClientTestCase(test.TestCase):
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
             auth_url='http://keystonehost/identity',
             password='strongpassword', project_domain_name='default',
-            project_name=None, user_domain_name='default', username='adminuser'
+            project_name=None, user_domain_name='default',
+            system_scope=None, username='adminuser'
         )
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
@@ -94,7 +96,8 @@ class NovaClientTestCase(test.TestCase):
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
             auth_url='http://keystonehost/identity',
             password='strongpassword', project_domain_name='default',
-            project_name=None, user_domain_name='default', username='adminuser'
+            project_name=None, user_domain_name='default',
+            system_scope=None, username='adminuser'
         )
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
@@ -115,7 +118,8 @@ class NovaClientTestCase(test.TestCase):
         p_plugin_loader.return_value.load_from_options.assert_called_once_with(
             auth_url='http://keystonehost/identity',
             password='strongpassword', project_domain_name='default',
-            project_name=None, user_domain_name='default', username='adminuser'
+            project_name=None, user_domain_name='default',
+            system_scope=None, username='adminuser'
         )
         p_client.assert_called_once_with(
             p_api_version(nova.NOVA_API_VERSION),
@@ -124,6 +128,21 @@ class NovaClientTestCase(test.TestCase):
             service_type='compute', service_name='nova',
             cacert=None, timeout=None, global_request_id=self.ctx.global_id,
             extensions=nova.nova_extensions)
+
+    @mock.patch('novaclient.api_versions.APIVersion')
+    @mock.patch('novaclient.client.Client')
+    @mock.patch('keystoneauth1.loading.get_plugin_loader')
+    @mock.patch('keystoneauth1.session.Session')
+    def test_nova_client_system_scope(self, p_session, p_plugin_loader,
+                                      p_client, p_api_version):
+        self.override_config('os_system_scope', 'all')
+        nova.novaclient(self.ctx)
+        p_plugin_loader.return_value.load_from_options.assert_called_once_with(
+            auth_url='http://keystonehost/identity',
+            password='strongpassword', project_domain_name='default',
+            project_name=None, user_domain_name='default',
+            system_scope='all', username='adminuser'
+        )
 
 
 class NovaApiTestCase(test.TestCase):

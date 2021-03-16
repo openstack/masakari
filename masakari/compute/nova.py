@@ -112,7 +112,8 @@ def novaclient(context, timeout=None):
         password=context.auth_token,
         project_name=context.project_name,
         user_domain_name=CONF.os_user_domain_name,
-        project_domain_name=CONF.os_project_domain_name)
+        project_domain_name=CONF.os_project_domain_name,
+        system_scope=CONF.os_system_scope)
     session_loader = keystoneauth1.loading.session.Session()
     keystone_session = session_loader.load_from_options(
         auth=auth, cacert=CONF.nova_ca_certificates_file,
