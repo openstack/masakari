@@ -193,3 +193,8 @@ can re-propose it for the next cycle.
 If it's not a priority and your spec has not been approved, your code
 will not merge this cycle. Please re-propose your spec for the next
 cycle.
+
+Release notes
+-------------
+
+Release notes are covered on their own page: :doc:`Release notes </contributor/release_notes>`
