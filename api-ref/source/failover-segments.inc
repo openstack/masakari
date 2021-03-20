@@ -100,7 +100,7 @@ recovery_method. For `service_type` user can mention the name of service for
 which this segment is created. As of now user can mention `COMPUTE` as
 `service_type`. For `recovery_method` user can mention either `auto`,
 `reserved_host`, `auto_priority` or `rh_priority`. Segment name should be
-unique. For `enabled` user can mention `True` or `False` to enable/disable
+unique. For `enabled` user can mention `true` or `false` to enable/disable
 this segment.
 
 Response Codes

@@ -11,7 +11,7 @@
             "deleted_at": null,
             "id": 1,
             "name": "segment2",
-            "enabled": True
+            "enabled": true
         }
     ]
 }

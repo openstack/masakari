@@ -3,6 +3,6 @@
         "service_type": "COMPUTE",
         "recovery_method": "auto",
         "name": "new_segment",
-        "enabled": True
+        "enabled": true
     }
 }
