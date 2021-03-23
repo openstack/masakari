@@ -333,13 +333,6 @@ class EvacuateInstancesTask(base.MasakariTask):
                                 self.update_details(msg, 1.0)
                                 LOG.info(msg)
 
-                            # A failed compute host can be associated with
-                            # multiple aggregates but operators will not
-                            # associate it with multiple aggregates in real
-                            # deployment so adding reserved_host to the very
-                            # first aggregate from the list.
-                            break
-
                 self.novaclient.enable_disable_service(
                     context, reserved_host, enable=True)
 

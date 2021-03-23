@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Adds ``reserved_host`` to all aggregates of the failing host, instead of
+    just the first one.
+    `LP#1856164 <https://launchpad.net/bugs/1856164>`__
