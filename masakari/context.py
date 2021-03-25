@@ -66,6 +66,10 @@ class RequestContext(context.RequestContext):
     Represents the user taking a given action within the system.
 
     """
+    FROM_DICT_EXTRA_KEYS = [
+        'read_deleted', 'remote_address',
+        'timestamp', 'service_catalog',
+    ]
 
     def __init__(self, user_id=None, project_id=None,
                  is_admin=None, read_deleted="no",
@@ -102,6 +106,8 @@ class RequestContext(context.RequestContext):
             resource_uuid=kwargs.pop('resource_uuid', None),
             overwrite=overwrite,
             roles=roles,
+            user_name=user_name,
+            project_name=project_name,
             is_admin_project=kwargs.pop('is_admin_project', True),
             global_request_id=kwargs.pop('global_request_id', None))
         # oslo_context's RequestContext.to_dict() generates this field, we can
@@ -111,11 +117,6 @@ class RequestContext(context.RequestContext):
             LOG.debug('Arguments dropped when creating context: %s',
                       str(kwargs))
 
-        # FIXME: user_id and project_id duplicate information that is
-        # already present in the oslo_context's RequestContext. We need to
-        # get rid of them.
-        self.user_id = user_id
-        self.project_id = project_id
         self.read_deleted = read_deleted
         self.remote_address = remote_address
         if not timestamp:
@@ -132,10 +133,6 @@ class RequestContext(context.RequestContext):
         else:
             # if list is empty or none
             self.service_catalog = []
-
-        self.user_name = user_name
-        self.project_name = project_name
-        self.is_admin = is_admin
 
         self.user_auth_plugin = user_auth_plugin
         if self.is_admin is None:
@@ -170,21 +167,15 @@ class RequestContext(context.RequestContext):
         values.update({
             'user_id': getattr(self, 'user_id', None),
             'project_id': getattr(self, 'project_id', None),
-            'is_admin': getattr(self, 'is_admin', None),
             'read_deleted': getattr(self, 'read_deleted', 'no'),
             'remote_address': getattr(self, 'remote_address', None),
             'timestamp': utils.strtime(self.timestamp) if hasattr(
                 self, 'timestamp') else None,
-            'request_id': getattr(self, 'request_id', None),
             'user_name': getattr(self, 'user_name', None),
             'service_catalog': getattr(self, 'service_catalog', None),
             'project_name': getattr(self, 'project_name', None)
         })
         return values
-
-    @classmethod
-    def from_dict(cls, values):
-        return cls(**values)
 
     def elevated(self, read_deleted=None):
         """Return a version of this context with admin flag set."""
