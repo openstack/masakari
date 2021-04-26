@@ -149,12 +149,3 @@
     gate:
       jobs:
         - openstack-tox-linters
-
-- project:
-    masakari-systemfault-integration-ci:
-      jobs:
-        - masakari-build-test
-
-- job:
-    name: masakari-build-test
-    parent: base
