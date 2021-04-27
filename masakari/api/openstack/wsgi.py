@@ -14,7 +14,7 @@
 #    under the License.
 
 import functools
-from http import client as http
+from http import HTTPStatus
 import inspect
 
 import microversion_parse
@@ -267,7 +267,7 @@ class ResponseObject(object):
         """Builds a response object."""
 
         self.obj = obj
-        self._default_code = http.OK
+        self._default_code = HTTPStatus.OK
         self._code = code
         self._headers = headers or {}
         self.serializer = JSONDictSerializer()
@@ -1003,17 +1003,17 @@ class Fault(webob.exc.HTTPException):
     """Wrap webob.exc.HTTPException to provide API friendly response."""
 
     _fault_names = {
-        http.BAD_REQUEST: "badRequest",
-        http.UNAUTHORIZED: "unauthorized",
-        http.FORBIDDEN: "forbidden",
-        http.NOT_FOUND: "itemNotFound",
-        http.METHOD_NOT_ALLOWED: "badMethod",
-        http.CONFLICT: "conflictingRequest",
-        http.REQUEST_ENTITY_TOO_LARGE: "overLimit",
-        http.UNSUPPORTED_MEDIA_TYPE: "badMediaType",
-        http.NOT_IMPLEMENTED: "notImplemented",
-        http.SERVICE_UNAVAILABLE: "serviceUnavailable",
-        http.TOO_MANY_REQUESTS: "overLimit"
+        HTTPStatus.BAD_REQUEST: "badRequest",
+        HTTPStatus.UNAUTHORIZED: "unauthorized",
+        HTTPStatus.FORBIDDEN: "forbidden",
+        HTTPStatus.NOT_FOUND: "itemNotFound",
+        HTTPStatus.METHOD_NOT_ALLOWED: "badMethod",
+        HTTPStatus.CONFLICT: "conflictingRequest",
+        HTTPStatus.REQUEST_ENTITY_TOO_LARGE: "overLimit",
+        HTTPStatus.UNSUPPORTED_MEDIA_TYPE: "badMediaType",
+        HTTPStatus.NOT_IMPLEMENTED: "notImplemented",
+        HTTPStatus.SERVICE_UNAVAILABLE: "serviceUnavailable",
+        HTTPStatus.TOO_MANY_REQUESTS: "overLimit"
     }
 
     def __init__(self, exception):
@@ -1040,7 +1040,7 @@ class Fault(webob.exc.HTTPException):
             fault_name: {
                 'code': code,
                 'message': explanation}}
-        if code == http.REQUEST_ENTITY_TOO_LARGE or code == 429:
+        if code == HTTPStatus.REQUEST_ENTITY_TOO_LARGE or code == 429:
             retry = self.wrapped_exc.headers.get('Retry-After', None)
             if retry:
                 fault_data[fault_name]['retryAfter'] = retry

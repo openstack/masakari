@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from http import client as http
+from http import HTTPStatus
 
 from oslo_utils import timeutils
 from webob import exc
@@ -52,9 +52,9 @@ class NotificationsController(wsgi.Controller):
     def _validate_comp_host_payload(self, req, body):
         pass
 
-    @wsgi.response(http.ACCEPTED)
-    @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN,
-                                 http.CONFLICT))
+    @wsgi.response(HTTPStatus.ACCEPTED)
+    @extensions.expected_errors((HTTPStatus.BAD_REQUEST, HTTPStatus.FORBIDDEN,
+                                 HTTPStatus.CONFLICT))
     @validation.schema(schema.create)
     def create(self, req, body):
         """Creates a new notification."""
@@ -84,7 +84,7 @@ class NotificationsController(wsgi.Controller):
 
         return {'notification': notification}
 
-    @extensions.expected_errors((http.BAD_REQUEST, http.FORBIDDEN))
+    @extensions.expected_errors((HTTPStatus.BAD_REQUEST, HTTPStatus.FORBIDDEN))
     def index(self, req):
         """Returns a summary list of notifications."""
         context = req.environ['masakari.context']
@@ -118,7 +118,7 @@ class NotificationsController(wsgi.Controller):
 
         return {'notifications': notifications}
 
-    @extensions.expected_errors((http.FORBIDDEN, http.NOT_FOUND))
+    @extensions.expected_errors((HTTPStatus.FORBIDDEN, HTTPStatus.NOT_FOUND))
     def show(self, req, id):
         """Return data about the given notification id."""
         context = req.environ['masakari.context']

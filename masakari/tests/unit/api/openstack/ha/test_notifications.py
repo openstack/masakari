@@ -16,7 +16,7 @@
 """Tests for the notifications api."""
 
 import copy
-from http import client as http
+from http import HTTPStatus
 from unittest import mock
 
 import ddt
@@ -229,7 +229,7 @@ class NotificationTestCase(test.TestCase):
         fake_req.method = 'POST'
         fake_req.body = jsonutils.dump_as_bytes(body)
         resp = fake_req.get_response(self.app)
-        self.assertEqual(http.ACCEPTED, resp.status_code)
+        self.assertEqual(HTTPStatus.ACCEPTED, resp.status_code)
 
     @mock.patch.object(ha_api.NotificationAPI, 'create_notification')
     def test_create_host_not_found(self, mock_create):
@@ -424,7 +424,7 @@ class NotificationTestCase(test.TestCase):
         fake_req.headers['Content-Type'] = 'application/json'
         fake_req.method = method
         resp = fake_req.get_response(self.app)
-        self.assertEqual(http.METHOD_NOT_ALLOWED, resp.status_code)
+        self.assertEqual(HTTPStatus.METHOD_NOT_ALLOWED, resp.status_code)
 
 
 class NotificationCasePolicyNotAuthorized(test.NoDBTestCase):
