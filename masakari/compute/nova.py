@@ -167,8 +167,8 @@ class API(object):
             nova.services.enable(service.id)
 
     @translate_nova_exception
-    def is_service_down(self, context, host_name, binary):
-        """Check whether service is up or down on given host."""
+    def is_service_disabled(self, context, host_name, binary):
+        """Check whether service is enabled or disabled on given host."""
         nova = novaclient(context)
         service = nova.services.list(host=host_name, binary=binary)[0]
         return service.status == 'disabled'

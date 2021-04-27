@@ -42,8 +42,8 @@ class DisableComputeNodeTask(base.MasakariTask):
         msg = "Disabling compute service on host: '%s'" % host_name
         self.update_details(msg)
 
-        if not self.novaclient.is_service_down(self.context, host_name,
-                                               process_name):
+        if not self.novaclient.is_service_disabled(self.context, host_name,
+                                                   process_name):
             # disable compute node on given host
             self.novaclient.enable_disable_service(self.context, host_name)
             msg = "Disabled compute service on host: '%s'" % host_name
@@ -64,7 +64,7 @@ class ConfirmComputeNodeDisabledTask(base.MasakariTask):
 
     def execute(self, process_name, host_name):
         def _wait_for_disable():
-            service_disabled = self.novaclient.is_service_down(
+            service_disabled = self.novaclient.is_service_disabled(
                 self.context, host_name, process_name)
             if service_disabled:
                 raise loopingcall.LoopingCallDone()
