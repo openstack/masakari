@@ -237,12 +237,12 @@ class NovaApiTestCase(test.TestCase):
             'fake_id', 'fake_reason')
 
     @mock.patch('masakari.compute.nova.novaclient')
-    def test_is_service_down(self, mock_novaclient):
+    def test_is_service_disabled(self, mock_novaclient):
         host_name = 'fake'
         binary = "nova-compute"
         mock_services = mock.MagicMock()
         mock_novaclient.return_value = mock.MagicMock(services=mock_services)
-        self.api.is_service_down(self.ctx, host_name, binary)
+        self.api.is_service_disabled(self.ctx, host_name, binary)
 
         mock_novaclient.assert_called_once_with(self.ctx)
         mock_services.list.assert_called_once_with(binary='nova-compute',

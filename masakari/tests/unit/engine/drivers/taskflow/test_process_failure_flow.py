@@ -63,9 +63,10 @@ class ProcessFailureTestCase(test.TestCase):
         task.execute(self.process_name, self.service_host)
 
         # verify service is disabled
-        self.assertTrue(self.novaclient.is_service_down(self.ctxt,
-                                                        self.service_host,
-                                                        self.process_name))
+        self.assertTrue(
+            self.novaclient.is_service_disabled(self.ctxt,
+                                                self.service_host,
+                                                self.process_name))
 
         # verify progress details
         _mock_notify.assert_has_calls([
@@ -120,7 +121,7 @@ class ProcessFailureTestCase(test.TestCase):
                                          binary="nova-compute",
                                          status="enabled")
 
-        def fake_is_service_down(context, host_name, binary):
+        def fake_is_service_disabled(context, host_name, binary):
             # assume that service is not disabled
             return False
 
@@ -129,8 +130,8 @@ class ProcessFailureTestCase(test.TestCase):
                                                       self.novaclient)
         task.execute(self.process_name, self.service_host)
 
-        with mock.patch.object(self.novaclient, 'is_service_down',
-                               fake_is_service_down):
+        with mock.patch.object(self.novaclient, 'is_service_disabled',
+                               fake_is_service_disabled):
             # test ConfirmComputeNodeDisabledTask
             task = process_failure.ConfirmComputeNodeDisabledTask(
                 self.ctxt, self.novaclient)

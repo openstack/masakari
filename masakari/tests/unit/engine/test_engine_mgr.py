@@ -1137,9 +1137,9 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
             uuidsentinel.fake_notification)
 
         # verify service is disabled
-        self.assertTrue(self.novaclient.is_service_down(self.context,
-                                                        "fake-host",
-                                                        "nova-compute"))
+        self.assertTrue(self.novaclient.is_service_disabled(self.context,
+                                                            "fake-host",
+                                                            "nova-compute"))
         # verify progress details
         _mock_notify.assert_has_calls([
             mock.call("Disabling compute service on host: 'fake-host'"),
