@@ -14,7 +14,7 @@
 #    under the License.
 
 """
-WSGI middleware for OpenStack Compute API.
+WSGI middleware for OpenStack Masakari API.
 """
 
 import masakari.api.openstack
