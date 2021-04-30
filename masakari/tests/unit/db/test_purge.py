@@ -110,14 +110,7 @@ class PurgeDeletedTest(test.TestCase):
 
         dialect = self.engine.url.get_dialect()
         if dialect == sqlite.dialect:
-            # We're seeing issues with foreign key support in SQLite 3.6.20
-            # SQLAlchemy doesn't support it at all with < SQLite 3.6.19
-            # It works fine in SQLite 3.7.
-            # Force foreign_key checking if running SQLite >= 3.7
-            import sqlite3
-            tup = sqlite3.sqlite_version_info
-            if tup[0] > 3 or (tup[0] == 3 and tup[1] >= 7):
-                self.conn.execute("PRAGMA foreign_keys = ON")
+            self.conn.execute("PRAGMA foreign_keys = ON")
 
     def test_purge_deleted_rows_old(self):
         # Purge at 30 days old, should only delete 2 rows
