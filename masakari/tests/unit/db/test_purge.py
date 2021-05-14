@@ -20,6 +20,7 @@ import uuid
 from oslo_db.sqlalchemy import utils as sqlalchemyutils
 from oslo_utils import timeutils
 from sqlalchemy.dialects import sqlite
+from sqlalchemy.sql import func, select
 
 from masakari import context
 from masakari import db
@@ -112,15 +113,17 @@ class PurgeDeletedTest(test.TestCase):
         if dialect == sqlite.dialect:
             self.conn.execute("PRAGMA foreign_keys = ON")
 
+    def _count(self, table):
+        return self.conn.execute(
+            select([func.count()]).select_from(table)).scalar()
+
     def test_purge_deleted_rows_old(self):
         # Purge at 30 days old, should only delete 2 rows
         db.purge_deleted_rows(self.context, age_in_days=30, max_rows=10)
 
-        notifications_rows = self.conn.execute(
-            self.notifications.count()).scalar()
-        failover_segments_rows = self.conn.execute(
-            self.failover_segments.count()).scalar()
-        hosts_rows = self.conn.execute(self.hosts.count()).scalar()
+        notifications_rows = self._count(self.notifications)
+        failover_segments_rows = self._count(self.failover_segments)
+        hosts_rows = self._count(self.hosts)
 
         # Verify that we only deleted 2
         self.assertEqual(4, notifications_rows)
@@ -130,13 +133,9 @@ class PurgeDeletedTest(test.TestCase):
     def test_purge_all_deleted_rows(self):
         db.purge_deleted_rows(self.context, age_in_days=20, max_rows=-1)
 
-        notifications_rows = self.conn.execute(
-            self.notifications.count()).scalar()
-
-        failover_segments_rows = self.conn.execute(
-            self.failover_segments.count()).scalar()
-
-        hosts_rows = self.conn.execute(self.hosts.count()).scalar()
+        notifications_rows = self._count(self.notifications)
+        failover_segments_rows = self._count(self.failover_segments)
+        hosts_rows = self._count(self.hosts)
 
         # Verify that we have purged all deleted rows
         self.assertEqual(2, notifications_rows)
@@ -146,13 +145,9 @@ class PurgeDeletedTest(test.TestCase):
     def test_purge_maximum_rows_partial_deleted_records(self):
         db.purge_deleted_rows(self.context, age_in_days=60, max_rows=3)
 
-        notifications_rows = self.conn.execute(
-            self.notifications.count()).scalar()
-
-        failover_segments_rows = self.conn.execute(
-            self.failover_segments.count()).scalar()
-
-        hosts_rows = self.conn.execute(self.hosts.count()).scalar()
+        notifications_rows = self._count(self.notifications)
+        failover_segments_rows = self._count(self.failover_segments)
+        hosts_rows = self._count(self.hosts)
 
         # Verify that we have deleted 3 rows only
         self.assertEqual(4, notifications_rows)
