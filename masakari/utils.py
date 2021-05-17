@@ -137,7 +137,7 @@ def expects_func_args(*args):
         @functools.wraps(dec)
         def _decorator(f):
             base_f = safe_utils.get_wrapped_function(f)
-            arg_names, a, kw, _default = inspect.getargspec(base_f)
+            arg_names, a, kw, _, _, _, _ = inspect.getfullargspec(base_f)
             if a or kw or set(args) <= set(arg_names):
                 # NOTE : We can't really tell if correct stuff will
                 # be passed if it's a function with *args or **kwargs so
