@@ -50,11 +50,9 @@ class FailoverSegmentAPI(object):
     def get_segment(self, context, segment_uuid):
         """Get a single failover segment with the given segment_uuid."""
         if uuidutils.is_uuid_like(segment_uuid):
-            LOG.debug("Fetching failover segment by "
-                      "UUID", segment_uuid=segment_uuid)
-
-            segment = objects.FailoverSegment.get_by_uuid(context, segment_uuid
-                                                          )
+            LOG.debug("Fetching failover segment by uuid %s", segment_uuid)
+            segment = objects.FailoverSegment.get_by_uuid(context,
+                                                          segment_uuid)
         else:
             LOG.debug("Failed to fetch failover "
                       "segment by uuid %s", segment_uuid)
@@ -159,9 +157,7 @@ class HostAPI(object):
         """Get a host by id"""
 
         if uuidutils.is_uuid_like(host_uuid):
-            LOG.debug("Fetching host by "
-                      "UUID", host_uuid=host_uuid)
-
+            LOG.debug("Fetching host by uuid %s", host_uuid)
             host = objects.Host.get_by_uuid(
                 context, host_uuid, segment_uuid=segment_uuid)
         else:
@@ -363,9 +359,7 @@ class NotificationAPI(object):
     def get_notification(self, context, notification_uuid):
         """Get a single notification with the given notification_uuid."""
         if uuidutils.is_uuid_like(notification_uuid):
-            LOG.debug("Fetching notification by "
-                      "UUID", notification_uuid=notification_uuid)
-
+            LOG.debug("Fetching notification by uuid %s", notification_uuid)
             notification = objects.Notification.get_by_uuid(context,
                                                             notification_uuid)
         else:
