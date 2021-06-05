@@ -1,52 +1,14 @@
 ---
-
-- nodeset:
-    name: masakari-ubuntu-focal-duo
-    nodes:
-      - name: controller
-        label: ubuntu-focal
-      - name: compute1
-        label: ubuntu-focal
-    groups:
-      # Nodes running the compute service
-      - name: compute
-        nodes:
-          - controller
-          - compute1
-      # Nodes that are not the controller
-      - name: subnode
-        nodes:
-          - compute1
-      # Switch node for multinode networking setup
-      - name: switch
-        nodes:
-          - controller
-      # Peer nodes for multinode networking setup
-      - name: peers
-        nodes:
-          - compute1
-
 - job:
     name: masakari-functional-devstack-multinode
     parent: devstack
     description: |
-      Base multinodes job for devstack-based functional tests
-    nodeset: masakari-ubuntu-focal-duo
+      Masakari functional tests job based on devstack (two-node).
+    nodeset: openstack-two-node-focal
     pre-run: playbooks/devstack/pre.yaml
     run: playbooks/devstack/run.yaml
     post-run: playbooks/devstack/post.yaml
-    roles:
-      - zuul: openstack-infra/devstack
-    timeout: 9000
     required-projects:
-      - openstack/cinder
-      - openstack/glance
-      - openstack/keystone
-      - openstack/neutron
-      - openstack/nova
-      - openstack/placement
-      - openstack/horizon
-      - openstack/python-masakariclient
       - openstack/masakari
       - openstack/masakari-monitors
     irrelevant-files:
@@ -59,79 +21,38 @@
       - ^\.gitreview$
       - ^\.mailmap$
       - ^\.yamllint$
-      - ^\.zuul.yaml$
+      - ^\.zuul\.yaml$
       - ^LICENSE$
       - ^.*[^/]+\.rst$
+      - ^bindep\.txt$
     vars:
-      test_matrix_configs: [neutron]
+      devstack_plugins:
+        masakari: https://opendev.org/openstack/masakari
       devstack_services:
-        horizon: false
+        # FIXME(yoctozepto): Make the job tls-proxy-compatible.
+        tls-proxy: false
+        # NOTE(yoctozepto): Disable controller's cinder (c-* services).
+        # It is enabled by default by the parent job (devstack) definition.
+        cinder: false
+        # NOTE(yoctozepto): Disable controller's swift (s-* services).
+        # It is enabled by default by the parent job (devstack) definition.
         swift: false
-      devstack_localrc:
-        USE_PYTHON3: true
-        DATABASE_TYPE: mysql
-      zuul_work_dir: src/opendev.org/openstack/masakari
     host-vars:
       controller:
-        devstack_plugins:
-          masakari: https://opendev.org/openstack/masakari
-        devstack_services:
-          mysql: true
-          rabbit: true
-          tls-proxy: false
-          horizon: false
-          swift: false
-          # Keystone services
-          key: true
-          # Glance services
-          g-api: true
-          # Nova services
-          n-api: true
-          n-api-meta: true
-          n-cond: true
-          n-cpu: true
-          n-novnc: true
-          n-sch: true
-          placement-api: true
-          # Legacy Neutron services
-          q-agt: true
-          q-dhcp: true
-          q-l3: true
-          q-meta: true
-          q-metering: true
-          q-svc: true
-          # Cinder services
-          c-api: true
-          c-sch: true
-          c-vol: true
-          cinder: true
-          # Masakari services
-          masakari-api: true
-          masakari-engine: true
-          masakari-monitors: true
         tox_install_siblings: false
         tox_envlist: functional
     group-vars:
       subnode:
-        devstack_localrc:
-          DATABASE_TYPE: mysql
-        devstack_plugins:
-          masakari: https://opendev.org/openstack/masakari
         devstack_services:
-          q-agt: true
-          n-api: false
-          n-api-meta: false
-          n-cauth: false
-          n-cond: false
-          n-cpu: true
-          n-novnc: false
-          n-sch: false
-          horizon: false
+          # FIXME(yoctozepto): Make the job tls-proxy-compatible.
           tls-proxy: false
-          # Masakari services
-          masakari-monitors: true
+          # Override Masakari services on non-controllers (overrides default
+          # plugin settings in Masakari). Only monitors are left.
           masakari-api: false
           masakari-engine: false
+          # NOTE(yoctozepto): Disable compute's cinder (c-* services).
+          # It is enabled by default by the parent job (devstack) definition.
+          cinder: false
 
 - project:
     templates:
