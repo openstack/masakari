@@ -95,6 +95,16 @@ Contributor Guide
    contributor/code_structure
    contributor/release_notes
 
+For Contributors
+================
+
+* If you are a new contributor to Masakari please refer: :doc:`contributor/contributing`
+
+  .. toctree::
+     :hidden:
+
+     contributor/contributing
+
 Search
 ======
 
