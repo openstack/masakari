@@ -58,9 +58,10 @@
       - ^\.gitignore$
       - ^\.gitreview$
       - ^\.mailmap$
+      - ^\.yamllint$
       - ^\.zuul.yaml$
       - ^LICENSE$
-      - \.rst$
+      - ^.*[^/]+\.rst$
     vars:
       test_matrix_configs: [neutron]
       devstack_services:
