@@ -71,3 +71,6 @@
     gate:
       jobs:
         - openstack-tox-linters
+    periodic:
+      jobs:
+        - masakari-functional-devstack-multinode
