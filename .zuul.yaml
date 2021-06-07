@@ -66,8 +66,7 @@
     check:
       jobs:
         - openstack-tox-linters
-        - masakari-functional-devstack-multinode:
-            voting: true
+        - masakari-functional-devstack-multinode
     gate:
       jobs:
         - openstack-tox-linters
