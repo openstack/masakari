@@ -24,12 +24,12 @@ notification state. You can filter on the notification `status` when you
 complete a list notifications request. The notification `status` is returned
 in the response body. The possible notification `status` values are:
 
-- ``NEW``. The notification is in new state and yet to be processed.
-- ``RUNNING``. The notification is in progress.
-- ``FINISHED``. The notification is completed successfully.
-- ``ERROR``. The notification is ended up in error.
-- ``FAILED``. The notification is not processed successfully after failed once.
-- ``IGNORED``. The notification is ignored by masakari engine.
+- ``new``. The notification is in new state and yet to be processed.
+- ``running``. The notification is in progress.
+- ``finished``. The notification is completed successfully.
+- ``error``. The notification is ended up in error.
+- ``failed``. The notification is not processed successfully after failed once.
+- ``ignored``. The notification is ignored by masakari engine.
 
 You can also filter on the basis of `source_host_uuid`, `generated_since` and
 `type` when you complete a list notifications request.
