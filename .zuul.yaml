@@ -30,8 +30,6 @@
       devstack_plugins:
         masakari: https://opendev.org/openstack/masakari
       devstack_services:
-        # FIXME(yoctozepto): Make the job tls-proxy-compatible.
-        tls-proxy: false
         # NOTE(yoctozepto): Disable controller's cinder (c-* services).
         # It is enabled by default by the parent job (devstack) definition.
         cinder: false
@@ -45,8 +43,6 @@
     group-vars:
       subnode:
         devstack_services:
-          # FIXME(yoctozepto): Make the job tls-proxy-compatible.
-          tls-proxy: false
           # Override Masakari services on non-controllers (overrides default
           # plugin settings in Masakari). Only monitors are left.
           masakari-api: false
