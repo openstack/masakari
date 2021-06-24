@@ -95,7 +95,7 @@ NOTIFICATION_LIST = [
 
     {"type": "PROCESS", "id": 2, "payload": {'event': 'STOPPED',
                                              'process_name': 'fake_process'},
-     "source_host_uuid": uuidsentinel.fake_host1, "generated_time": NOW,
+     "source_host_uuid": uuidsentinel.fake_host_1, "generated_time": NOW,
      "status": "running", "notification_uuid": uuidsentinel.fake_notification1,
      "created_at": NOW, "updated_at": None, "deleted_at": None, "deleted": 0},
 ]
