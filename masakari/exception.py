@@ -44,7 +44,7 @@ CONF = masakari.conf.CONF
 
 class ConvertedException(webob.exc.WSGIHTTPException):
     def __init__(self, code, title="", explanation=""):
-        self.code = code
+        self.code = int(code)
         # There is a strict rule about constructing status line for HTTP:
         # '...Status-Line, consisting of the protocol version followed by a
         # numeric status code and its associated textual phrase, with each
