@@ -172,6 +172,13 @@ class FakeNovaClient(object):
                     services.append(service)
             return services
 
+        def disable_log_reason(self, service_id, reason):
+            for _service in self._services:
+                if _service.id == service_id:
+                    service = _service
+            service.status = 'disabled'
+            service.disabled_reason = reason
+
     def __init__(self):
         self.servers = FakeNovaClient.ServerManager()
         self.services = FakeNovaClient.Services()

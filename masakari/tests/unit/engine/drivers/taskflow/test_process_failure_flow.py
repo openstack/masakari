@@ -20,11 +20,14 @@ Unit Tests for process failure TaskFlow
 from unittest import mock
 
 from masakari.compute import nova
+from masakari import conf
 from masakari import context
 from masakari.engine.drivers.taskflow import process_failure
 from masakari import exception
 from masakari import test
 from masakari.tests.unit import fakes
+
+CONF = conf.CONF
 
 
 class ProcessFailureTestCase(test.TestCase):
@@ -39,6 +42,7 @@ class ProcessFailureTestCase(test.TestCase):
         # overriding 'wait_period_after_service_update' to 2 seconds
         # to reduce the wait period.
         self.override_config('wait_period_after_service_update', 2)
+        self.disabled_reason = CONF.process_failure.service_disable_reason
 
     @mock.patch('masakari.compute.nova.novaclient')
     @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
