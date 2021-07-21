@@ -179,7 +179,7 @@ Install and configure Masakari
 
       .. code-block:: ini
 
-         [default]
+         [DEFAULT]
          transport_url = rabbit://stackrabbit:admin@<CONTROLLER_IP>:5672/
          graceful_shutdown_timeout = 5
          os_privileged_user_tenant = service
