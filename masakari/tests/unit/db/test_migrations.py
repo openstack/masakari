@@ -17,9 +17,11 @@ import os
 
 from migrate.versioning import api as versioning_api
 from migrate.versioning import repository
-from oslo_db.sqlalchemy import test_base
+from oslo_db.sqlalchemy import enginefacade
+from oslo_db.sqlalchemy import test_fixtures
 from oslo_db.sqlalchemy import test_migrations
 from oslo_db.sqlalchemy import utils as oslodbutils
+from oslotest import base as test_base
 import sqlalchemy
 from sqlalchemy.engine import reflection
 import sqlalchemy.exc
@@ -62,11 +64,12 @@ class MasakariMigrationsCheckers(test_migrations.WalkVersionsMixin):
         old_level = migrate_log.level
         migrate_log.setLevel(logging.WARN)
         self.addCleanup(migrate_log.setLevel, old_level)
-        CONF.set_override('connection', str(self.migrate_engine.url),
-                          group='taskflow')
         self.useFixture(masakari_fixtures.Timeout(
             os.environ.get('OS_TEST_TIMEOUT', 0),
             self.TIMEOUT_SCALING_FACTOR))
+        self.engine = enginefacade.writer.get_engine()
+        CONF.set_override('connection', str(self.migrate_engine.url),
+                          group='taskflow')
 
     def assertColumnExists(self, engine, table_name, column):
         self.assertTrue(oslodbutils.column_exists(engine, table_name, column),
@@ -215,8 +218,11 @@ class MasakariMigrationsCheckers(test_migrations.WalkVersionsMixin):
         self.assertColumnExists(engine, 'failover_segments', 'enabled')
 
 
-class TestMasakariMigrationsSQLite(MasakariMigrationsCheckers,
-                                   test_base.DbTestCase):
+class TestMasakariMigrationsSQLite(
+    MasakariMigrationsCheckers,
+    test_fixtures.OpportunisticDBTestMixin,
+    test_base.BaseTestCase,
+):
 
     def _check_006(self, engine, data):
         # NOTE(ShilpaSD): DB script '006_add_persistence_tables.py' adds db
@@ -224,11 +230,14 @@ class TestMasakariMigrationsSQLite(MasakariMigrationsCheckers,
         # alembic migration.
         pass
 
-    pass
 
+class TestMasakariMigrationsMySQL(
+    MasakariMigrationsCheckers,
+    test_fixtures.OpportunisticDBTestMixin,
+    test_base.BaseTestCase,
+):
+    FIXTURE = test_fixtures.MySQLOpportunisticFixture
 
-class TestMasakariMigrationsMySQL(MasakariMigrationsCheckers,
-                              test_base.MySQLOpportunisticTestCase):
     def test_innodb_tables(self):
         sa_migration.db_sync(engine=self.migrate_engine)
 
@@ -252,5 +261,7 @@ class TestMasakariMigrationsMySQL(MasakariMigrationsCheckers,
 
 class TestMasakariMigrationsPostgreSQL(
     MasakariMigrationsCheckers,
-    test_base.PostgreSQLOpportunisticTestCase):
-    pass
+    test_fixtures.OpportunisticDBTestMixin,
+    test_base.BaseTestCase,
+):
+    FIXTURE = test_fixtures.PostgresqlOpportunisticFixture
