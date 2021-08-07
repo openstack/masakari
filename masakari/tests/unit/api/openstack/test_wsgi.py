@@ -253,8 +253,9 @@ class ResourceTest(MicroversionedTest):
             @extensions.expected_errors(HTTPStatus.BAD_REQUEST)
             def create(self, req, body):
                 if expected_body != body:
-                    msg = "The request body invalid"
-                    raise webob.exc.HTTPBadRequest(explanation=msg)
+                    raise exception.ConvertedException(
+                        code=HTTPStatus.BAD_REQUEST,
+                        explanation="The request body invalid")
                 return "success"
         # verify the method: POST
         app = fakes.TestRouter(Controller())

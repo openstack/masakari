@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes Masakari API to properly return error codes for invalid requests
+    to the user instead of 500.
+    `LP#1932194 <https://launchpad.net/bugs/1932194>`__
