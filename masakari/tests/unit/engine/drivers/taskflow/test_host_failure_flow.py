@@ -52,6 +52,7 @@ class HostFailureTestCase(test.TestCase):
         self.instance_host = "fake-host"
         self.novaclient = nova.API()
         self.fake_client = fakes.FakeNovaClient()
+        self.disabled_reason = CONF.host_failure.service_disable_reason
 
     def _verify_instance_evacuated(self, old_instance_list):
         for server in old_instance_list:
@@ -86,7 +87,7 @@ class HostFailureTestCase(test.TestCase):
         task.execute(self.instance_host)
 
         mock_enable_disable.assert_called_once_with(
-            self.ctxt, self.instance_host)
+            self.ctxt, self.instance_host, reason=self.disabled_reason)
 
     def _test_instance_list(self, instances_evacuation_count):
         task = host_failure.PrepareHAEnabledInstancesTask(self.ctxt,

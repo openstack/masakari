@@ -45,7 +45,8 @@ class DisableComputeNodeTask(base.MasakariTask):
         if not self.novaclient.is_service_disabled(self.context, host_name,
                                                    process_name):
             # disable compute node on given host
-            self.novaclient.enable_disable_service(self.context, host_name)
+            self.novaclient.enable_disable_service(self.context, host_name,
+                reason=CONF.process_failure.service_disable_reason)
             msg = "Disabled compute service on host: '%s'" % host_name
             self.update_details(msg, 1.0)
         else:

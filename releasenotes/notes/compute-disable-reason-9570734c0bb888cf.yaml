@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Nova compute service "disable reason" is now set
+    in case of host or process failure.
+    It can be customised per type of failure via config.

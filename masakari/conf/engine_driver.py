@@ -27,6 +27,11 @@ host_recovery_group = cfg.OptGroup(
     title='Host failure recovery options',
     help="Configuration options for host failure recovery")
 
+process_recovery_group = cfg.OptGroup(
+    'process_failure',
+    title='Process failure recovery options',
+    help="Configuration options for process failure recovery")
+
 customized_recovery_flow_group = cfg.OptGroup(
     'taskflow_driver_recovery_flows',
     title='Customized recovery flow Options',
@@ -80,6 +85,10 @@ Operators can decide whether reserved_host should be added to aggregate group
 of failed compute host. When set to True, reserved host will be added to the
 aggregate group of failed compute host. When set to False, the reserved_host
 will not be added to the aggregate group of failed compute host."""),
+    cfg.StrOpt("service_disable_reason",
+               default="Masakari detected host failed.",
+               help="Compute disable reason in case Masakari detects host "
+                    "failure."),
 ]
 
 instance_failure_options = [
@@ -220,14 +229,23 @@ The allowed values for this option is comma separated dictionary of object
 names in between ``{`` and ``}``."""))
 ]
 
+process_failure_opts = [
+    cfg.StrOpt("service_disable_reason",
+               default="Masakari detected process failed.",
+               help="Compute disable reason in case Masakari detects process "
+                    "failure."),
+]
+
 
 def register_opts(conf):
     conf.register_group(instance_recovery_group)
     conf.register_group(host_recovery_group)
+    conf.register_group(process_recovery_group)
     conf.register_group(customized_recovery_flow_group)
     conf.register_group(taskflow_group)
     conf.register_opts(instance_failure_options, group=instance_recovery_group)
     conf.register_opts(host_failure_opts, group=host_recovery_group)
+    conf.register_opts(process_failure_opts, group=process_recovery_group)
     conf.register_opts(taskflow_driver_recovery_flows,
                        group=customized_recovery_flow_group)
     conf.register_opts(taskflow_options, group=taskflow_group)
@@ -237,6 +255,7 @@ def list_opts():
     return {
         instance_recovery_group.name: instance_failure_options,
         host_recovery_group.name: host_failure_opts,
+        process_recovery_group.name: process_failure_opts,
         taskflow_group.name: taskflow_options
     }
 

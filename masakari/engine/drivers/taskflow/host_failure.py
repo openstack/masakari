@@ -48,7 +48,8 @@ class DisableComputeServiceTask(base.MasakariTask):
     def execute(self, host_name):
         msg = "Disabling compute service on host: '%s'" % host_name
         self.update_details(msg)
-        self.novaclient.enable_disable_service(self.context, host_name)
+        self.novaclient.enable_disable_service(self.context, host_name,
+            reason=CONF.host_failure.service_disable_reason)
         # Sleep until nova-compute service is marked as disabled.
         log_msg = ("Sleeping %(wait)s sec before starting recovery "
                "thread until nova recognizes the node down.")
