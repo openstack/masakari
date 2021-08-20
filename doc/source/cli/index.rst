@@ -2,7 +2,7 @@
 Masakari CLI Documentation
 ==========================
 
-In this section you will find information on Masakari’s command line
+In this section you will find information on Masakari's command line
 interface.
 
 .. toctree::

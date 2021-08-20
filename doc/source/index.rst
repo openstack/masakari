@@ -77,37 +77,45 @@ Reference Material
    configuration/policy.rst
    configuration/recovery_config.rst
    configuration/recovery_workflow_custom_task.rst
-   configuration/recovery_workflow_sample_config.rst
-   configuration/sample_config.rst
    configuration/sample_policy.rst
    user/architecture.rst
    user/notifications.rst
 
-Contributor Guide
-=================
+.. only:: html
 
-.. toctree::
-   :maxdepth: 2
+   .. toctree::
+      :hidden:
 
-   user/how_to_get_involved
-   user/process
-   install/development.environment
-   contributor/code_structure
-   contributor/release_notes
+      configuration/recovery_workflow_sample_config.rst
+      configuration/sample_config.rst
 
-For Contributors
-================
+.. only:: html
 
-* If you are a new contributor to Masakari please refer: :doc:`contributor/contributing`
+   Contributor Guide
+   =================
 
-  .. toctree::
-     :hidden:
+   .. toctree::
+      :maxdepth: 2
 
-     contributor/contributing
+      user/how_to_get_involved
+      user/process
+      install/development.environment
+      contributor/code_structure
+      contributor/release_notes
 
-Search
-======
+   For Contributors
+   ================
 
-* :ref:`search`: Search the contents of this document.
-* `OpenStack wide search <https://docs.openstack.org>`_: Search the wider
-  set of OpenStack documentation, including forums.
+   * If you are a new contributor to Masakari please refer: :doc:`contributor/contributing`
+
+      .. toctree::
+         :hidden:
+
+         contributor/contributing
+
+   Search
+   ======
+
+   * :ref:`search`: Search the contents of this document.
+   * `OpenStack wide search <https://docs.openstack.org>`_: Search the wider
+     set of OpenStack documentation, including forums.

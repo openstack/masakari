@@ -62,7 +62,7 @@ How do I get my feature in?
 The best way of getting your feature in is... well it depends.
 
 First concentrate on solving your problem and/or use case, don't fixate
-on getting the code you have working merged. It’s likely things will need
+on getting the code you have working merged. It's likely things will need
 significant re-work after you discuss how your needs match up with all
 the existing ways Masakari is currently being used. The good news, is this
 process should leave you with a feature that's more flexible and doesn't
@@ -196,7 +196,7 @@ http://docs.openstack.org/infra/manual/developers.html#peer-review
 In the draft process guide, I discuss how doing reviews can help get
 your code merged faster: :ref:`process`.
 
-Let’s look at some of the top reasons why participating with code reviews
+Let's look at some of the top reasons why participating with code reviews
 really helps you:
 
 -  Doing more reviews, and seeing what other reviewers notice, will help
