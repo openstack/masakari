@@ -188,21 +188,8 @@ function configure_masakarimonitors {
     iniset $MASAKARI_MONITORS_CONF api project_domain_id "$SERVICE_DOMAIN_ID"
     iniset $MASAKARI_MONITORS_CONF api region "$REGION_NAME"
 
-    iniset $MASAKARI_MONITORS_CONF process process_list_path "/etc/masakarimonitors/process_list.yaml"
-
-    cp $DEST/masakari-monitors/etc/masakarimonitors/process_list.yaml.sample \
-       $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
-
-    sed -i 's/start nova-compute/start devstack@n-cpu/g' $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
-    sed -i 's/restart nova-compute/restart devstack@n-cpu/g' $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
-    sed -i 's/start masakari-instancemonitor/start devstack@masakari-instancemonitor/g' \
-    $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
-    sed -i 's/restart masakari-instancemonitor/restart devstack@masakari-instancemonitor/g' \
-    $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
-
-    # NOTE(neha-alhat): remove monitoring of host-monitor process as
-    # devstack support for host-monitor is not added yet.
-    sed -i '43,52d' $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
+    iniset $MASAKARI_MONITORS_CONF process process_list_path "$MASAKARI_MONITORS_CONF_DIR/process_list.yaml"
+    touch $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
 }
 
 # install_masakari() - Collect source and prepare
