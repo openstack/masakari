@@ -1,4 +1,8 @@
 ---
 - hosts: controller
   roles:
-    - tox
+    - role: tox
+      vars:
+        # NOTE(yoctozepto): We need to run this play in other projects but it is
+        # meant to run tox from this project, not the "current one".
+        zuul_work_dir: "{{ zuul.projects['opendev.org/openstack/masakari'].src_dir }}"
