@@ -29,7 +29,7 @@
 
 # Save trace setting
 XTRACE=$(set +o | grep xtrace)
-set +o xtrace
+set -o xtrace
 
 if is_service_enabled tls-proxy; then
     MASAKARI_SERVICE_PROTOCOL="https"
