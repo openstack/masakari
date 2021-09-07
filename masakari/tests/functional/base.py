@@ -50,10 +50,11 @@ class BaseFunctionalTest(base.TestCase):
         logger.addHandler(handler)
         logger.propagate = False
 
-        config = openstack.config.get_cloud_region(cloud=TEST_CLOUD_NAME)
-        self.admin_conn = connection.Connection(region_name=config.region_name,
-                                           auth=config.auth,
-                                           ha_api_version=ha_api_version)
+        config = openstack.config.get_cloud_region(
+            cloud=TEST_CLOUD_NAME,
+            ha_api_version=ha_api_version,
+        )
+        self.admin_conn = connection.Connection(config=config)
 
         devstack_user = os.getenv('OS_CLOUD', 'devstack')
         devstack_region = openstack.config.get_cloud_region(
