@@ -147,7 +147,7 @@ function configure_masakari {
 
     # Set os_privileged_user credentials (used for connecting nova service)
     iniset $MASAKARI_CONF DEFAULT os_privileged_user_name nova
-    iniset $MASAKARI_CONF DEFAULT os_privileged_user_auth_url "${KEYSTONE_AUTH_PROTOCOL}://${KEYSTONE_AUTH_HOST}/identity"
+    iniset $MASAKARI_CONF DEFAULT os_privileged_user_auth_url "$KEYSTONE_SERVICE_URI"
     iniset $MASAKARI_CONF DEFAULT os_privileged_user_password "$SERVICE_PASSWORD"
     iniset $MASAKARI_CONF DEFAULT os_privileged_user_tenant "$SERVICE_PROJECT_NAME"
     iniset $MASAKARI_CONF DEFAULT graceful_shutdown_timeout "$SERVICE_GRACEFUL_SHUTDOWN_TIMEOUT"
@@ -180,7 +180,7 @@ function configure_masakarimonitors {
         --namespace oslo.middleware \
         > $MASAKARI_MONITORS_CONF
 
-    iniset $MASAKARI_MONITORS_CONF api auth_url "${KEYSTONE_AUTH_PROTOCOL}://${KEYSTONE_AUTH_HOST}/identity"
+    iniset $MASAKARI_MONITORS_CONF api auth_url "$KEYSTONE_SERVICE_URI"
     iniset $MASAKARI_MONITORS_CONF api password "$SERVICE_PASSWORD"
     iniset $MASAKARI_MONITORS_CONF api project_name "$SERVICE_PROJECT_NAME"
     iniset $MASAKARI_MONITORS_CONF api username "$USERNAME"
