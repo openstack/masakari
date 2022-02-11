@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    Fixes an issue that could be caused by a user sending a malformed
+    host notification missing host status. Such notification would
+    block the host from being added back from maintenance until
+    manual intervention or notification expiration.
+    `LP#1960619 <https://launchpad.net/bugs/1960619>`__

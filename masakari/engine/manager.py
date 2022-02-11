@@ -177,11 +177,16 @@ class MasakariManager(manager.Manager):
         notification_event = notification.payload.get('event')
         exception_info = None
 
-        if host_status.upper() != fields.HostStatusType.NORMAL:
+        if host_status is None:
+            LOG.warning("Notification '%(uuid)s' ignored as host_status is "
+                        "not provided.",
+                        {'uuid': notification.notification_uuid})
+            notification_status = fields.NotificationStatus.IGNORED
+        elif host_status.upper() != fields.HostStatusType.NORMAL:
             # NOTE(shilpasd): Avoid host recovery for host_status other than
             # 'NORMAL' otherwise it could lead to unsafe evacuation of
             # instances running on the failed source host.
-            LOG.warning("Notification '%(uuid)s' ignored as host_status"
+            LOG.warning("Notification '%(uuid)s' ignored as host_status "
                         "is '%(host_status)s'",
                         {'uuid': notification.notification_uuid,
                          'host_status': host_status.upper()})
