@@ -841,14 +841,39 @@ class EngineManagerUnitTestCase(test.NoDBTestCase):
                                               notification=notification)
             mock_log.assert_called_once()
             args = mock_log.call_args[0]
-            expected_log = ("Notification '%(uuid)s' ignored as host_status"
-                        "is '%(host_status)s'")
+            expected_log = ("Notification '%(uuid)s' ignored as host_status "
+                            "is '%(host_status)s'")
             expected_log_args_1 = {
                 'uuid': notification.notification_uuid,
                 'host_status': fields.HostStatusType.UNKNOWN}
 
             self.assertEqual(expected_log, args[0])
             self.assertEqual(expected_log_args_1, args[1])
+            self.assertEqual(
+                fields.NotificationStatus.IGNORED, notification.status)
+
+    @mock.patch.object(notification_obj.Notification, "save")
+    def test_process_notification_host_failure_without_host_status(
+            self, mock_get_noti, mock_notification_save):
+        notification = fakes.create_fake_notification(
+            type="COMPUTE_HOST",
+            payload={'event': 'stopped', 'cluster_status': 'ONLINE'},
+            source_host_uuid=uuidsentinel.fake_host,
+            generated_time=NOW, status=fields.NotificationStatus.NEW,
+            notification_uuid=uuidsentinel.fake_notification)
+
+        mock_get_noti.return_value = notification
+        notification_new = notification.obj_clone()
+        notification_new.status = fields.NotificationStatus.IGNORED
+        mock_notification_save.side_effect = [notification, notification_new]
+
+        with mock.patch("masakari.engine.manager.LOG.warning") as mock_log:
+            self.engine._process_notification(self.context,
+                                              notification=notification)
+            mock_log.assert_called_once_with(
+                "Notification '%(uuid)s' ignored as host_status is not "
+                "provided.",
+                {'uuid': notification.notification_uuid})
             self.assertEqual(
                 fields.NotificationStatus.IGNORED, notification.status)
 
