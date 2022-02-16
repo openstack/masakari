@@ -54,4 +54,10 @@ In the ``[keystone_authtoken]`` sections, configure Identity service access:
 
 Replace ``MASAKARI_PASS`` with the password you chose for the ``masakari`` user in the Identity service.
 
+In the ``[coordination]`` section, set 'backend_url' if use coordination for Masakari-api service.
 
+.. note::
+    Additional packages may be required depending on the tooz backend used in
+    the installation. For example, ``etcd3gw`` is required if the backend driver
+    is configured to use ``etcd3+http://``. Supported drivers are listed at
+    `Tooz drivers <https://docs.openstack.org/tooz/latest/user/drivers.html>`_.

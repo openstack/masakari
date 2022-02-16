@@ -26,6 +26,7 @@ from paste import deploy
 from masakari.common import config
 import masakari.conf
 from masakari import config as api_config
+from masakari import coordination
 from masakari import exception
 from masakari import objects
 from masakari import rpc
@@ -53,7 +54,9 @@ def main():
 
     launcher = service.process_launcher()
     try:
-        server = service.WSGIService("masakari_api", use_ssl=CONF.use_ssl)
+        use_coordination = bool(CONF.coordination.backend_url)
+        server = service.WSGIService("masakari_api", use_ssl=CONF.use_ssl,
+                                     coordination=use_coordination)
         launcher.launch_service(server, workers=server.workers or 1)
     except exception.PasteAppNotFound as ex:
         log.error("Failed to start ``masakari_api`` service. Error: %s",
@@ -80,6 +83,10 @@ def initialize_application():
         CONF.log_opt_values(logging.getLogger(__name__), logging.DEBUG)
 
     config.set_middleware_defaults()
+
+    if CONF.coordination.backend_url:
+        coordination.COORDINATOR.start()
+
     rpc.init(CONF)
     conf = conf_files[0]
 

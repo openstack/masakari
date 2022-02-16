@@ -34,7 +34,7 @@ class TestMasakariAPI(test.NoDBTestCase):
             mock_service.WSGIService.side_effect = fake_service
             api.main()
             mock_service.WSGIService.assert_has_calls([
-                mock.call('masakari_api', use_ssl=False),
+                mock.call('masakari_api', use_ssl=False, coordination=False)
             ])
             launcher = mock_service.process_launcher.return_value
             launcher.launch_service.assert_called_once_with(
