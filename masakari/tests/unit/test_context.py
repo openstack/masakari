@@ -145,7 +145,7 @@ class ContextTestCase(test.NoDBTestCase):
 
         ctx = context.RequestContext.from_dict(values)
         self.assertEqual('111', ctx.user)
-        self.assertEqual('222', ctx.tenant)
+        self.assertEqual('222', ctx.project_id)
         self.assertEqual('111', ctx.user_id)
         self.assertEqual('222', ctx.project_id)
         values2 = ctx.to_dict()
