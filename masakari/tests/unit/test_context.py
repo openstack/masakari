@@ -130,6 +130,7 @@ class ContextTestCase(test.NoDBTestCase):
         self.assertDictContainsSubset(expected_values, values2)
 
     def test_convert_from_dict_then_to_dict(self):
+        # TODO(tkajiam): Remove tenant once oslo.context is bumped to >= 4.0
         values = {'is_admin': True,
                   'tenant': '222',
                   'project_id': '222',
@@ -149,4 +150,6 @@ class ContextTestCase(test.NoDBTestCase):
         self.assertEqual('111', ctx.user_id)
         self.assertEqual('222', ctx.project_id)
         values2 = ctx.to_dict()
+        # TODO(tkajiam): Remove this once oslo.context is bumped to >= 4.0
+        values2.setdefault('tenant', values2.get('project_id'))
         self.assertDictContainsSubset(values, values2)
