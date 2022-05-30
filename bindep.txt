@@ -3,7 +3,7 @@
 
 # libpq-dev is needed by openstack-tox-py37 build only.
 libpq-dev [platform:dpkg test]
-python-dev [platform:dpkg test]
+python3-dev [platform:dpkg test]
 libmysqlclient-dev [platform:dpkg test]
 mysql [platform:rpm test]
 mysql-client [platform:dpkg test]
