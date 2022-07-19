@@ -72,6 +72,7 @@
     vars:
       devstack_localrc:
         SERVICE_IP_VERSION: 6
+        TUNNEL_IP_VERSION: 6
         SERVICE_HOST: ""
 
 - project:
