@@ -23,6 +23,7 @@ from oslo_utils import uuidutils
 from masakari.api import utils as api_utils
 from masakari.compute import nova
 import masakari.conf
+from masakari.coordination import synchronized
 from masakari.engine import rpcapi as engine_rpcapi
 from masakari import exception
 from masakari.i18n import _
@@ -291,9 +292,7 @@ class NotificationAPI(object):
 
         return False
 
-    def create_notification(self, context, notification_data):
-        """Create notification"""
-
+    def _create_notification(self, context, notification_data):
         # Check whether host from which the notification came is already
         # present in failover segment or not
         host_name = notification_data.get('hostname')
@@ -320,7 +319,7 @@ class NotificationAPI(object):
 
         if self._is_duplicate_notification(context, notification):
             message = (_("Notification received from host %(host)s of "
-                         " type '%(type)s' is duplicate.") %
+                         "type %(type)s is duplicate.") %
                        {'host': host_name, 'type': notification.type})
             raise exception.DuplicateNotification(message=message)
 
@@ -330,11 +329,25 @@ class NotificationAPI(object):
         except Exception as e:
             with excutils.save_and_reraise_exception():
                 tb = traceback.format_exc()
-                api_utils.notify_about_notification_api(context, notification,
+                api_utils.notify_about_notification_api(
+                    context, notification,
                     action=fields.EventNotificationAction.NOTIFICATION_CREATE,
                     phase=fields.EventNotificationPhase.ERROR, exception=e,
                     tb=tb)
         return notification
+
+    @synchronized('create_host_notification-{notification_data[hostname]}')
+    def _create_host_type_notification(self, context, notification_data):
+        return self._create_notification(context, notification_data)
+
+    def create_notification(self, context, notification_data):
+        """Create notification"""
+        create_notification_function = '_create_notification'
+        if notification_data.get('type') == \
+                fields.NotificationType.COMPUTE_HOST:
+            create_notification_function = '_create_host_type_notification'
+        return getattr(self, create_notification_function)(context,
+                                                           notification_data)
 
     def get_all(self, context, filters=None, sort_keys=None,
                 sort_dirs=None, limit=None, marker=None):

@@ -1,0 +1,12 @@
+---
+fixes:
+  - |
+    Fixes an issue which triggers two recovery workflows for the same
+    host failure. `LP#1961110
+    <https://bugs.launchpad.net/masakari/+bug/1961110>`__
+
+    It introduces distributed lock for Masakari-api services when handle
+    the concurrent notifications for the same host failure from multiple
+    Masakari-hostmonitor services. To enable coordination, the user needs
+    to set the new configuration option ``[coordination]backend_url``,
+    which specifies the backend.

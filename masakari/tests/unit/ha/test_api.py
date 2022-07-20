@@ -22,6 +22,7 @@ from oslo_utils import timeutils
 
 from masakari.api import utils as api_utils
 from masakari.compute import nova as nova_obj
+from masakari import coordination
 from masakari.engine import rpcapi as engine_rpcapi
 from masakari import exception
 from masakari.ha import api as ha_api
@@ -720,6 +721,7 @@ class NotificationAPITestCase(test.NoDBTestCase):
         )
         self.exception_duplicate = exception.DuplicateNotification(
             host='host_1', type='COMPUTE_HOST')
+        coordination.Coordinator.get_lock = mock.MagicMock()
 
     def _assert_notification_data(self, expected, actual):
         self.assertTrue(obj_base.obj_equal_prims(expected, actual),

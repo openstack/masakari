@@ -17,6 +17,7 @@ from oslo_config import cfg
 
 from masakari.conf import api
 from masakari.conf import base
+from masakari.conf import coordination
 from masakari.conf import database
 from masakari.conf import engine
 from masakari.conf import engine_driver
@@ -32,6 +33,7 @@ CONF = cfg.CONF
 
 api.register_opts(CONF)
 base.register_opts(CONF)
+coordination.register_opts(CONF)
 database.register_opts(CONF)
 engine.register_opts(CONF)
 engine_driver.register_opts(CONF)

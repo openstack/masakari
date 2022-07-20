@@ -27,6 +27,7 @@ from oslo_utils import importutils
 
 import masakari.conf
 from masakari import context
+from masakari import coordination as masakari_coordination
 from masakari import exception
 from masakari.i18n import _
 from masakari.objects import base as objects_base
@@ -188,7 +189,8 @@ class Service(service.Service):
 class WSGIService(service.Service):
     """Provides ability to launch API from a 'paste' configuration."""
 
-    def __init__(self, name, loader=None, use_ssl=False, max_url_len=None):
+    def __init__(self, name, loader=None, use_ssl=False, max_url_len=None,
+                 coordination=False):
         """Initialize, but do not start the WSGI server.
 
         :param name: The name of the WSGI server given to the loader.
@@ -221,6 +223,7 @@ class WSGIService(service.Service):
                                   port=self.port,
                                   use_ssl=self.use_ssl,
                                   max_url_len=max_url_len)
+        self.coordination = coordination
 
     def reset(self):
         """Reset server greenpool size to default.
@@ -239,6 +242,8 @@ class WSGIService(service.Service):
         :returns: None
 
         """
+        if self.coordination:
+            masakari_coordination.COORDINATOR.start()
         self.server.start()
 
     def stop(self):
@@ -247,6 +252,12 @@ class WSGIService(service.Service):
         :returns: None
 
         """
+        if self.coordination:
+            try:
+                masakari_coordination.COORDINATOR.stop()
+            except Exception as error:
+                LOG.warning('Error occurred during masakari coordination was '
+                            'stopped: %s', error)
         self.server.stop()
 
     def wait(self):
