@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fixes "Instance stopping fails randomly due to already stopped instances".
+    `LP#1980736 <https://launchpad.net/bugs/1980736>`__
