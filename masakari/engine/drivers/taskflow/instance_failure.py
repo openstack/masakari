@@ -75,7 +75,16 @@ class StopInstanceTask(base.MasakariTask):
             msg = "Stopping instance: %s" % instance_uuid
             self.update_details(msg)
 
-            self.novaclient.stop_server(self.context, instance.id)
+            try:
+                self.novaclient.stop_server(self.context, instance.id)
+            except exception.Conflict:
+                msg = "Conflict when stopping instance: %s" % instance_uuid
+                self.update_details(msg)
+                instance = self.novaclient.get_server(self.context,
+                                                      instance_uuid)
+                vm_state = getattr(instance, 'OS-EXT-STS:vm_state')
+                if vm_state != 'stopped':
+                    raise
 
         def _wait_for_power_off():
             new_instance = self.novaclient.get_server(self.context,
