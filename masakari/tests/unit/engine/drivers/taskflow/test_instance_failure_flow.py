@@ -170,6 +170,70 @@ class InstanceFailureTestCase(test.TestCase):
     @mock.patch('masakari.compute.nova.novaclient')
     @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
                 'update_details')
+    def test_instance_failure_flow_stop_conflict_instance_in_error(
+            self, _mock_notify, _mock_novaclient):
+        _mock_novaclient.return_value = self.fake_client
+
+        # create test data
+        server = self.fake_client.servers.create(self.instance_id,
+                                                 host="fake-host",
+                                                 ha_enabled=True,
+                                                 vm_state="active")
+
+        def fake_stop_server_conflict(context, uuid):
+            # assume that while stopping instance goes into error state
+            setattr(server, 'OS-EXT-STS:vm_state', "error")
+            raise exception.Conflict(reason="Cannot 'stop' instance 1 "
+                                            "while it is in vm_state error")
+
+        # test StopInstanceTask
+        task = instance_failure.StopInstanceTask(self.ctxt, self.novaclient)
+        with mock.patch.object(self.novaclient, 'stop_server',
+                               fake_stop_server_conflict):
+            self.assertRaises(
+                exception.Conflict, task.execute, self.instance_id)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call('Stopping instance: ' + self.instance_id),
+            mock.call('Conflict when stopping instance: ' + self.instance_id)
+        ])
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_instance_failure_flow_stop_conflict_instance_already_stoppped(
+            self, _mock_notify, _mock_novaclient):
+        _mock_novaclient.return_value = self.fake_client
+
+        # create test data
+        server = self.fake_client.servers.create(self.instance_id,
+                                                 host="fake-host",
+                                                 ha_enabled=True,
+                                                 vm_state="active")
+
+        def fake_stop_server_conflict(context, uuid):
+            # assume that while stopping instance goes into stopped state
+            setattr(server, 'OS-EXT-STS:vm_state', "stopped")
+            raise exception.Conflict(reason="Cannot 'stop' instance 1 "
+                                            "while it is in vm_state stopped")
+
+        # test StopInstanceTask
+        task = instance_failure.StopInstanceTask(self.ctxt, self.novaclient)
+        with mock.patch.object(self.novaclient, 'stop_server',
+                               fake_stop_server_conflict):
+            task.execute(self.instance_id)
+
+        # verify progress details
+        _mock_notify.assert_has_calls([
+            mock.call('Stopping instance: ' + self.instance_id),
+            mock.call('Conflict when stopping instance: ' + self.instance_id),
+            mock.call("Stopped instance: '" + self.instance_id + "'", 1.0)
+        ])
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
     def test_instance_failure_flow_stop_failed(self, _mock_notify,
                                                _mock_novaclient):
         _mock_novaclient.return_value = self.fake_client
