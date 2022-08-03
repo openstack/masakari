@@ -343,17 +343,20 @@ class V1APIExtensionBase(object, metaclass=abc.ABCMeta):
         """
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def name(self):
         """Name of the extension."""
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def alias(self):
         """Alias for the extension."""
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def version(self):
         """Version of the extension."""
         pass
