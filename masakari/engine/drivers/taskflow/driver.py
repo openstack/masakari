@@ -175,8 +175,8 @@ class TaskFlowDriver(driver.NotificationDriver):
             flow_engine = instance_failure.get_instance_recovery_flow(
                 context, novaclient, process_what)
         except Exception:
-            msg = (_('Failed to create instance failure flow.'),
-                   notification_uuid)
+            msg = _("Failed to create instance failure flow for "
+                    "notification '%s'.") % notification_uuid
             LOG.exception(msg)
             raise exception.MasakariException(msg)
 
@@ -209,8 +209,8 @@ class TaskFlowDriver(driver.NotificationDriver):
         try:
             flow_engine = recovery_flow(context, novaclient, process_what)
         except Exception:
-            msg = (_('Failed to create process failure flow.'),
-                   notification_uuid)
+            msg = _("Failed to create process failure flow for "
+                    "notification '%s'.") % notification_uuid
             LOG.exception(msg)
             raise exception.MasakariException(msg)
 
