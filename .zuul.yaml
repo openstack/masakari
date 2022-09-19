@@ -133,6 +133,7 @@
           masakari-engine: false
 
 - project:
+    queue: masakari
     templates:
       - check-requirements
       - openstack-cover-jobs
