@@ -1,0 +1,6 @@
+---
+fixes:
+  - |
+    Fixes an issue where failure notification stuck into running status
+    when timeout. `LP#1996835
+    <https://bugs.launchpad.net/masakari/+bug/1996835>`__
