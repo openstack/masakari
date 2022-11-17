@@ -184,7 +184,19 @@ class TaskFlowDriver(driver.NotificationDriver):
         # taskflow sends out and redirect them to a more useful log for
         # masakari's debugging (or error reporting) usage.
         with base.DynamicLogListener(flow_engine, logger=LOG):
-            flow_engine.run()
+            try:
+                flow_engine.run()
+            except Exception as exc:
+                with excutils.save_and_reraise_exception(reraise=False) as e:
+                    if isinstance(
+                            exc, (exception.SkipInstanceRecoveryException,
+                                  exception.IgnoreInstanceRecoveryException,
+                                  exception.InstanceRecoveryFailureException)):
+                        e.reraise = True
+                        return
+                    msg = _("Failed to execute instance failure flow for "
+                            "notification '%s'.") % notification_uuid
+                    raise exception.MasakariException(msg)
 
     def execute_process_failure(self, context, process_name, host_name,
                                 notification_uuid):
@@ -218,7 +230,17 @@ class TaskFlowDriver(driver.NotificationDriver):
         # taskflow sends out and redirect them to a more useful log for
         # masakari's debugging (or error reporting) usage.
         with base.DynamicLogListener(flow_engine, logger=LOG):
-            flow_engine.run()
+            try:
+                flow_engine.run()
+            except Exception as exc:
+                with excutils.save_and_reraise_exception(reraise=False) as e:
+                    if isinstance(
+                            exc, exception.ProcessRecoveryFailureException):
+                        e.reraise = True
+                        return
+                    msg = _("Failed to execute instance failure flow for "
+                            "notification '%s'.") % notification_uuid
+                    raise exception.MasakariException(msg)
 
     @contextlib.contextmanager
     def upgrade_backend(self, persistence_backend):
