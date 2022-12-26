@@ -32,12 +32,17 @@ from masakari.objects import fields
 from masakari.objects import host as host_obj
 from masakari.objects import notification as notification_obj
 from masakari.objects import segment as segment_obj
+from masakari.objects import vmove as vmove_obj
 from masakari import test
 from masakari.tests.unit.api.openstack import fakes
 from masakari.tests.unit import fakes as fakes_data
 from masakari.tests import uuidsentinel
 
 NOW = timeutils.utcnow().replace(microsecond=0)
+
+
+def _make_vmove_obj(vmove_dict):
+    return vmove_obj.VMove(**vmove_dict)
 
 
 def _make_segment_obj(segment_dict):
@@ -938,3 +943,102 @@ class NotificationAPITestCase(test.NoDBTestCase):
         self.assertRaises(exception.InvalidInput,
                           self.notification_api.get_all,
                           self.context, self.req)
+
+
+class VMoveAPITestCase(test.NoDBTestCase):
+    """Test Case for vmove api."""
+
+    def setUp(self):
+        super(VMoveAPITestCase, self).setUp()
+        self.vmove_api = ha_api.VMoveAPI()
+        self.req = fakes.HTTPRequest.blank(
+            '/v1/notifications/%s/vmoves' % (
+                uuidsentinel.fake_notification),
+            use_admin_context=True)
+        self.context = self.req.environ['masakari.context']
+        self.notification = fakes_data.create_fake_notification(
+            id=1,
+            type="COMPUTE_HOST",
+            source_host_uuid=uuidsentinel.fake_host_1,
+            status="running",
+            notification_uuid=uuidsentinel.fake_notification,
+            payload={'event': 'STOPPED',
+                     'host_status': 'NORMAL',
+                     'cluster_status': 'ONLINE'}
+        )
+        self.vmove = fakes_data.create_fake_vmove(
+            id=1,
+            uuid=uuidsentinel.fake_vmove,
+            notification_uuid=self.notification.notification_uuid,
+            instance_uuid=uuidsentinel.fake_instance_1,
+            instance_name='vm1',
+            source_host='host_1',
+            dest_host='host_2',
+            start_time='2022-11-22 14:50:22',
+            end_time='2022-11-22 14:50:22',
+            type='evacuation',
+            status='succeeded',
+            message=None
+        )
+
+    def _assert_vmove_data(self, expected, actual):
+        self.assertTrue(obj_base.obj_equal_prims(expected, actual),
+                        "The vmove objects were not equal")
+
+    @mock.patch.object(vmove_obj.VMoveList, 'get_all')
+    @mock.patch.object(notification_obj.Notification, 'get_by_uuid')
+    def test_get_all(self, mock_get, mock_get_all):
+        mock_get.return_value = self.notification
+        fake_vmove_list = [self.vmove]
+        mock_get_all.return_value = fake_vmove_list
+
+        result = self.vmove_api.get_all(self.context,
+                                        uuidsentinel.fake_notification,
+                                        filters={},
+                                        sort_keys=['created_at'],
+                                        sort_dirs=['desc'],
+                                        limit=None,
+                                        marker=None)
+
+        for i in range(len(result)):
+            self._assert_vmove_data(
+                fake_vmove_list[i], _make_vmove_obj(result[i]))
+
+    @mock.patch.object(vmove_obj.VMoveList, 'get_all')
+    @mock.patch.object(notification_obj.Notification, 'get_by_uuid')
+    def test_get_all_with_invalid_notification(self, mock_get, mock_get_all):
+        vm_type_notification = fakes_data.create_fake_notification(
+            id=1,
+            type="VM",
+            source_host_uuid=uuidsentinel.fake_host_2,
+            status="running",
+            notification_uuid=uuidsentinel.fake_vm_type_notification,
+            payload={'event': 'STOPPED',
+                     'host_status': 'NORMAL',
+                     'cluster_status': 'ONLINE'}
+        )
+        mock_get.return_value = vm_type_notification
+
+        self.assertRaises(exception.NotificationWithoutVMoves,
+                          self.vmove_api.get_all, self.context,
+                          uuidsentinel.fake_vm_type_notification)
+
+    @mock.patch.object(vmove_obj.VMove, 'get_by_uuid')
+    @mock.patch.object(notification_obj.Notification, 'get_by_uuid')
+    def test_get_vmove(self, mock_get, mock_get_vmove):
+        mock_get.return_value = self.notification
+        mock_get_vmove.return_value = self.vmove
+        result = self.vmove_api.get_vmove(
+            self.context,
+            uuidsentinel.fake_notification,
+            uuidsentinel.fake_vmove)
+        self._assert_vmove_data(self.vmove, result)
+
+    @mock.patch.object(vmove_obj.VMove, 'get_by_uuid')
+    @mock.patch.object(notification_obj.Notification, 'get_by_uuid')
+    def test_get_vmove_not_found(self, mock_get_notification, mock_get_vmove):
+        mock_get_notification.return_value = self.notification
+        self.assertRaises(exception.VMoveNotFound,
+                          self.vmove_api.get_vmove, self.context,
+                          uuidsentinel.fake_notification,
+                          "123")

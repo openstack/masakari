@@ -363,6 +363,84 @@ def notification_delete(context, notification_uuid):
     return IMPL.notification_delete(context, notification_uuid)
 
 
+# vmoves related db apis
+
+
+def vmoves_get_all_by_filters(
+        context, filters=None, sort_keys=None, sort_dirs=None,
+        limit=None, marker=None):
+    """Get all vm moves that match the filters.
+
+    :param context: context to query under
+    :param filters: filters for the query in the form of key/value
+    :param sort_keys: list of attributes by which results should be sorted,
+                     paired with corresponding item in sort_dirs
+    :param sort_dirs: list of directions in which results should be sorted,
+                     paired with corresponding item in sort_keys
+    :param limit: maximum number of items to return
+    :param marker: the last item of the previous page, used to determine the
+                   next page of results to return
+
+    :returns: list of dictionary-like objects containing all vm moves
+    """
+    return IMPL.vmoves_get_all_by_filters(context, filters=filters,
+                                          sort_keys=sort_keys,
+                                          sort_dirs=sort_dirs,
+                                          limit=limit,
+                                          marker=marker)
+
+
+def vmove_get_by_uuid(context, vmove_uuid):
+    """Get one vm move information by uuid.
+
+    :param context: context to query under
+    :param uuid: uuid of the vm move
+
+    :returns: dictionary-like object containing one vm move
+
+    :raises: exception.VMoveNotFound if the vm move with given
+             'uuid' doesn't exist
+    """
+    return IMPL.vmove_get_by_uuid(context, vmove_uuid)
+
+
+def vmove_create(context, values):
+    """Create one vm move.
+
+    :param context: context to query under
+    :param values: dictionary of the vm move attributes to create
+
+    :returns: dictionary-like object containing created one vm move
+    """
+    return IMPL.vmove_create(context, values)
+
+
+def vmove_update(context, uuid, values):
+    """Update one vm move information in the database.
+
+    :param context: context to query under
+    :param uuid: uuid of the vm move to be updated
+    :param values: dictionary of the vm move attributes to be updated
+
+    :returns: dictionary-like object containing updated one vm move
+
+    :raises: exception.VMoveNotFound if the vm move with given
+             'uuid' doesn't exist
+    """
+    return IMPL.vmove_update(context, uuid, values)
+
+
+def vmove_delete(context, uuid):
+    """Delete one vm move.
+
+    :param context: context to query under
+    :param uuid: uuid of the vm move to be delete
+
+    :raises exception.VMoveNotFound if the vm move not exist.
+    """
+    return IMPL.vmove_delete(context, uuid)
+
+
 def purge_deleted_rows(context, age_in_days, max_rows):
     """Purge the soft deleted rows.
 

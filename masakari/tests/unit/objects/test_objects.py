@@ -674,7 +674,9 @@ object_data = {
     'MyOwnedObject': '1.0-fec853730bd02d54cc32771dd67f08a0',
     'SegmentApiNotification': '1.0-1187e93f564c5cca692db76a66cda2a6',
     'SegmentApiPayload': '1.1-e34e1c772e16e9ad492067ee98607b1d',
-    'SegmentApiPayloadBase': '1.1-6a1db76f3e825f92196fc1a11508d886'
+    'SegmentApiPayloadBase': '1.1-6a1db76f3e825f92196fc1a11508d886',
+    'VMove': '1.0-5c4d8667b5612b8a49adc065f8961aa2',
+    'VMoveList': '1.0-63fff36dee683c7a1555798cb233ad3f'
 }
 
 

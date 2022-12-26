@@ -501,3 +501,121 @@ class NotificationsTestCase(test.TestCase, ModelsObjectComparatorMixin):
         self.assertRaises(exception.InvalidSortKey,
                           db.notifications_get_all_by_filters,
                           context=self.ctxt, sort_keys=['invalid_sort_key'])
+
+
+class VMoveTestCase(test.TestCase, ModelsObjectComparatorMixin):
+
+    def setUp(self):
+        super(VMoveTestCase, self).setUp()
+        self.ctxt = context.get_admin_context()
+
+    def _get_fake_values(self):
+        return {
+            'uuid': uuidsentinel.vmove,
+            'notification_uuid': uuidsentinel.notification,
+            'instance_uuid': uuidsentinel.instance_uuid,
+            'instance_name': 'fake_instance',
+            'source_host': 'fake_host1',
+            'dest_host': 'fake_host2',
+            'start_time': None,
+            'end_time': None,
+            'type': 'evacuation',
+            'status': 'pending',
+            'message': None
+        }
+
+    def _get_fake_values_list(self):
+        return [
+            {'uuid': uuidsentinel.vmove_1,
+             'notification_uuid': uuidsentinel.notification,
+             'instance_uuid': uuidsentinel.instance_uuid_1,
+             'instance_name': 'fake_instance1',
+             'source_host': 'fake_host1',
+             'dest_host': None,
+             'start_time': None,
+             'end_time': None,
+             'type': 'evacuation',
+             'status': 'pending',
+             'message': None},
+            {'uuid': uuidsentinel.vmove_2,
+             'notification_uuid': uuidsentinel.notification,
+             'instance_uuid': uuidsentinel.instance_uuid_2,
+             'instance_name': 'fake_instance2',
+             'source_host': 'fake_host1',
+             'dest_host': None,
+             'start_time': None,
+             'end_time': None,
+             'type': 'evacuation',
+             'status': 'pending',
+             'message': None},
+            {'uuid': uuidsentinel.vmove_3,
+             'notification_uuid': uuidsentinel.notification,
+             'instance_uuid': uuidsentinel.instance_uuid_3,
+             'instance_name': 'fake_instance3',
+             'source_host': 'fake_host1',
+             'dest_host': None,
+             'start_time': None,
+             'end_time': None,
+             'type': 'evacuation',
+             'status': 'pending',
+             'message': None}]
+
+    def _create_vmove(self, values):
+        return db.vmove_create(self.ctxt, values)
+
+    def _test_get_vmove(self, method, filter):
+        vmoves = [self._create_vmove(p)
+                  for p in self._get_fake_values_list()]
+        for vmove in vmoves:
+            real_vmove = method(self.ctxt, vmove[filter])
+            self._assertEqualObjects(vmove, real_vmove)
+
+    def test_vmove_create(self):
+        vmove = self._create_vmove(self._get_fake_values())
+        self.assertIsNotNone(vmove['uuid'])
+        ignored_keys = ['deleted', 'created_at', 'updated_at', 'deleted_at',
+                        'id']
+        self._assertEqualObjects(vmove, self._get_fake_values(),
+                                 ignored_keys)
+
+    def test_vmove_get_by_uuid(self):
+        self._test_get_vmove(db.vmove_get_by_uuid, 'uuid')
+
+    def test_vmove_update(self):
+        update = {'dest_host': 'fake_host2', 'status': 'succeeded'}
+        updated = {'uuid': uuidsentinel.vmove,
+                   'notification_uuid': uuidsentinel.notification,
+                   'instance_uuid': uuidsentinel.instance_uuid,
+                   'instance_name': 'fake_instance',
+                   'source_host': 'fake_host1',
+                   'dest_host': 'fake_host2',
+                   'start_time': None,
+                   'end_time': None,
+                   'type': 'evacuation',
+                   'status': 'succeeded',
+                   'message': None}
+        ignored_keys = ['deleted', 'created_at', 'updated_at', 'deleted_at',
+                        'id']
+        self._create_vmove(self._get_fake_values())
+        db.vmove_update(self.ctxt, uuidsentinel.vmove, update)
+        vmove_updated = db.vmove_get_by_uuid(
+            self.ctxt, uuidsentinel.vmove)
+        self._assertEqualObjects(updated, vmove_updated, ignored_keys)
+
+    def test_vmove_not_found(self):
+        self._create_vmove(self._get_fake_values())
+        self.assertRaises(exception.VMoveNotFound,
+                          db.vmove_get_by_uuid, self.ctxt,
+                          500)
+
+    def test_invalid_marker(self):
+        [self._create_vmove(p) for p in self._get_fake_values_list()]
+        self.assertRaises(exception.MarkerNotFound,
+                          db.vmoves_get_all_by_filters,
+                          context=self.ctxt, marker=6)
+
+    def test_invalid_sort_key(self):
+        [self._create_vmove(p) for p in self._get_fake_values_list()]
+        self.assertRaises(exception.InvalidSortKey,
+                          db.vmoves_get_all_by_filters,
+                          context=self.ctxt, sort_keys=['invalid_sort_key'])

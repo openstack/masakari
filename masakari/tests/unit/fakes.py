@@ -45,6 +45,7 @@ class FakeNovaClient(object):
             self.id = id
             self.uuid = uuid or uuidutils.generate_uuid()
             self.host = host
+            self.name = 'fake_instance'
             setattr(self, 'OS-EXT-SRV-ATTR:hypervisor_hostname', host)
             setattr(self, 'OS-EXT-STS:vm_state', vm_state)
             setattr(self, 'OS-EXT-STS:task_state', task_state)
@@ -226,3 +227,31 @@ def create_fake_notification_progress_details(
     return objects.NotificationProgressDetails(
         name=name, uuid=uuid, progress=progress, state=state,
         progress_details=progress_details)
+
+
+def create_fake_vmove(
+        id=1,
+        uuid=uuidsentinel.fake_vmove,
+        notification_uuid=uuidsentinel.fake_notification,
+        instance_uuid=uuidsentinel.fake_instance,
+        instance_name='fake_instance',
+        source_host='fake_host_1',
+        dest_host='fake_host_2',
+        start_time=None,
+        end_time=None,
+        type='evacuation',
+        status='pending',
+        message=None):
+    return objects.VMove(
+        id=id,
+        uuid=uuid,
+        notification_uuid=notification_uuid,
+        instance_uuid=instance_uuid,
+        instance_name=instance_name,
+        source_host=source_host,
+        dest_host=dest_host,
+        start_time=start_time,
+        end_time=end_time,
+        type=type,
+        status=status,
+        message=message)

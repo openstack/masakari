@@ -281,6 +281,14 @@ class ComputeNotFoundByName(NotFound):
                 "be found.")
 
 
+class VMoveNotFound(NotFound):
+    msg_fmt = _("No vm move with id %(id)s.")
+
+
+class NotificationWithoutVMoves(Invalid):
+    msg_fmt = _("This notification %(id)s without vm moves.")
+
+
 class FailoverSegmentExists(MasakariException):
     msg_fmt = _("Failover segment with name %(name)s already exists.")
 
