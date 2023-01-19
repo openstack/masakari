@@ -132,10 +132,9 @@ class RequestContextSerializer(messaging.Serializer):
 def get_client(target, version_cap=None, serializer=None):
     assert TRANSPORT is not None
     serializer = RequestContextSerializer(serializer)
-    return messaging.RPCClient(TRANSPORT,
-                               target,
-                               version_cap=version_cap,
-                               serializer=serializer)
+    return messaging.get_rpc_client(
+        TRANSPORT, target, version_cap=version_cap,
+        serializer=serializer)
 
 
 def get_server(target, endpoints, serializer=None):

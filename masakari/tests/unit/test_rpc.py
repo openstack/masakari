@@ -87,20 +87,20 @@ class RPCAPITestCase(test.TestCase):
         self.assertEqual(['foo', 'bar'], exmods)
 
     @mock.patch.object(rpc, 'RequestContextSerializer')
-    @mock.patch.object(messaging, 'RPCClient')
-    def test_get_client(self, mock_client, mock_ser):
+    @mock.patch.object(messaging, 'get_rpc_client')
+    def test_get_client(self, mock_get, mock_ser):
         rpc.TRANSPORT = mock.Mock()
         tgt = mock.Mock()
         ser = mock.Mock()
-        mock_client.return_value = 'client'
+        mock_get.return_value = 'client'
         mock_ser.return_value = ser
 
         client = rpc.get_client(tgt, version_cap='1.0', serializer='foo')
 
         mock_ser.assert_called_once_with('foo')
-        mock_client.assert_called_once_with(rpc.TRANSPORT,
-                                            tgt, version_cap='1.0',
-                                            serializer=ser)
+        mock_get.assert_called_once_with(rpc.TRANSPORT,
+                                         tgt, version_cap='1.0',
+                                         serializer=ser)
         self.assertEqual('client', client)
 
     @mock.patch.object(rpc, 'RequestContextSerializer')
