@@ -278,3 +278,61 @@ class EventNotificationPriorityField(BaseEnumField):
 
 class EventNotificationPhaseField(BaseEnumField):
     AUTO_TYPE = EventNotificationPhase()
+
+
+class VMoveType(Enum):
+    """Represents possible types for VMoves."""
+
+    EVACUATION = "evacuation"
+    MIGRATION = "migration"
+    LIVE_MIGRATION = "live_migration"
+
+    ALL = (EVACUATION, MIGRATION, LIVE_MIGRATION)
+
+    def __init__(self):
+        super(VMoveType,
+              self).__init__(valid_values=VMoveType.ALL)
+
+    @classmethod
+    def index(cls, value):
+        """Return an index into the Enum given a value."""
+        return cls.ALL.index(value)
+
+    @classmethod
+    def from_index(cls, index):
+        """Return the Enum value at a given index."""
+        return cls.ALL[index]
+
+
+class VMoveTypeField(BaseEnumField):
+    AUTO_TYPE = VMoveType()
+
+
+class VMoveStatus(Enum):
+    """Represents possible statuses for VMoves."""
+
+    PENDING = "pending"
+    ONGOING = "ongoing"
+    IGNORED = "ignored"
+    FAILED = "failed"
+    SUCCEEDED = "succeeded"
+
+    ALL = (PENDING, ONGOING, IGNORED, FAILED, SUCCEEDED)
+
+    def __init__(self):
+        super(VMoveStatus,
+              self).__init__(valid_values=VMoveStatus.ALL)
+
+    @classmethod
+    def index(cls, value):
+        """Return an index into the Enum given a value."""
+        return cls.ALL.index(value)
+
+    @classmethod
+    def from_index(cls, index):
+        """Return the Enum value at a given index."""
+        return cls.ALL[index]
+
+
+class VMoveStatusField(BaseEnumField):
+    AUTO_TYPE = VMoveStatus()

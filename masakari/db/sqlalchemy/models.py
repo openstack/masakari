@@ -141,3 +141,25 @@ class Notification(BASE, MasakariAPIBase, models.SoftDeleteMixin):
                          'ignored', 'finished', name='notification_status'),
                     nullable=False)
     source_host_uuid = Column(String(36), nullable=False)
+
+
+class VMove(BASE, MasakariAPIBase, models.SoftDeleteMixin):
+    """Represents one vm move."""
+    __tablename__ = 'vmoves'
+    __table_args__ = (
+        schema.UniqueConstraint('uuid',
+                                name='uniq_vmove0uuid'),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    uuid = Column(String(36), nullable=False)
+    notification_uuid = Column(String(36), nullable=False)
+    instance_uuid = Column(String(36), nullable=False)
+    instance_name = Column(String(255), nullable=False)
+    source_host = Column(String(255), nullable=True)
+    dest_host = Column(String(255), nullable=True)
+    start_time = Column(DateTime, nullable=True)
+    end_time = Column(DateTime, nullable=True)
+    type = Column(String(36), nullable=True)
+    status = Column(String(255), nullable=True)
+    message = Column(Text)

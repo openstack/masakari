@@ -393,3 +393,36 @@ class NotificationAPI(object):
                         get_notification_recovery_workflow_details(
                             context, notification))
         return notification
+
+
+class VMoveAPI(object):
+    """The vmoves API to manage vmoves"""
+
+    def _is_valid_notification(self, context, notification_uuid):
+        notification = objects.Notification.get_by_uuid(
+            context, notification_uuid)
+        if notification.type != fields.NotificationType.COMPUTE_HOST:
+            raise exception.NotificationWithoutVMoves(id=notification_uuid)
+
+    def get_all(self, context, notification_uuid, filters=None,
+                sort_keys=None, sort_dirs=None, limit=None, marker=None):
+        """Get all vmoves by filters"""
+        self._is_valid_notification(context, notification_uuid)
+        filters['notification_uuid'] = notification_uuid
+
+        vmoves = objects.VMoveList.get_all(
+            context, filters, sort_keys, sort_dirs, limit, marker)
+
+        return vmoves
+
+    def get_vmove(self, context, notification_uuid, vmove_uuid):
+        """Get one vmove."""
+        self._is_valid_notification(context, notification_uuid)
+        if uuidutils.is_uuid_like(vmove_uuid):
+            LOG.debug("Fetching vmove by uuid %s", vmove_uuid)
+            vmove = objects.VMove.get_by_uuid(context, vmove_uuid)
+        else:
+            LOG.debug("Failed to fetch vmove by uuid %s", vmove_uuid)
+            raise exception.VMoveNotFound(id=vmove_uuid)
+
+        return vmove

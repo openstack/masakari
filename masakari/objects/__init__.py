@@ -21,3 +21,4 @@ def register_all():
     __import__('masakari.objects.host')
     __import__('masakari.objects.notification')
     __import__('masakari.objects.segment')
+    __import__('masakari.objects.vmove')

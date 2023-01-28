@@ -618,6 +618,109 @@ def notification_delete(context, notification_uuid):
         raise exception.NotificationNotFound(id=notification_uuid)
 
 
+# db apis for vm moves
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.reader
+def vmoves_get_all_by_filters(
+        context, filters=None, sort_keys=None,
+        sort_dirs=None, limit=None, marker=None):
+
+    if limit == 0:
+        return []
+
+    sort_keys, sort_dirs = _process_sort_params(sort_keys,
+                                                sort_dirs)
+
+    filters = filters or {}
+    query = model_query(context, models.VMove)
+
+    if 'notification_uuid' in filters:
+        query = query.filter(models.VMove.notification_uuid == filters[
+            'notification_uuid'])
+
+    if 'type' in filters:
+        query = query.filter(models.VMove.type == filters[
+            'type'])
+
+    if 'status' in filters:
+        status = filters['status']
+        if isinstance(status, (list, tuple, set, frozenset)):
+            column_attr = getattr(models.VMove, 'status')
+            query = query.filter(column_attr.in_(status))
+        else:
+            query = query.filter(models.VMove.status == status)
+
+    marker_row = None
+    if marker is not None:
+        marker_row = model_query(context,
+                                 models.VMove
+                                 ).filter_by(id=marker).first()
+        if not marker_row:
+            raise exception.MarkerNotFound(marker=marker)
+
+    try:
+        query = sqlalchemyutils.paginate_query(query, models.VMove,
+                                               limit,
+                                               sort_keys,
+                                               marker=marker_row,
+                                               sort_dirs=sort_dirs)
+    except db_exc.InvalidSortKey as err:
+        raise exception.InvalidSortKey(err)
+
+    return query.all()
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.reader
+def vmove_get_by_uuid(context, uuid):
+    return _vmove_get_by_uuid(context, uuid)
+
+
+def _vmove_get_by_uuid(context, uuid):
+    query = model_query(context, models.VMove).filter_by(uuid=uuid)
+
+    result = query.first()
+    if not result:
+        raise exception.VMoveNotFound(id=uuid)
+
+    return result
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.writer
+def vmove_create(context, values):
+    vm_move = models.VMove()
+    vm_move.update(values)
+
+    vm_move.save(session=context.session)
+
+    return _vmove_get_by_uuid(context, vm_move.uuid)
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.writer
+def vmove_update(context, uuid, values):
+    vm_move = _vmove_get_by_uuid(context, uuid)
+    vm_move.update(values)
+
+    vm_move.save(session=context.session)
+
+    return _vmove_get_by_uuid(context, vm_move.uuid)
+
+
+@oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
+@main_context_manager.writer
+def vmove_delete(context, vmove_uuid):
+    count = model_query(context, models.VMove
+                        ).filter_by(uuid=vmove_uuid
+                                    ).soft_delete(synchronize_session=False)
+
+    if count == 0:
+        raise exception.VMoveNotFound(id=vmove_uuid)
+
+
 class DeleteFromSelect(sa_sql.expression.UpdateBase):
     def __init__(self, table, select, column):
         self.table = table

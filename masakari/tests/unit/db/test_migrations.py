@@ -217,6 +217,19 @@ class MasakariMigrationsCheckers(test_migrations.WalkVersionsMixin):
     def _check_007(self, engine, data):
         self.assertColumnExists(engine, 'failover_segments', 'enabled')
 
+    def _check_008(self, engine, data):
+        self.assertColumnExists(engine, 'vmoves', 'uuid')
+        self.assertColumnExists(engine, 'vmoves', 'notification_uuid')
+        self.assertColumnExists(engine, 'vmoves', 'instance_uuid')
+        self.assertColumnExists(engine, 'vmoves', 'instance_name')
+        self.assertColumnExists(engine, 'vmoves', 'source_host')
+        self.assertColumnExists(engine, 'vmoves', 'dest_host')
+        self.assertColumnExists(engine, 'vmoves', 'start_time')
+        self.assertColumnExists(engine, 'vmoves', 'end_time')
+        self.assertColumnExists(engine, 'vmoves', 'type')
+        self.assertColumnExists(engine, 'vmoves', 'status')
+        self.assertColumnExists(engine, 'vmoves', 'message')
+
 
 class TestMasakariMigrationsSQLite(
     MasakariMigrationsCheckers,
