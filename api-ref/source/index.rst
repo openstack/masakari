@@ -13,3 +13,4 @@ Masakari project.
 .. include:: failover-segments.inc
 .. include:: hosts.inc
 .. include:: notifications.inc
+.. include:: vmoves.inc
