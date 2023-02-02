@@ -41,6 +41,7 @@ REST_API_VERSION_HISTORY = """REST API Version History:
     * 1.0 - Initial version.
     * 1.1 - Add support for getting notification progress details.
     * 1.2 - Add enabled option to segment.
+    * 1.3 - Add masakari vmoves.
 """
 
 # The minimum and maximum versions of the API supported
@@ -49,7 +50,7 @@ REST_API_VERSION_HISTORY = """REST API Version History:
 # Note: This only applies for the v1 API once microversions
 # support is fully merged.
 _MIN_API_VERSION = "1.0"
-_MAX_API_VERSION = "1.2"
+_MAX_API_VERSION = "1.3"
 # The default api version request if none is requested in the headers
 DEFAULT_API_VERSION = _MIN_API_VERSION
 

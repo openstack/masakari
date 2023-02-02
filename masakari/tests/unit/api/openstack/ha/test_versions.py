@@ -224,7 +224,7 @@ class VersionsTest(test.NoDBTestCase):
             "version": {
                 "id": "v1.0",
                 "status": "CURRENT",
-                "version": "1.2",
+                "version": "1.3",
                 "min_version": "1.0",
                 "updated": "2016-07-01T11:33:21Z",
                 "links": [

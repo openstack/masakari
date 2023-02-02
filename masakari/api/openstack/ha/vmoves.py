@@ -61,18 +61,23 @@ class VMovesController(wsgi.Controller):
             raise exc.HTTPBadRequest(explanation=ex.format_message())
         except exception.Invalid as e:
             raise exc.HTTPBadRequest(explanation=e.format_message())
+        except exception.NotificationWithoutVMoves as e:
+            raise exc.HTTPBadRequest(explanation=e.format_message())
         except exception.NotificationNotFound as ex:
             raise exc.HTTPNotFound(explanation=ex.format_message())
 
         return {'vmoves': vmoves}
 
-    @extensions.expected_errors((HTTPStatus.FORBIDDEN, HTTPStatus.NOT_FOUND))
+    @extensions.expected_errors((HTTPStatus.BAD_REQUEST, HTTPStatus.FORBIDDEN,
+                                 HTTPStatus.NOT_FOUND))
     def show(self, req, notification_id, id):
         """Shows the details of one vmove."""
         context = req.environ['masakari.context']
         context.can(vmove_policies.VMOVES % 'detail')
         try:
             vmove = self.api.get_vmove(context, notification_id, id)
+        except exception.NotificationWithoutVMoves as e:
+            raise exc.HTTPBadRequest(explanation=e.format_message())
         except exception.VMoveNotFound as e:
             raise exc.HTTPNotFound(explanation=e.format_message())
 
