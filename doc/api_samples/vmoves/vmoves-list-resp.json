@@ -1,0 +1,21 @@
+{
+    "vmoves": [
+        {
+            "created_at": "2023-01-28T14:55:27.000000",
+            "updated_at": null,
+            "deleted_at": null,
+            "deleted": false,
+            "id": 1,
+            "notification_uuid": "a0e70d3a-b3a2-4616-b65d-a7c03a2c85fc",
+            "instance_uuid": "1c2f1795-ce78-4d4c-afd0-ce141fdb3952",
+            "instance_name": "vm1",
+            "source_host": "host1",
+            "dest_host": "host2",
+            "start_time": "2023-01-28T14:55:27.000000",
+            "end_time": "2023-01-28T14:55:31.000000",
+            "status": "succeeded",
+            "type": "evacuation",
+            "message": null
+        }
+    ]
+}

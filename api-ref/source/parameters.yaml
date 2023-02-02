@@ -25,6 +25,12 @@ segment_id_path:
   in: path
   required: true
   type: string
+vmove_id_path:
+  description: |
+    The UUID of the vmove.
+  in: path
+  required: true
+  type: string
 
 # variables in query
 generated_since_query_notifications:
@@ -135,9 +141,31 @@ sort_key_segment:
   in: query
   required: false
   type: string
+sort_key_vmove:
+  description: |
+    Sorts by a vmove attribute. Default attribute is ``created_at``. You can specify
+    multiple pairs of sort key and sort direction query parameters. If you omit the
+    sort direction in a pair, the API uses the natural sorting direction of the vmove
+    ``sort_key`` attribute. The sort keys are limited to:
+
+    - ``created_at``
+    - ``updated_at``
+    - ``uuid``
+    - ``start_time``
+    - ``type``
+    - ``status``
+  in: query
+  required: false
+  type: string
 source_host_uuid_query_notifications:
   description: |
     Filter the notifications list result by source_host_uuid.
+  in: query
+  required: false
+  type: string
+status_query_vmove:
+  description: |
+    Filter the vmoves list result by vmove status.
   in: query
   required: false
   type: string
@@ -153,7 +181,12 @@ type_query_notifications:
   in: query
   required: false
   type: string
-
+type_query_vmove:
+  description: |
+    Filter the vmoves list result by vmove type.
+  in: query
+  required: false
+  type: string
 # variables in body
 control_attributes:
   description: |
@@ -431,3 +464,69 @@ versions:
   required: true
   description: >
     A list of version objects that describe the API versions available.
+vmove:
+  description: |
+    A ``vmove`` object.
+  in: body
+  required: true
+  type: object
+vmove_end_time:
+  description: |
+    The date and time when the vmove ended.
+  in: body
+  required: true
+  type: string
+vmove_id:
+  description: |
+    ID of vmove.
+  in: body
+  required: true
+  type: string
+vmove_instance_name:
+  description: |
+    The name of the instance.
+  in: body
+  required: true
+  type: string
+vmove_instance_uuid:
+  description: |
+    The UUID of the instance.
+  in: body
+  required: true
+  type: string
+vmove_message:
+  description: |
+    The vmove message info.
+  in: body
+  required: true
+  type: string
+vmove_start_time:
+  description: |
+    The date and time when the vmove started.
+  in: body
+  required: true
+  type: string
+vmove_status:
+  description: |
+    The vmove status.
+  in: body
+  required: true
+  type: string
+vmove_type:
+  description: |
+    The vmove type.
+  in: body
+  required: true
+  type: string
+vmove_uuid:
+  description: |
+    The UUID of the vmove.
+  in: body
+  required: true
+  type: string
+vmoves:
+  description: |
+    A list of ``vmove`` objects.
+  in: body
+  required: true
+  type: array
