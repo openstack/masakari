@@ -617,6 +617,10 @@ def notification_delete(context, notification_uuid):
     if count == 0:
         raise exception.NotificationNotFound(id=notification_uuid)
 
+    model_query(context, models.VMove).filter_by(
+        notification_uuid=notification_uuid).soft_delete(
+        synchronize_session=False)
+
 
 # db apis for vm moves
 
