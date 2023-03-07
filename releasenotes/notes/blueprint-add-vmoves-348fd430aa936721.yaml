@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    It persists vm moves information for one host failure notification
+    into the database, which could help users to insight the process
+    or result of the host recovery workflow, such as which vms evacuated
+    succeed or failed, and which ones are still evacuating.
+
+    Added VMove API in microversion 1.3, please refer to ..  _`VMoves`:
+    https://docs.openstack.org/api-ref/instance-ha/#vmoves-vmoves
