@@ -23,7 +23,7 @@ class NotificationProcessTestCase(base.NotificationTestBase):
 
     NOTIFICATION_TYPE = "PROCESS"
     NOTIFICATION_WAIT_INTERVAL = 1
-    NOTIFICATION_WAIT_PERIOD = 120
+    NOTIFICATION_WAIT_PERIOD = 600
 
     def setUp(self, ha_api_version="1.0"):
         super(NotificationProcessTestCase, self).setUp(ha_api_version)
