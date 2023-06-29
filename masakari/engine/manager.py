@@ -212,6 +212,7 @@ class MasakariManager(manager.Manager):
             if host_obj.reserved:
                 update_data['reserved'] = False
 
+            LOG.info("Set host %s on maintenance.", host_name)
             host_obj.update(update_data)
             host_obj.save()
 
