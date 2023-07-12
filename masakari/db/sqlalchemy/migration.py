@@ -19,7 +19,7 @@ import threading
 from oslo_config import cfg
 from oslo_db import exception as oslo_exception
 from oslo_db import options
-from stevedore import driver
+from oslo_db.sqlalchemy import migration
 
 from masakari import db
 from masakari.db import api as db_api
@@ -39,38 +39,32 @@ MIGRATE_REPO_PATH = os.path.join(
 )
 
 
-def get_backend():
-    global _IMPL
-    if _IMPL is None:
-        with _LOCK:
-            if _IMPL is None:
-                _IMPL = driver.DriverManager(
-                    "masakari.database.migration_backend",
-                    cfg.CONF.database.backend).driver
-    return _IMPL
-
-
 def db_sync(version=None, init_version=INIT_VERSION, engine=None):
     if engine is None:
         engine = db_api.get_engine()
 
-    current_db_version = get_backend().db_version(engine,
-                                                  MIGRATE_REPO_PATH,
-                                                  init_version)
+    current_db_version = migration.db_version(
+        engine,
+        MIGRATE_REPO_PATH,
+        init_version,
+    )
 
     if version and int(version) < current_db_version:
         msg = _('Database schema downgrade is not allowed.')
         raise exception.InvalidInput(reason=msg)
 
     if version and int(version) > db.MAX_INT:
-        message = _('Version should be less than or equal to %(max_version)d.'
-                    ) % {'max_version': db.MAX_INT}
+        message = _(
+            'Version should be less than or equal to %(max_version)d.'
+        ) % {'max_version': db.MAX_INT}
         raise exception.InvalidInput(reason=message)
 
     try:
-        return get_backend().db_sync(engine=engine,
-                                     abs_path=MIGRATE_REPO_PATH,
-                                     version=version,
-                                     init_version=init_version)
+        return migration.db_sync(
+            engine=engine,
+            abs_path=MIGRATE_REPO_PATH,
+            version=version,
+            init_version=init_version,
+        )
     except oslo_exception.DBMigrationError as exc:
         raise exception.InvalidInput(reason=exc)
