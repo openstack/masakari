@@ -22,20 +22,18 @@ inline callbacks.
 import contextlib
 import datetime
 import eventlet
-eventlet.monkey_patch(os=False)  # noqa
-from unittest import mock
+eventlet.monkey_patch(os=False)
+from unittest import mock  # noqa: E402
 
-import fixtures
+import fixtures  # noqa: E402
+from oslo_config import cfg  # noqa: E402
+from oslo_log import log as logging  # noqa: E402
+from oslo_serialization import jsonutils  # noqa: E402
+import testtools  # noqa: E402
 
-import testtools
-
-from oslo_config import cfg
-from oslo_log import log as logging
-from oslo_serialization import jsonutils
-
-from masakari.tests import fixtures as masakari_fixtures
-from masakari.tests.unit import conf_fixture
-from masakari.tests.unit import policy_fixture
+from masakari.tests import fixtures as masakari_fixtures  # noqa: E402
+from masakari.tests.unit import conf_fixture  # noqa: E402
+from masakari.tests.unit import policy_fixture  # noqa: E402
 
 CONF = cfg.CONF
 logging.register_options(CONF)
