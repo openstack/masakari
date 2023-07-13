@@ -71,3 +71,6 @@ etc/masakari/policy.yaml.sample
 doc/source/_static/masakari.conf.sample
 doc/source/_static/masakari-custom-recovery-methods.conf.sample
 doc/source/_static/masakari.policy.yaml.sample
+
+# Files created by alembic
+/masakari.db
