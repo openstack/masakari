@@ -143,6 +143,15 @@ class PurgeDeletedTest(test.TestCase):
         self.assertEqual(2, hosts_rows)
 
     def test_purge_maximum_rows_partial_deleted_records(self):
+        notifications_rows = self._count(self.notifications)
+        failover_segments_rows = self._count(self.failover_segments)
+        hosts_rows = self._count(self.hosts)
+
+        # Verify the initial number of rows
+        self.assertEqual(6, notifications_rows)
+        self.assertEqual(6, hosts_rows)
+        self.assertEqual(6, failover_segments_rows)
+
         db.purge_deleted_rows(self.context, age_in_days=60, max_rows=3)
 
         notifications_rows = self._count(self.notifications)
