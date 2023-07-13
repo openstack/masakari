@@ -159,6 +159,6 @@ class PurgeDeletedTest(test.TestCase):
         hosts_rows = self._count(self.hosts)
 
         # Verify that we have deleted 3 rows only
-        self.assertEqual(4, notifications_rows)
-        self.assertEqual(5, hosts_rows)
+        self.assertEqual(5, notifications_rows)
+        self.assertEqual(4, hosts_rows)
         self.assertEqual(6, failover_segments_rows)

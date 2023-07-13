@@ -15,16 +15,14 @@
 #    under the License.
 
 """
-  CLI interface for masakari management.
+CLI interface for masakari management.
 """
-
 
 import logging as python_logging
 import sys
 import time
 
 from oslo_config import cfg
-from oslo_db.sqlalchemy import migration
 from oslo_log import log as logging
 
 import masakari.conf
@@ -76,9 +74,7 @@ class DbCommands(object):
 
     def version(self):
         """Print the current database version."""
-        print(migration.db_version(db_api.get_engine(),
-                                   db_migration.MIGRATE_REPO_PATH,
-                                   db_migration.INIT_VERSION))
+        print(db_migration.db_version())
 
     @args('--age_in_days', type=int, default=30,
           help='Purge deleted rows older than age in days (default: '

@@ -24,7 +24,7 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-if config.config_file_name is not None:
+if config.attributes.get('configure_logger', True):
     fileConfig(config.config_file_name)
 
 # this is the MetaData object for the various models in the database
@@ -49,6 +49,8 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        # use a unique version table name to avoid conflicts with taskflow
+        version_table='masakari_alembic_version',
     )
 
     with context.begin_transaction():
@@ -61,16 +63,40 @@ def run_migrations_online() -> None:
     In this scenario we need to create an Engine
     and associate a connection with the context.
 
-    """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    This is modified from the default based on the below, since we want to
+    share an engine when unit testing so in-memory database testing actually
+    works.
 
-    with connectable.connect() as connection:
+    https://alembic.sqlalchemy.org/en/latest/cookbook.html#connection-sharing
+    """
+    connectable = config.attributes.get('connection', None)
+
+    if connectable is None:
+        # only create Engine if we don't have a Connection from the outside
+        connectable = engine_from_config(
+            config.get_section(config.config_ini_section),
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
+        with connectable.connect() as connection:
+            context.configure(
+                connection=connection,
+                target_metadata=target_metadata,
+                render_as_batch=True,
+                # use a unique version table name to avoid conflicts with
+                # taskflow
+                version_table='masakari_alembic_version',
+            )
+
+            with context.begin_transaction():
+                context.run_migrations()
+    else:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connectable,
+            target_metadata=target_metadata,
+            render_as_batch=True,
+            # use a unique version table name to avoid conflicts with taskflow
+            version_table='masakari_alembic_version',
         )
 
         with context.begin_transaction():
