@@ -31,19 +31,18 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         'failover_segments',
+        sa.Column('created_at', sa.DateTime(), nullable=True),
+        sa.Column('updated_at', sa.DateTime(), nullable=True),
         sa.Column('deleted_at', sa.DateTime(), nullable=True),
         sa.Column(
             'deleted',
             oslo_db_types.SoftDeleteInteger(),
             nullable=True,
         ),
-        sa.Column('created_at', sa.DateTime(), nullable=True),
-        sa.Column('updated_at', sa.DateTime(), nullable=True),
         sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
         sa.Column('uuid', sa.String(length=36), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('service_type', sa.String(length=255), nullable=False),
-        sa.Column('enabled', sa.Boolean(), nullable=True),
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column(
             'recovery_method',
@@ -56,6 +55,7 @@ def upgrade() -> None:
             ),
             nullable=False,
         ),
+        sa.Column('enabled', sa.Boolean(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint(
             'name', 'deleted', name='uniq_segment0name0deleted'
@@ -70,17 +70,18 @@ def upgrade() -> None:
     )
     op.create_table(
         'notifications',
+        sa.Column('created_at', sa.DateTime(), nullable=True),
+        sa.Column('updated_at', sa.DateTime(), nullable=True),
         sa.Column('deleted_at', sa.DateTime(), nullable=True),
         sa.Column(
             'deleted',
             oslo_db_types.SoftDeleteInteger(),
             nullable=True,
         ),
-        sa.Column('created_at', sa.DateTime(), nullable=True),
-        sa.Column('updated_at', sa.DateTime(), nullable=True),
         sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
         sa.Column('notification_uuid', sa.String(length=36), nullable=False),
         sa.Column('generated_time', sa.DateTime(), nullable=False),
+        sa.Column('source_host_uuid', sa.String(length=36), nullable=False),
         sa.Column('type', sa.String(length=36), nullable=False),
         sa.Column('payload', sa.Text(), nullable=True),
         sa.Column(
@@ -96,7 +97,6 @@ def upgrade() -> None:
             ),
             nullable=False,
         ),
-        sa.Column('source_host_uuid', sa.String(length=36), nullable=False),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint(
             'notification_uuid', name='uniq_notification0uuid'
@@ -104,22 +104,22 @@ def upgrade() -> None:
     )
     op.create_table(
         'hosts',
+        sa.Column('created_at', sa.DateTime(), nullable=True),
+        sa.Column('updated_at', sa.DateTime(), nullable=True),
         sa.Column('deleted_at', sa.DateTime(), nullable=True),
         sa.Column(
             'deleted',
             oslo_db_types.SoftDeleteInteger(),
             nullable=True,
         ),
-        sa.Column('created_at', sa.DateTime(), nullable=True),
-        sa.Column('updated_at', sa.DateTime(), nullable=True),
         sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
         sa.Column('uuid', sa.String(length=36), nullable=False),
         sa.Column('name', sa.String(length=255), nullable=False),
         sa.Column('reserved', sa.Boolean(), nullable=True),
         sa.Column('type', sa.String(length=255), nullable=False),
         sa.Column('control_attributes', sa.Text(), nullable=False),
-        sa.Column('on_maintenance', sa.Boolean(), nullable=True),
         sa.Column('failover_segment_id', sa.String(length=36), nullable=False),
+        sa.Column('on_maintenance', sa.Boolean(), nullable=True),
         sa.ForeignKeyConstraint(
             ['failover_segment_id'],
             ['failover_segments.uuid'],
