@@ -132,7 +132,7 @@ class ContextTestCase(test.NoDBTestCase):
                            'timestamp': '2016-03-02T22:31:56.641629',
                            'user_id': 111,
                            'user_name': None}
-        self.assertDictContainsSubset(expected_values, values2)
+        self.assertEqual(values2, {**values2, **expected_values})
 
     def test_convert_from_dict_then_to_dict(self):
         # TODO(tkajiam): Remove tenant once oslo.context is bumped to >= 4.0
@@ -150,11 +150,9 @@ class ContextTestCase(test.NoDBTestCase):
                   'user_name': 'username'}
 
         ctx = context.RequestContext.from_dict(values)
-        self.assertEqual('111', ctx.user)
-        self.assertEqual('222', ctx.project_id)
         self.assertEqual('111', ctx.user_id)
         self.assertEqual('222', ctx.project_id)
         values2 = ctx.to_dict()
         # TODO(tkajiam): Remove this once oslo.context is bumped to >= 4.0
         values2.setdefault('tenant', values2.get('project_id'))
-        self.assertDictContainsSubset(values, values2)
+        self.assertEqual(values2, {**values2, **values})

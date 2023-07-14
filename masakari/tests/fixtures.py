@@ -158,7 +158,7 @@ class WarningsFixture(fixtures.Fixture):
         # Let's escalate that to an exception in the test to prevent adding
         # violations.
 
-        # warnings.filterwarnings('error', message='.*invalid UUID.*')
+        warnings.filterwarnings('error', message='.*invalid UUID.*')
 
         # Enable deprecation warnings for nova itself to capture upcoming
         # SQLAlchemy changes

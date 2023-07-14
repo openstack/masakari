@@ -32,7 +32,7 @@ from masakari.objects import fields
 from masakari.objects import vmove as vmove_obj
 from masakari import test
 from masakari.tests.unit import fakes
-from masakari.tests import uuidsentinel
+from masakari.tests import uuidsentinel as uuids
 
 CONF = conf.CONF
 
@@ -51,10 +51,9 @@ class HostFailureTestCase(test.TestCase):
         # reduce the wait period.
         self.override_config("wait_period_after_evacuation", 2)
         self.override_config("wait_period_after_service_update", 2)
-        self.override_config("evacuate_all_instances",
-                             False, "host_failure")
+        self.override_config("evacuate_all_instances", False, "host_failure")
         self.instance_host = "fake-host"
-        self.notification_uuid = uuidsentinel.fake_notification
+        self.notification_uuid = uuids.notification
         self.novaclient = nova.API()
         self.fake_client = fakes.FakeNovaClient()
         self.disabled_reason = CONF.host_failure.service_disable_reason
@@ -157,7 +156,7 @@ class HostFailureTestCase(test.TestCase):
             return fake_server
 
         fake_instance = self.fake_client.servers.create(
-            id="1", host=self.instance_host, ha_enabled=True)
+            id=uuids.instance, host=self.instance_host, ha_enabled=True)
 
         vmove = vmove_obj.VMove(context=self.ctxt)
         vmove.instance_uuid = fake_instance.id
@@ -186,9 +185,11 @@ class HostFailureTestCase(test.TestCase):
                              True, "host_failure")
 
         # create test data
-        self.fake_client.servers.create(id="1", host=self.instance_host,
-                                        ha_enabled=True)
-        self.fake_client.servers.create(id="2", host=self.instance_host)
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host,
+            ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_2, host=self.instance_host)
 
         # execute DisableComputeServiceTask
         self._test_disable_compute_service(mock_enable_disable)
@@ -199,6 +200,7 @@ class HostFailureTestCase(test.TestCase):
         # execute EvacuateInstancesTask
         self._evacuate_instances(mock_enable_disable)
 
+        sorted_uuids = sorted([uuids.server_1, uuids.server_2])
         # verify progress details
         _mock_notify.assert_has_calls([
             mock.call("Disabling compute service on host: 'fake-host'"),
@@ -210,13 +212,18 @@ class HostFailureTestCase(test.TestCase):
             mock.call("Total Non-HA Enabled instances count: '1'", 0.7),
             mock.call("All instances (HA Enabled/Non-HA Enabled) should be "
                       "considered for evacuation. Total count is: '2'", 0.8),
-            mock.call("Instances to be evacuated are: '1,2'", 1.0),
-            mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are: '2,1'"),
-            mock.call("Evacuation of instance started: '2'", 0.5),
-            mock.call("Evacuation of instance started: '1'", 0.5),
-            mock.call("Successfully evacuate instances '1,2' from host "
-                      "'fake-host'", 0.7),
+            mock.call(f"Instances to be evacuated are: "
+                      f"'{uuids.server_1},{uuids.server_2}'", 1.0),
+            mock.call(f"Start evacuation of instances from failed host "
+                      f"'fake-host', instance uuids are: "
+                      f"'{uuids.server_2},{uuids.server_1}'"),
+            mock.call(f"Evacuation of instance started: '{uuids.server_2}'",
+                      0.5),
+            mock.call(f"Evacuation of instance started: '{uuids.server_1}'",
+                      0.5),
+            mock.call(f"Successfully evacuate instances "
+                      f"'{sorted_uuids[0]},{sorted_uuids[1]}' from host "
+                      f"'fake-host'", 0.7),
             mock.call('Evacuation process completed!', 1.0)
         ])
 
@@ -236,11 +243,13 @@ class HostFailureTestCase(test.TestCase):
                              ha_enabled_key, 'host_failure')
 
         # create test data
-        self.fake_client.servers.create(id="1", host=self.instance_host,
-                                        ha_enabled=True)
-        self.fake_client.servers.create(id="2", host=self.instance_host,
-                                        ha_enabled=True,
-                                        ha_enabled_key=ha_enabled_key)
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host,
+            ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_2, host=self.instance_host,
+            ha_enabled=True,
+            ha_enabled_key=ha_enabled_key)
 
         # execute DisableComputeServiceTask
         self._test_disable_compute_service(mock_enable_disable)
@@ -259,12 +268,14 @@ class HostFailureTestCase(test.TestCase):
             mock.call("Total instances running on failed host 'fake-host' is 2"
                       "", 0.3),
             mock.call("Total HA Enabled instances count: '1'", 0.6),
-            mock.call("Instances to be evacuated are: '2'", 1.0),
-            mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are: '2'"),
-            mock.call("Evacuation of instance started: '2'", 0.5),
-            mock.call("Successfully evacuate instances '2' from host "
-                      "'fake-host'", 0.7),
+            mock.call(f"Instances to be evacuated are: '{uuids.server_2}'",
+                      1.0),
+            mock.call(f"Start evacuation of instances from failed host "
+                      f"'fake-host', instance uuids are: '{uuids.server_2}'"),
+            mock.call(f"Evacuation of instance started: '{uuids.server_2}'",
+                      0.5),
+            mock.call(f"Successfully evacuate instances '{uuids.server_2}' "
+                      f"from host 'fake-host'", 0.7),
             mock.call('Evacuation process completed!', 1.0)
         ])
 
@@ -281,13 +292,17 @@ class HostFailureTestCase(test.TestCase):
                              True, "host_failure")
 
         # create test data
-        self.fake_client.servers.create(id="1", host=self.instance_host,
-                                        ha_enabled=True)
-        self.fake_client.servers.create(id="2", host=self.instance_host)
-        reserved_host = fakes.create_fake_host(name="fake-reserved-host",
-                                               reserved=True)
-        self.fake_client.aggregates.create(id="1", name='fake_agg',
-                                           hosts=[self.instance_host])
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host,
+            ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_2, host=self.instance_host)
+        reserved_host = fakes.create_fake_host(
+            name="fake-reserved-host",
+            reserved=True)
+        self.fake_client.aggregates.create(
+            id=uuids.aggregate_1, name='fake_agg',
+            hosts=[self.instance_host])
 
         # execute DisableComputeServiceTask
         self._test_disable_compute_service(mock_enable_disable)
@@ -301,9 +316,11 @@ class HostFailureTestCase(test.TestCase):
                 mock_enable_disable,
                 reserved_host=reserved_host.name)
             self.assertEqual(1, mock_save.call_count)
-            self.assertIn(reserved_host.name,
-                          self.fake_client.aggregates.get('1').hosts)
+            self.assertIn(
+                reserved_host.name,
+                self.fake_client.aggregates.get(uuids.aggregate_1).hosts)
 
+        sorted_uuids = sorted([uuids.server_1, uuids.server_2])
         # verify progress details
         _mock_notify.assert_has_calls([
             mock.call("Disabling compute service on host: 'fake-host'"),
@@ -315,18 +332,23 @@ class HostFailureTestCase(test.TestCase):
             mock.call("Total Non-HA Enabled instances count: '1'", 0.7),
             mock.call("All instances (HA Enabled/Non-HA Enabled) should be "
                       "considered for evacuation. Total count is: '2'", 0.8),
-            mock.call("Instances to be evacuated are: '1,2'", 1.0),
-            mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are: '2,1'"),
+            mock.call(f"Instances to be evacuated are: "
+                      f"'{uuids.server_1},{uuids.server_2}'", 1.0),
+            mock.call(f"Start evacuation of instances from failed host "
+                      f"'fake-host', instance uuids are: "
+                      f"'{uuids.server_2},{uuids.server_1}'"),
             mock.call("Enabling reserved host: 'fake-reserved-host'", 0.1),
             mock.call('Add host fake-reserved-host to aggregate fake_agg',
                       0.2),
             mock.call('Added host fake-reserved-host to aggregate fake_agg',
                       0.3),
-            mock.call("Evacuation of instance started: '2'", 0.5),
-            mock.call("Evacuation of instance started: '1'", 0.5),
-            mock.call("Successfully evacuate instances '1,2' from host "
-                      "'fake-host'", 0.7),
+            mock.call(f"Evacuation of instance started: '{uuids.server_2}'",
+                      0.5),
+            mock.call(f"Evacuation of instance started: '{uuids.server_1}'",
+                      0.5),
+            mock.call(f"Successfully evacuate instances "
+                      f"'{sorted_uuids[0]},{sorted_uuids[1]}' from host "
+                      f"'fake-host'", 0.7),
             mock.call('Evacuation process completed!', 1.0)
         ])
 
@@ -343,16 +365,20 @@ class HostFailureTestCase(test.TestCase):
                              True, "host_failure")
 
         # create test data
-        self.fake_client.servers.create(id="1", host=self.instance_host,
-                                        ha_enabled=True)
-        self.fake_client.servers.create(id="2", host=self.instance_host)
-        reserved_host = fakes.create_fake_host(name="fake-reserved-host",
-                                               reserved=True)
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host,
+            ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_2, host=self.instance_host)
+        reserved_host = fakes.create_fake_host(
+            name="fake-reserved-host", reserved=True)
         # Set multiple aggregates to the failure host
-        self.fake_client.aggregates.create(id="1", name='fake_agg_1',
-                                           hosts=[self.instance_host])
-        self.fake_client.aggregates.create(id="2", name='fake_agg_2',
-                                           hosts=[self.instance_host])
+        self.fake_client.aggregates.create(
+            id=uuids.aggregate_1, name='fake_agg_1',
+            hosts=[self.instance_host])
+        self.fake_client.aggregates.create(
+            id=uuids.aggregate_2, name='fake_agg_2',
+            hosts=[self.instance_host])
 
         # execute DisableComputeServiceTask
         self._test_disable_compute_service(mock_enable_disable)
@@ -366,11 +392,14 @@ class HostFailureTestCase(test.TestCase):
                 mock_enable_disable,
                 reserved_host=reserved_host.name)
             self.assertEqual(1, mock_save.call_count)
-            self.assertIn(reserved_host.name,
-                          self.fake_client.aggregates.get('1').hosts)
-            self.assertIn(reserved_host.name,
-                          self.fake_client.aggregates.get('2').hosts)
+            self.assertIn(
+                reserved_host.name,
+                self.fake_client.aggregates.get(uuids.aggregate_1).hosts)
+            self.assertIn(
+                reserved_host.name,
+                self.fake_client.aggregates.get(uuids.aggregate_2).hosts)
 
+        sorted_uuids = sorted([uuids.server_1, uuids.server_2])
         # verify progress details
         _mock_notify.assert_has_calls([
             mock.call("Disabling compute service on host: 'fake-host'"),
@@ -382,9 +411,11 @@ class HostFailureTestCase(test.TestCase):
             mock.call("Total Non-HA Enabled instances count: '1'", 0.7),
             mock.call("All instances (HA Enabled/Non-HA Enabled) should be "
                       "considered for evacuation. Total count is: '2'", 0.8),
-            mock.call("Instances to be evacuated are: '1,2'", 1.0),
-            mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are: '2,1'"),
+            mock.call(f"Instances to be evacuated are: "
+                      f"'{uuids.server_1},{uuids.server_2}'", 1.0),
+            mock.call(f"Start evacuation of instances from failed host "
+                      f"'fake-host', instance uuids are: "
+                      f"'{uuids.server_2},{uuids.server_1}'"),
             mock.call("Enabling reserved host: 'fake-reserved-host'", 0.1),
             mock.call('Add host fake-reserved-host to aggregate fake_agg_1',
                       0.2),
@@ -394,10 +425,13 @@ class HostFailureTestCase(test.TestCase):
                       0.2),
             mock.call('Added host fake-reserved-host to aggregate fake_agg_2',
                       0.3),
-            mock.call("Evacuation of instance started: '2'", 0.5),
-            mock.call("Evacuation of instance started: '1'", 0.5),
-            mock.call("Successfully evacuate instances '1,2' from host "
-                      "'fake-host'", 0.7),
+            mock.call(f"Evacuation of instance started: '{uuids.server_2}'",
+                      0.5),
+            mock.call(f"Evacuation of instance started: '{uuids.server_1}'",
+                      0.5),
+            mock.call(f"Successfully evacuate instances "
+                      f"'{sorted_uuids[0]},{sorted_uuids[1]}' from host "
+                      f"'fake-host'", 0.7),
             mock.call('Evacuation process completed!', 1.0)
         ])
 
@@ -415,13 +449,14 @@ class HostFailureTestCase(test.TestCase):
                              True, "host_failure")
 
         # create test data
-        self.fake_client.servers.create(id="1", host=self.instance_host,
-                                        ha_enabled=True)
-        reserved_host = fakes.create_fake_host(name="fake-reserved-host",
-                                               reserved=True)
-        self.fake_client.aggregates.create(id="1", name='fake_agg',
-                                           hosts=[self.instance_host,
-                                                  reserved_host.name])
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host,
+            ha_enabled=True)
+        reserved_host = fakes.create_fake_host(
+            name="fake-reserved-host", reserved=True)
+        self.fake_client.aggregates.create(
+            id=uuids.aggregate_1, name='fake_agg',
+            hosts=[self.instance_host, reserved_host.name])
         expected_msg_format = ("Host '%(reserved_host)s' already has been "
                                "added to aggregate '%(aggregate)s'.") % {
             'reserved_host': 'fake-reserved-host', 'aggregate': 'fake_agg'
@@ -439,8 +474,9 @@ class HostFailureTestCase(test.TestCase):
                 mock_enable_disable,
                 reserved_host=reserved_host.name)
             self.assertEqual(1, mock_save.call_count)
-            self.assertIn(reserved_host.name,
-                          self.fake_client.aggregates.get('1').hosts)
+            self.assertIn(
+                reserved_host.name,
+                self.fake_client.aggregates.get(uuids.aggregate_1).hosts)
             mock_log.info.assert_any_call(expected_msg_format)
 
         # verify progress details
@@ -451,17 +487,19 @@ class HostFailureTestCase(test.TestCase):
             mock.call("Total instances running on failed host 'fake-host' is 1"
                       "", 0.3),
             mock.call("Total HA Enabled instances count: '1'", 0.6),
-            mock.call("Instances to be evacuated are: '1'", 1.0),
-            mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are: '1'"),
+            mock.call(f"Instances to be evacuated are: '{uuids.server_1}'",
+                      1.0),
+            mock.call(f"Start evacuation of instances from failed host "
+                      f"'fake-host', instance uuids are: '{uuids.server_1}'"),
             mock.call("Enabling reserved host: 'fake-reserved-host'", 0.1),
             mock.call('Add host fake-reserved-host to aggregate fake_agg',
                       0.2),
             mock.call("Host 'fake-reserved-host' already has been added to "
                       "aggregate 'fake_agg'.", 1.0),
-            mock.call("Evacuation of instance started: '1'", 0.5),
-            mock.call("Successfully evacuate instances '1' from host "
-                      "'fake-host'", 0.7),
+            mock.call(f"Evacuation of instance started: '{uuids.server_1}'",
+                      0.5),
+            mock.call(f"Successfully evacuate instances '{uuids.server_1}' "
+                      f"from host 'fake-host'", 0.7),
             mock.call('Evacuation process completed!', 1.0)
         ])
 
@@ -477,28 +515,35 @@ class HostFailureTestCase(test.TestCase):
 
         # create ha_enabled test data
         power_state = 4 if vm_state == 'resized' else None
-        self.fake_client.servers.create(id="1", host=self.instance_host,
-                                        vm_state=vm_state,
-                                        power_state=power_state,
-                                        ha_enabled=True)
-        self.fake_client.servers.create(id="2", host=self.instance_host,
-                                        vm_state=vm_state,
-                                        power_state=power_state,
-                                        ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host,
+            vm_state=vm_state,
+            power_state=power_state,
+            ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_2, host=self.instance_host,
+            vm_state=vm_state,
+            power_state=power_state,
+            ha_enabled=True)
 
         self._test_instance_list(2)
 
         # execute EvacuateInstancesTask
         self._evacuate_instances(mock_enable_disable)
 
+        sorted_uuids = sorted([uuids.server_1, uuids.server_2])
         # verify progress details
         _mock_notify.assert_has_calls([
-            mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are: '2,1'"),
-            mock.call("Evacuation of instance started: '2'", 0.5),
-            mock.call("Evacuation of instance started: '1'", 0.5),
-            mock.call("Successfully evacuate instances '1,2' from host "
-                      "'fake-host'", 0.7),
+            mock.call(f"Start evacuation of instances from failed host "
+                      f"'fake-host', instance uuids are: "
+                      f"'{uuids.server_2},{uuids.server_1}'"),
+            mock.call(f"Evacuation of instance started: '{uuids.server_2}'",
+                      0.5),
+            mock.call(f"Evacuation of instance started: '{uuids.server_1}'",
+                      0.5),
+            mock.call(f"Successfully evacuate instances "
+                      f"'{sorted_uuids[0]},{sorted_uuids[1]}' from host "
+                      f"'fake-host'", 0.7),
             mock.call('Evacuation process completed!', 1.0)
         ])
 
@@ -515,12 +560,14 @@ class HostFailureTestCase(test.TestCase):
         _mock_novaclient.return_value = self.fake_client
 
         # create ha_enabled test data
-        self.fake_client.servers.create(id="1", host=self.instance_host,
-                                        vm_state='error',
-                                        ha_enabled=True)
-        self.fake_client.servers.create(id="2", host=self.instance_host,
-                                        vm_state='active',
-                                        ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host,
+            vm_state='error',
+            ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_2, host=self.instance_host,
+            vm_state='active',
+            ha_enabled=True)
 
         # execute PrepareHAEnabledInstancesTask
         self._test_instance_list(1)
@@ -533,18 +580,20 @@ class HostFailureTestCase(test.TestCase):
             mock.call('Preparing instances for evacuation'),
             mock.call("Total instances running on failed host 'fake-host' is 2"
                       "", 0.3),
-            mock.call("Ignoring recovery of HA_Enabled instance '1' as it is "
-                      "in 'error' state.", 0.4),
+            mock.call(f"Ignoring recovery of HA_Enabled instance "
+                      f"'{uuids.server_1}' as it is in 'error' state.", 0.4),
             mock.call("Total HA Enabled instances count: '1'", 0.6),
             mock.call("Total Non-HA Enabled instances count: '0'", 0.7),
             mock.call("All instances (HA Enabled/Non-HA Enabled) should be "
                       "considered for evacuation. Total count is: '1'", 0.8),
-            mock.call("Instances to be evacuated are: '2'", 1.0),
-            mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are: '2'"),
-            mock.call("Evacuation of instance started: '2'", 0.5),
-            mock.call("Successfully evacuate instances '2' from host "
-                      "'fake-host'", 0.7),
+            mock.call(f"Instances to be evacuated are: '{uuids.server_2}'",
+                      1.0),
+            mock.call(f"Start evacuation of instances from failed host "
+                      f"'fake-host', instance uuids are: '{uuids.server_2}'"),
+            mock.call(f"Evacuation of instance started: '{uuids.server_2}'",
+                      0.5),
+            mock.call(f"Successfully evacuate instances '{uuids.server_2}' "
+                      f"from host 'fake-host'", 0.7),
             mock.call('Evacuation process completed!', 1.0)
         ])
 
@@ -561,9 +610,10 @@ class HostFailureTestCase(test.TestCase):
         _mock_novaclient.return_value = self.fake_client
 
         # create ha_enabled test data
-        self.fake_client.servers.create(id="1", host=self.instance_host,
-                                        vm_state='error',
-                                        ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host,
+            vm_state='error',
+            ha_enabled=True)
 
         # execute PrepareHAEnabledInstancesTask
         task = host_failure.PrepareHAEnabledInstancesTask(self.ctxt,
@@ -576,8 +626,8 @@ class HostFailureTestCase(test.TestCase):
             mock.call('Preparing instances for evacuation'),
             mock.call("Total instances running on failed host 'fake-host' is 1"
                       "", 0.3),
-            mock.call("Ignoring recovery of HA_Enabled instance '1' as it is "
-                      "in 'error' state.", 0.4),
+            mock.call(f"Ignoring recovery of HA_Enabled instance "
+                      f"'{uuids.server_1}' as it is in 'error' state.", 0.4),
             mock.call("Total HA Enabled instances count: '0'", 0.6),
             mock.call("Skipped host 'fake-host' recovery as no instances needs"
                       " to be evacuated", 1.0)
@@ -592,8 +642,10 @@ class HostFailureTestCase(test.TestCase):
         _mock_novaclient.return_value = self.fake_client
 
         # create test data
-        self.fake_client.servers.create(id="1", host=self.instance_host)
-        self.fake_client.servers.create(id="2", host=self.instance_host)
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host)
+        self.fake_client.servers.create(
+            id=uuids.server_2, host=self.instance_host)
 
         # execute DisableComputeServiceTask
         self._test_disable_compute_service(mock_enable_disable)
@@ -628,9 +680,10 @@ class HostFailureTestCase(test.TestCase):
         _mock_novaclient.return_value = self.fake_client
 
         # create ha_enabled test data
-        server = self.fake_client.servers.create(id="1", vm_state='active',
-                                                 host=self.instance_host,
-                                                 ha_enabled=True)
+        server = self.fake_client.servers.create(
+            id=uuids.server_1, vm_state='active',
+            host=self.instance_host,
+            ha_enabled=True)
 
         self._test_instance_list(1)
 
@@ -648,11 +701,12 @@ class HostFailureTestCase(test.TestCase):
 
         # verify progress details
         _mock_notify.assert_has_calls([
-            mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are: '1'"),
-            mock.call("Evacuation of instance started: '1'", 0.5),
-            mock.call("Failed to evacuate instances '1' from host 'fake-host'"
-                      "", 0.7)
+            mock.call(f"Start evacuation of instances from failed host "
+                      f"'fake-host', instance uuids are: '{uuids.server_1}'"),
+            mock.call(f"Evacuation of instance started: '{uuids.server_1}'",
+                      0.5),
+            mock.call(f"Failed to evacuate instances '{uuids.server_1}' from "
+                      f"host 'fake-host'", 0.7)
         ])
 
     @mock.patch('masakari.compute.nova.novaclient')
@@ -698,36 +752,46 @@ class HostFailureTestCase(test.TestCase):
         _mock_novaclient.return_value = self.fake_client
 
         # create ha_enabled test data
-        self.fake_client.servers.create(id="1", host=self.instance_host,
-                                        vm_state='active',
-                                        task_state='fake_task_state',
-                                        power_state=None,
-                                        ha_enabled=True)
-        self.fake_client.servers.create(id="2", host=self.instance_host,
-                                        vm_state='stopped',
-                                        task_state='fake_task_state',
-                                        power_state=None,
-                                        ha_enabled=True)
-        self.fake_client.servers.create(id="3", host=self.instance_host,
-                                        vm_state='error',
-                                        task_state='fake_task_state',
-                                        power_state=None,
-                                        ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host,
+            vm_state='active',
+            task_state='fake_task_state',
+            power_state=None,
+            ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_2, host=self.instance_host,
+            vm_state='stopped',
+            task_state='fake_task_state',
+            power_state=None,
+            ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_3, host=self.instance_host,
+            vm_state='error',
+            task_state='fake_task_state',
+            power_state=None,
+            ha_enabled=True)
 
         self._test_instance_list(3)
 
         # execute EvacuateInstancesTask
         self._evacuate_instances(mock_enable_disable)
 
+        sorted_uuids = sorted([uuids.server_1, uuids.server_2, uuids.server_3])
         # verify progress details
         _mock_notify.assert_has_calls([
-            mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are: '3,2,1'"),
-            mock.call("Evacuation of instance started: '3'", 0.5),
-            mock.call("Evacuation of instance started: '2'", 0.5),
-            mock.call("Evacuation of instance started: '1'", 0.5),
-            mock.call("Successfully evacuate instances '1,2,3' from host "
-                      "'fake-host'", 0.7),
+            mock.call(f"Start evacuation of instances from failed host "
+                      f"'fake-host', instance uuids are: "
+                      f"'{uuids.server_3},{uuids.server_2},{uuids.server_1}'"),
+            mock.call(f"Evacuation of instance started: '{uuids.server_3}'",
+                      0.5),
+            mock.call(f"Evacuation of instance started: '{uuids.server_2}'",
+                      0.5),
+            mock.call(f"Evacuation of instance started: '{uuids.server_1}'",
+                      0.5),
+            mock.call(f"Successfully evacuate instances "
+                      f"'{sorted_uuids[0]},{sorted_uuids[1]},"
+                      f"{sorted_uuids[2]}' "
+                      f"from host 'fake-host'", 0.7),
             mock.call('Evacuation process completed!', 1.0)
         ])
 
@@ -744,13 +808,16 @@ class HostFailureTestCase(test.TestCase):
                              True, "host_failure")
 
         # create test data
-        self.fake_client.servers.create(id="1", host=self.instance_host,
-                                        ha_enabled=True)
-        self.fake_client.servers.create(id="2", host=self.instance_host)
-        reserved_host = fakes.create_fake_host(name="fake-reserved-host",
-                                               reserved=True)
-        self.fake_client.aggregates.create(id="1", name='fake_agg',
-                                           hosts=[self.instance_host])
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host,
+            ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_2, host=self.instance_host)
+        reserved_host = fakes.create_fake_host(
+            name="fake-reserved-host", reserved=True)
+        self.fake_client.aggregates.create(
+            id=uuids.aggregate_1, name='fake_agg',
+            hosts=[self.instance_host])
 
         # execute DisableComputeServiceTask
         self._test_disable_compute_service(mock_enable_disable)
@@ -764,9 +831,11 @@ class HostFailureTestCase(test.TestCase):
                 mock_enable_disable,
                 reserved_host=reserved_host.name)
             self.assertEqual(1, mock_save.call_count)
-            self.assertIn(reserved_host.name,
-                          self.fake_client.aggregates.get('1').hosts)
+            self.assertIn(
+                reserved_host.name,
+                self.fake_client.aggregates.get(uuids.aggregate_1).hosts)
 
+        sorted_uuids = sorted([uuids.server_1, uuids.server_2])
         # verify progress details
         _mock_notify.assert_has_calls([
             mock.call("Disabling compute service on host: 'fake-host'"),
@@ -778,18 +847,23 @@ class HostFailureTestCase(test.TestCase):
             mock.call("Total Non-HA Enabled instances count: '1'", 0.7),
             mock.call("All instances (HA Enabled/Non-HA Enabled) should be "
                       "considered for evacuation. Total count is: '2'", 0.8),
-            mock.call("Instances to be evacuated are: '1,2'", 1.0),
-            mock.call("Start evacuation of instances from failed host "
-                      "'fake-host', instance uuids are: '2,1'"),
+            mock.call(f"Instances to be evacuated are: "
+                      f"'{uuids.server_1},{uuids.server_2}'", 1.0),
+            mock.call(f"Start evacuation of instances from failed host "
+                      f"'fake-host', instance uuids are: "
+                      f"'{uuids.server_2},{uuids.server_1}'"),
             mock.call("Enabling reserved host: 'fake-reserved-host'", 0.1),
             mock.call('Add host fake-reserved-host to aggregate fake_agg',
                       0.2),
             mock.call('Added host fake-reserved-host to aggregate fake_agg',
                       0.3),
-            mock.call("Evacuation of instance started: '2'", 0.5),
-            mock.call("Evacuation of instance started: '1'", 0.5),
-            mock.call("Successfully evacuate instances '1,2' from host "
-                      "'fake-host'", 0.7),
+            mock.call(f"Evacuation of instance started: '{uuids.server_2}'",
+                      0.5),
+            mock.call(f"Evacuation of instance started: '{uuids.server_1}'",
+                      0.5),
+            mock.call(f"Successfully evacuate instances "
+                      f"'{sorted_uuids[0]},{sorted_uuids[1]}' from host "
+                      f"'fake-host'", 0.7),
             mock.call('Evacuation process completed!', 1.0)
         ])
 
@@ -800,11 +874,12 @@ class HostFailureTestCase(test.TestCase):
         _mock_novaclient.return_value = self.fake_client
 
         # create ha_enabled test data
-        self.fake_client.servers.create(id="1", host=self.instance_host,
-                                        vm_state='stopped',
-                                        task_state=None,
-                                        power_state=None,
-                                        ha_enabled=True)
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host,
+            vm_state='stopped',
+            task_state=None,
+            power_state=None,
+            ha_enabled=True)
 
         self._test_instance_list(1)
 

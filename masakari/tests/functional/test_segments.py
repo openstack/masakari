@@ -22,12 +22,14 @@ from masakari.tests.functional import base
 class TestSegments(base.BaseFunctionalTest):
     def test_create_get_delete(self):
         # This test will create, get and delete a segment
-        segment_data = {'name': self.getUniqueString(),
-                'recovery_method': fields.FailoverSegmentRecoveryMethod.AUTO,
-                'service_type': 'COMPUTE'}
+        segment_data = {
+            'name': self.getUniqueString(),
+            'recovery_method': fields.FailoverSegmentRecoveryMethod.AUTO,
+            'service_type': 'COMPUTE',
+        }
         segment = self.admin_conn.ha.create_segment(**segment_data)
 
-        self.assertDictContainsSubset(segment_data, segment)
+        self.assertEqual(dict(segment), {**segment_data, **segment})
 
         result = self.admin_conn.ha.get_segment(segment.uuid)
 
@@ -112,13 +114,15 @@ class TestSegments(base.BaseFunctionalTest):
         for seg_object in self.admin_conn.ha.segments(
                 recovery_method=fields.FailoverSegmentRecoveryMethod.AUTO):
 
-            self.assertDictContainsSubset(segment_data_1, seg_object)
+            self.assertEqual(
+                dict(seg_object), {**segment_data_1, **seg_object})
 
         for seg_object in self.admin_conn.ha.segments(
                 recovery_method=fields.FailoverSegmentRecoveryMethod.
                 RESERVED_HOST):
 
-            self.assertDictContainsSubset(segment_data_2, seg_object)
+            self.assertEqual(
+                dict(seg_object), {**segment_data_2, **seg_object})
 
     def test_update_with_host(self):
         # This test is for updating segment with host

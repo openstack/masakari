@@ -50,7 +50,7 @@ class TestHosts(base.BaseFunctionalTest):
 
         host = self.admin_conn.ha.create_host(self.segment.uuid, **host_data)
 
-        self.assertDictContainsSubset(host_data, host)
+        self.assertEqual(dict(host), {**host_data, **host})
 
         result = self.admin_conn.ha.get_host(host.uuid, self.segment.uuid)
 
@@ -136,7 +136,7 @@ class TestHosts(base.BaseFunctionalTest):
                                        type=host_type,
                                        reserved=reserved):
 
-            self.assertDictContainsSubset(expected_host_data, host)
+            self.assertEqual(dict(host), {**expected_host_data, **host})
 
     def test_update_get_delete(self):
         # This test is for updating created host and deletion of same

@@ -94,11 +94,11 @@ class RequestContext(context.RequestContext):
         tenant = kwargs.pop('tenant', None)
         super(RequestContext, self).__init__(
             auth_token=auth_token,
-            user=user_id or user,
+            user_id=user_id or user,
             project_id=project_id or tenant,
-            domain=kwargs.pop('domain', None),
-            user_domain=kwargs.pop('user_domain', None),
-            project_domain=kwargs.pop('project_domain', None),
+            domain_id=kwargs.pop('domain', None),
+            user_domain_id=kwargs.pop('user_domain', None),
+            project_domain_id=kwargs.pop('project_domain', None),
             is_admin=is_admin,
             read_only=kwargs.pop('read_only', False),
             show_deleted=kwargs.pop('show_deleted', False),
