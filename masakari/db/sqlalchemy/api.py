@@ -788,14 +788,24 @@ def purge_deleted_rows(context, age_in_days, max_rows):
 
         if table.name == 'notifications':
             status_column = table.c.status
-            query_delete = sql.select([column]).where(
-                sa.and_(updated_at_column < deleted_age, sa.or_(
-                    status_column == 'finished', status_column == 'failed',
-                    status_column == 'ignored'))).order_by(status_column)
+            query_delete = sql.select(column).where(
+                sa.and_(
+                    updated_at_column < deleted_age,
+                    sa.or_(
+                        status_column == 'finished',
+                        status_column == 'failed',
+                        status_column == 'ignored',
+                    ),
+                ),
+            ).order_by(status_column)
         else:
             query_delete = sql.select(
-                [column], deleted_at_column < deleted_age).order_by(
-                deleted_at_column)
+                column,
+            ).where(
+                deleted_at_column < deleted_age,
+            ).order_by(
+                deleted_at_column,
+            )
 
         if max_rows > 0:
             query_delete = query_delete.limit(max_rows - total_rows_purged)

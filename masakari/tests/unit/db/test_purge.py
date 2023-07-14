@@ -115,7 +115,7 @@ class PurgeDeletedTest(test.TestCase):
 
     def _count(self, table):
         return self.conn.execute(
-            select([func.count()]).select_from(table)).scalar()
+            select(func.count()).select_from(table)).scalar()
 
     def test_purge_deleted_rows_old(self):
         # Purge at 30 days old, should only delete 2 rows
