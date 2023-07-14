@@ -183,13 +183,6 @@ class WarningsFixture(fixtures.Fixture):
 
         warnings.filterwarnings(
             'ignore',
-            message='Using strings to indicate column or relationship paths',
-            module='masakari',
-            category=sqla_exc.SADeprecationWarning,
-        )
-
-        warnings.filterwarnings(
-            'ignore',
             message=r'The legacy calling style of select\(\)',
             module='masakari',
             category=sqla_exc.SADeprecationWarning,

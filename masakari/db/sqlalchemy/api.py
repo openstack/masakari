@@ -26,7 +26,7 @@ from oslo_utils import timeutils
 import sqlalchemy as sa
 from sqlalchemy.ext import compiler
 from sqlalchemy import MetaData
-from sqlalchemy.orm import joinedload
+from sqlalchemy import orm
 from sqlalchemy import sql
 import sqlalchemy.sql as sa_sql
 from sqlalchemy.sql import func
@@ -363,8 +363,11 @@ def host_get_all_by_filters(
                                                 sort_dirs)
 
     filters = filters or {}
-    query = model_query(context,
-                        models.Host).options(joinedload('failover_segment'))
+    query = model_query(
+        context, models.Host,
+    ).options(
+        orm.joinedload(models.Host.failover_segment),
+    )
 
     if 'failover_segment_id' in filters:
         query = query.filter(models.Host.failover_segment_id == filters[
@@ -406,9 +409,13 @@ def host_get_by_uuid(context, host_uuid, segment_uuid=None):
 
 
 def _host_get_by_uuid(context, host_uuid, segment_uuid=None):
-    query = model_query(context, models.Host
-                        ).filter_by(uuid=host_uuid
-                                    ).options(joinedload('failover_segment'))
+    query = model_query(
+        context, models.Host,
+    ).filter_by(
+        uuid=host_uuid,
+    ).options(
+        orm.joinedload(models.Host.failover_segment),
+    )
     if segment_uuid:
         query = query.filter_by(failover_segment_id=segment_uuid)
 
@@ -427,9 +434,13 @@ def _host_get_by_uuid(context, host_uuid, segment_uuid=None):
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 @main_context_manager.reader
 def host_get_by_id(context, host_id):
-    query = model_query(context, models.Host
-                        ).filter_by(id=host_id
-                                    ).options(joinedload('failover_segment'))
+    query = model_query(
+        context, models.Host,
+    ).filter_by(
+        id=host_id,
+    ).options(
+        orm.joinedload(models.Host.failover_segment),
+    )
 
     result = query.first()
     if not result:
@@ -441,9 +452,13 @@ def host_get_by_id(context, host_id):
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 @main_context_manager.reader
 def host_get_by_name(context, name):
-    query = model_query(context, models.Host
-                        ).filter_by(name=name
-                                    ).options(joinedload('failover_segment'))
+    query = model_query(
+        context, models.Host,
+    ).filter_by(
+        name=name,
+    ).options(
+        orm.joinedload(models.Host.failover_segment),
+    )
 
     result = query.first()
     if not result:
