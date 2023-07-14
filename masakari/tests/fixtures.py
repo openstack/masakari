@@ -190,13 +190,6 @@ class WarningsFixture(fixtures.Fixture):
 
         warnings.filterwarnings(
             'ignore',
-            message=r'Passing a string to Connection.execute\(\)',
-            module='masakari',
-            category=sqla_exc.SADeprecationWarning,
-        )
-
-        warnings.filterwarnings(
-            'ignore',
             message=r'The legacy calling style of select\(\)',
             module='masakari',
             category=sqla_exc.SADeprecationWarning,

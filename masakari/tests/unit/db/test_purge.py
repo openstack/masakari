@@ -111,7 +111,7 @@ class PurgeDeletedTest(test.TestCase):
 
         dialect = self.engine.url.get_dialect()
         if dialect == sqlite.dialect:
-            self.conn.execute("PRAGMA foreign_keys = ON")
+            self.conn.exec_driver_sql("PRAGMA foreign_keys = ON")
 
     def _count(self, table):
         return self.conn.execute(

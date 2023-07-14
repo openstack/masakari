@@ -23,8 +23,8 @@ from oslo_db.sqlalchemy import enginefacade
 from oslo_db.sqlalchemy import utils as sqlalchemyutils
 from oslo_log import log as logging
 from oslo_utils import timeutils
-from sqlalchemy import or_, and_
-from sqlalchemy.ext.compiler import compiles
+import sqlalchemy as sa
+from sqlalchemy.ext import compiler
 from sqlalchemy import MetaData
 from sqlalchemy.orm import joinedload
 from sqlalchemy import sql
@@ -736,7 +736,7 @@ class DeleteFromSelect(sa_sql.expression.UpdateBase):
 
 # NOTE(pooja_jadhav): MySQL doesn't yet support subquery with
 # 'LIMIT & IN/ALL/ANY/SOME' We need work around this with nesting select.
-@compiles(DeleteFromSelect)
+@compiler.compiles(DeleteFromSelect)
 def visit_delete_from_select(element, compiler, **kw):
     return "DELETE FROM %s WHERE %s in (SELECT T1.%s FROM (%s) as T1)" % (
         compiler.process(element.table, asfrom=True),
@@ -774,7 +774,7 @@ def purge_deleted_rows(context, age_in_days, max_rows):
         if table.name == 'notifications':
             status_column = table.c.status
             query_delete = sql.select([column]).where(
-                and_(updated_at_column < deleted_age, or_(
+                sa.and_(updated_at_column < deleted_age, sa.or_(
                     status_column == 'finished', status_column == 'failed',
                     status_column == 'ignored'))).order_by(status_column)
         else:
