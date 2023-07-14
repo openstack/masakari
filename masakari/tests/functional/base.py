@@ -19,9 +19,7 @@ import sys
 
 import openstack.config
 from openstack import connection
-
-from masakari.tests import base
-
+from oslotest import base
 
 #: Defines the OpenStack Client Config (OCC) cloud key in your OCC config
 #: file, typically in /etc/openstack/clouds.yaml. That configuration
@@ -30,7 +28,7 @@ from masakari.tests import base
 TEST_CLOUD_NAME = os.getenv('OS_CLOUD', 'devstack-admin')
 
 
-class BaseFunctionalTest(base.TestCase):
+class BaseFunctionalTest(base.BaseTestCase):
 
     def setUp(self, ha_api_version="1.0"):
         super(BaseFunctionalTest, self).setUp()

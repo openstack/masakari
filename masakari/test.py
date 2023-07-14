@@ -91,6 +91,8 @@ class TestCase(testtools.TestCase):
         else:
             self.useFixture(masakari_fixtures.DatabasePoisonFixture())
 
+        self.useFixture(masakari_fixtures.WarningsFixture())
+
     def stub_out(self, old, new):
         """Replace a function for the duration of the test.
 

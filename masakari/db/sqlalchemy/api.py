@@ -726,6 +726,8 @@ def vmove_delete(context, vmove_uuid):
 
 
 class DeleteFromSelect(sa_sql.expression.UpdateBase):
+    inherit_cache = False
+
     def __init__(self, table, select, column):
         self.table = table
         self.select = select

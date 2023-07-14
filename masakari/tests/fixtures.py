@@ -14,8 +14,11 @@
 
 """Fixtures for Masakari tests."""
 
+import warnings
+
 import fixtures
 from oslo_config import cfg
+from sqlalchemy import exc as sqla_exc
 
 from masakari.db import migration
 from masakari.db.sqlalchemy import api as session
@@ -139,3 +142,77 @@ class Database(fixtures.Fixture):
         super(Database, self).setUp()
         self.reset()
         self.addCleanup(self.cleanup)
+
+
+class WarningsFixture(fixtures.Fixture):
+    """Filters out warnings during test runs."""
+
+    def setUp(self):
+        super().setUp()
+
+        self._original_warning_filters = warnings.filters[:]
+
+        warnings.simplefilter('once', DeprecationWarning)
+
+        # The UUIDFields emits a warning if the value is not a valid UUID.
+        # Let's escalate that to an exception in the test to prevent adding
+        # violations.
+
+        # warnings.filterwarnings('error', message='.*invalid UUID.*')
+
+        # Enable deprecation warnings for nova itself to capture upcoming
+        # SQLAlchemy changes
+
+        warnings.filterwarnings(
+            'ignore',
+            category=sqla_exc.SADeprecationWarning,
+        )
+
+        warnings.filterwarnings(
+            'error',
+            module='masakari',
+            category=sqla_exc.SADeprecationWarning,
+        )
+
+        warnings.filterwarnings(
+            'ignore',
+            message='The current statement is being autocommitted',
+            module='masakari',
+            category=sqla_exc.SADeprecationWarning,
+        )
+
+        warnings.filterwarnings(
+            'ignore',
+            message='Using strings to indicate column or relationship paths',
+            module='masakari',
+            category=sqla_exc.SADeprecationWarning,
+        )
+
+        warnings.filterwarnings(
+            'ignore',
+            message=r'Passing a string to Connection.execute\(\)',
+            module='masakari',
+            category=sqla_exc.SADeprecationWarning,
+        )
+
+        warnings.filterwarnings(
+            'ignore',
+            message=r'The legacy calling style of select\(\)',
+            module='masakari',
+            category=sqla_exc.SADeprecationWarning,
+        )
+
+        # Enable general SQLAlchemy warnings also to ensure we're not doing
+        # silly stuff. It's possible that we'll need to filter things out here
+        # with future SQLAlchemy versions, but that's a good thing
+
+        warnings.filterwarnings(
+            'error',
+            module='masakari',
+            category=sqla_exc.SAWarning,
+        )
+
+        self.addCleanup(self._reset_warning_filters)
+
+    def _reset_warning_filters(self):
+        warnings.filters[:] = self._original_warning_filters
