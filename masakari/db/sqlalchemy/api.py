@@ -771,7 +771,6 @@ def purge_deleted_rows(context, age_in_days, max_rows):
     based on last updated_at and status column.
     """
     engine = get_engine()
-    conn = engine.connect()
     metadata = MetaData()
     metadata.reflect(engine)
     deleted_age = timeutils.utcnow() - datetime.timedelta(days=age_in_days)
@@ -812,7 +811,8 @@ def purge_deleted_rows(context, age_in_days, max_rows):
 
         delete_statement = DeleteFromSelect(table, query_delete, column)
 
-        result = conn.execute(delete_statement)
+        with engine.connect() as conn, conn.begin():
+            result = conn.execute(delete_statement)
 
         rows = result.rowcount
         LOG.info('Deleted %(rows)d row(s) from table %(tbl)s',

@@ -34,7 +34,6 @@ class PurgeDeletedTest(test.TestCase):
         super(PurgeDeletedTest, self).setUp()
         self.context = context.get_admin_context()
         self.engine = db_api.get_engine()
-        self.conn = self.engine.connect()
         self.notifications = sqlalchemyutils.get_table(
             self.engine, "notifications")
         self.failover_segments = sqlalchemyutils.get_table(
@@ -58,7 +57,8 @@ class PurgeDeletedTest(test.TestCase):
                 type='demo',
                 status='failed')
             self.uuidstrs.append(notification_uuid)
-            self.conn.execute(ins_stmt)
+            with self.engine.connect() as conn, conn.begin():
+                conn.execute(ins_stmt)
 
             ins_stmt = self.failover_segments.insert().values(
                 uuid=fs_segment_uuid,
@@ -66,7 +66,8 @@ class PurgeDeletedTest(test.TestCase):
                 service_type='demo',
                 recovery_method='auto')
             self.uuid_fs_segments.append(fs_segment_uuid)
-            self.conn.execute(ins_stmt)
+            with self.engine.connect() as conn, conn.begin():
+                conn.execute(ins_stmt)
 
             ins_stmt = self.hosts.insert().values(
                 uuid=host_uuid,
@@ -75,7 +76,8 @@ class PurgeDeletedTest(test.TestCase):
                 type='demo',
                 control_attributes='test')
             self.uuid_hosts.append(host_uuid)
-            self.conn.execute(ins_stmt)
+            with self.engine.connect() as conn, conn.begin():
+                conn.execute(ins_stmt)
 
         # Set 4 of them deleted, 2 are 60 days ago, 2 are 20 days ago
         self.age_in_days_20 = timeutils.utcnow() - datetime.timedelta(days=20)
@@ -102,20 +104,24 @@ class PurgeDeletedTest(test.TestCase):
             self.hosts.c.uuid.in_(self.uuid_hosts[4:6])).values(
             deleted_at=self.age_in_days_60)
 
-        self.conn.execute(make_notifications_old)
-        self.conn.execute(make_notifications_older)
-        self.conn.execute(make_failover_segments_old)
-        self.conn.execute(make_failover_segments_older)
-        self.conn.execute(make_hosts_old)
-        self.conn.execute(make_hosts_older)
+        with self.engine.connect() as conn, conn.begin():
+            conn.execute(make_notifications_old)
+            conn.execute(make_notifications_older)
+            conn.execute(make_failover_segments_old)
+            conn.execute(make_failover_segments_older)
+            conn.execute(make_hosts_old)
+            conn.execute(make_hosts_older)
 
         dialect = self.engine.url.get_dialect()
         if dialect == sqlite.dialect:
-            self.conn.exec_driver_sql("PRAGMA foreign_keys = ON")
+            with self.engine.connect() as conn, conn.begin():
+                conn.exec_driver_sql("PRAGMA foreign_keys = ON")
 
     def _count(self, table):
-        return self.conn.execute(
-            select(func.count()).select_from(table)).scalar()
+        with self.engine.connect() as conn:
+            return conn.execute(
+                select(func.count()).select_from(table),
+            ).scalar()
 
     def test_purge_deleted_rows_old(self):
         # Purge at 30 days old, should only delete 2 rows
