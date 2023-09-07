@@ -95,7 +95,7 @@ databases, service credentials, and API endpoints.
    .. code-block:: console
 
       $ openstack endpoint create --region RegionOne \
-        masakari public http:// <CONTROLLER_IP>/instance-ha/v1/$\(tenant_id\)s
+        masakari public http://<CONTROLLER_IP>/instance-ha/v1/$\(tenant_id\)s
 
       +--------------+-------------------------------------------------------+
       | Field        | Value                                                 |
@@ -112,7 +112,7 @@ databases, service credentials, and API endpoints.
       +--------------+-------------------------------------------------------+
 
       $ openstack endpoint create --region RegionOne \
-        masakari internal http:// <CONTROLLER_IP>/instance-ha/v1/$\(tenant_id\)s
+        masakari internal http://<CONTROLLER_IP>/instance-ha/v1/$\(tenant_id\)s
 
       +--------------+-------------------------------------------------------+
       | Field        | Value                                                 |
@@ -231,6 +231,7 @@ Install and configure Masakari
    .. code-block:: console
 
       # cd masakari
+      # sudo python -m pip install -r requirements.txt
       # sudo python setup.py install
 
 #. Run below db command to sync database:
