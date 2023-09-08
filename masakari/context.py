@@ -117,7 +117,12 @@ class RequestContext(context.RequestContext):
             LOG.debug('Arguments dropped when creating context: %s',
                       str(kwargs))
 
-        self.read_deleted = read_deleted
+        if read_deleted is None:
+            # If we did not get a value for read_deleted, ensure we default
+            # it to "no" as code expects it to be a string.
+            self.read_deleted = 'no'
+        else:
+            self.read_deleted = read_deleted
         self.remote_address = remote_address
         if not timestamp:
             timestamp = timeutils.utcnow()

@@ -53,6 +53,7 @@
 
 - job:
     name: masakari-functional-devstack-multinode
+    voting: false
     parent: masakari-functional-devstack
     description: |
       Masakari functional tests job based on devstack (two-node).
@@ -60,6 +61,7 @@
 
 - job:
     name: masakari-functional-devstack-ipv6
+    voting: false
     # NOTE(yoctozepto): The devstack job does not support multinode IPv6 yet.
     parent: masakari-functional-devstack
     description: |
