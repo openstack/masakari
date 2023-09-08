@@ -57,6 +57,11 @@ class ContextTestCase(test.NoDBTestCase):
         ctxt.read_deleted = 'no'
         self.assertEqual('no', ctxt.read_deleted)
 
+    def test_request_context_read_deleted_none(self):
+        ctxt = context.RequestContext('111',
+                                    '222')
+        self.assertEqual('no', ctxt.read_deleted)
+
     def test_request_context_read_deleted_invalid(self):
         self.assertRaises(ValueError,
                           context.RequestContext,
