@@ -56,7 +56,7 @@
     parent: masakari-functional-devstack
     description: |
       Masakari functional tests job based on devstack (two-node).
-    nodeset: openstack-two-node-focal
+    nodeset: openstack-two-node-jammy
 
 - job:
     name: masakari-functional-devstack-ipv6
