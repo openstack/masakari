@@ -60,7 +60,9 @@ Configure masakari-api
 
    .. code-block:: shell-session
 
-      openstack endpoint create --region RegionOne masakari --publicurl http://<ip-address>:<port>/v1/%\(tenant_id\)s
+      openstack endpoint create --region RegionOne masakari public http://controller:15868/v1
+      openstack endpoint create --region RegionOne masakari internal http://controller:15868/v1
+      openstack endpoint create --region RegionOne masakari admin http://controller:15868/v1
 
 #. Clone masakari using
 
@@ -68,22 +70,23 @@ Configure masakari-api
 
       git clone https://github.com/openstack/masakari.git
 
-#. Run setup.py from masakari
+#. Prepare the masakari configuration files from masakari
 
    .. code-block:: shell-session
 
-      sudo python setup.py install
+      cd {$masakari_cloned_path}/masakari
+      tox -egenconfig
 
 #. Create directory ``/etc/masakari``
 
 #. Copy ``masakari.conf``, ``api-paste.ini`` and ``policy.yaml`` file
    from ``masakari/etc/`` to ``/etc/masakari`` folder
 
-#. To run masakari-api simply use following binary:
+#. Run setup.py from masakari
 
    .. code-block:: shell-session
 
-      masakari-api
+      sudo python3 setup.py install
 
 Configure masakari database
 ---------------------------
@@ -96,6 +99,15 @@ Configure masakari database
    .. code-block:: shell-session
 
       masakari-manage db sync
+
+#. To run masakari-api & masakari-engine simply use following binary (or create Systemd Units):
+
+   .. code-block:: shell-session
+
+      masakari-api
+      masakari-engine
+
+
 
 Features
 --------
