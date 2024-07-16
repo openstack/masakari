@@ -19,7 +19,7 @@ Call these functions from masakari.db namespace, not the masakari.db.api
 namespace.
 """
 
-from oslo_db import concurrency
+from oslo_db.api import DBAPI
 
 import masakari.conf
 
@@ -27,7 +27,7 @@ CONF = masakari.conf.CONF
 
 _BACKEND_MAPPING = {'sqlalchemy': 'masakari.db.sqlalchemy.api'}
 
-IMPL = concurrency.TpoolDbapiWrapper(CONF, backend_mapping=_BACKEND_MAPPING)
+IMPL = DBAPI.from_config(CONF, backend_mapping=_BACKEND_MAPPING)
 
 # The maximum value a signed INT type may have
 MAX_INT = 0x7FFFFFFF
