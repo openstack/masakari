@@ -4,7 +4,7 @@ default_language_version:
   python: python3
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
       - id: mixed-line-ending
@@ -15,13 +15,9 @@ repos:
       - id: debug-statements
       - id: check-yaml
         files: .*\.(yaml|yml)$
-  - repo: local
+  - repo: https://opendev.org/openstack/hacking
+    rev: 6.1.0
     hooks:
-      - id: flake8
-        name: flake8
-        additional_dependencies:
-          - hacking~=6.0.1
-        language: python
-        entry: flake8
-        files: '^.*\.py$'
+      - id: hacking
+        additional_dependencies: []
         exclude: '^(doc|releasenotes|tools)/.*$'
