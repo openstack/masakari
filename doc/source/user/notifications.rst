@@ -15,10 +15,12 @@ Notifications in Masakari
 ==========================
 
 Similar to other OpenStack services Masakari emits notifications to the message
-bus with the Notifier class provided by `oslo.messaging-doc`_. From the notification
-consumer point of view a notification consists of two parts: an envelope with a fixed
-structure defined by oslo.messaging and a payload defined by the service emitting the
-notification. The envelope format is the following::
+bus with the Notifier class provided
+by :oslo.messaging-doc:`oslo.messaging <reference/notifier.html>`.
+From the notification consumer point of view a notification consists
+of two parts: an envelope with a fixed structure defined by oslo.messaging and
+a payload defined by the service emitting the notification.
+The envelope format is the following::
 
     {
         "priority": <string, selected from a predefined list by the sender>,
@@ -58,8 +60,8 @@ oslo.messaging Notifier object and it uses the oslo provided functions on the
 Notifier object to emit notifications. The configuration of the returned
 Notifier object depends on the parameters of the get_notifier call and the
 value of the oslo.messaging configuration options ``driver`` and ``topics``.
-The versioned notification the the payload is not a free form dictionary but a
-serialized `oslo.versionedobjects-doc`_.
+The versioned notification payload is not a free form dictionary but a
+serialized :oslo.versionedobjects-doc:`oslo.versionedobjects <>`.
 
 .. _service.update:
 
@@ -101,15 +103,13 @@ notification payload:
   consume the new payload without any change.
 * a major version bump indicates a backward incompatible change of the payload
   which can mean removed fields, type change, etc in the payload.
-* there is an additional field 'masakari_object.name' for every payload besides
-  'masakari_object.data' and 'masakari_object.version'. This field contains the name of
-  the Masakari internal representation of the payload type. Client code should not
-  depend on this name.
+* there is an additional field ``masakari_object.name`` for every payload
+  besides ``masakari_object.data`` and ``masakari_object.version``.
+  This field contains the name of the Masakari internal representation of
+  the payload type. Client code should not depend on this name.
 
 Existing versioned notifications
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * This provides the list of existing versioned notifications with sample payloads.
 
 .. versioned_notifications::
-.. _`oslo.messaging-doc`: 	http://docs.openstack.org/developer/oslo.messaging/notifier.html
-.. _`oslo.versionedobjects-doc`: 	http://docs.openstack.org/developer/oslo.messaging/notifier.html

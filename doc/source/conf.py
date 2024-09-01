@@ -102,3 +102,8 @@ latex_use_xindy = False
 
 # Disable smartquotes, they don't work in latex
 smartquotes_excludes = {'builders': ['latex']}
+
+openstackdocs_projects = [
+    'oslo.messaging',
+    'oslo.versionedobjects',
+]
