@@ -66,7 +66,7 @@ Templates and examples
 
 All approved release notes end up being published on a dedicated site:
 
-   https://docs.openstack.org/releasenotes/masakari/
+https://docs.openstack.org/releasenotes/masakari/
 
 When looking for examples, it is advised to consider browsing the page above
 for a similar type of change and then comparing with their source

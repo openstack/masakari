@@ -28,15 +28,15 @@ specified as the username.
 
 * Possible values:
 
-    Either 'keystone' (default) or 'noauth2'.
+  Either 'keystone' (default) or 'noauth2'.
 
 * Services that use this:
 
-    ``masakari-api``
+  ``masakari-api``
 
 * Related options:
 
-    None
+  None
 """),
     cfg.BoolOpt("use_forwarded_for",
                 default=False,
@@ -48,15 +48,15 @@ You should only enable this if you have an HTML sanitizing proxy.
 
 * Possible values:
 
-    True, False (default)
+  True, False (default)
 
 * Services that use this:
 
-    ``masakari-api``
+  ``masakari-api``
 
 * Related options:
 
-    None
+  None
 """),
 ]
 
@@ -70,15 +70,15 @@ maximum number of items in a single response by setting this option.
 
 * Possible values:
 
-    Any positive integer. Default is 1000.
+  Any positive integer. Default is 1000.
 
 * Services that use this:
 
-    ``masakari-api``
+  ``masakari-api``
 
 * Related options:
 
-    None
+  None
 """),
     cfg.StrOpt("osapi_masakari_link_prefix",
                help="""
@@ -88,15 +88,15 @@ unchanged.
 
 * Possible values:
 
-    Any string, including an empty string (the default).
+  Any string, including an empty string (the default).
 
 * Services that use this:
 
-    ``masakari-api``
+  ``masakari-api``
 
 * Related options:
 
-    None
+  None
 """),
 ]
 

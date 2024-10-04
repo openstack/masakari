@@ -31,16 +31,16 @@ always accessible.
 
 * Possible values:
 
-    A list of strings, each being the alias of an extension that you do not
-    wish to load.
+  A list of strings, each being the alias of an extension that you do not
+  wish to load.
 
 * Services that use this:
 
-    ``masakari-api``
+  ``masakari-api``
 
 * Related options:
 
-    enabled, extensions_whitelist
+  enabled, extensions_whitelist
 """),
     cfg.ListOpt("extensions_whitelist",
                 default=[],
@@ -58,16 +58,16 @@ extensions will be part of the standard API, and thus always accessible.
 
 * Possible values:
 
-    A list of strings, each being the alias of an extension that you wish to
-    load, or an empty list, which indicates that all extensions are to be run.
+  A list of strings, each being the alias of an extension that you wish to
+  load, or an empty list, which indicates that all extensions are to be run.
 
 * Services that use this:
 
-    ``masakari-api``
+  ``masakari-api``
 
 * Related options:
 
-    enabled, extensions_blacklist
+  enabled, extensions_blacklist
 """),
     cfg.StrOpt("project_id_regex",
                default=None,
@@ -82,15 +82,15 @@ created by keystone.
 
 * Possible values:
 
-    A string representing any legal regular expression
+  A string representing any legal regular expression
 
 * Services that use this:
 
-    ``masakari-api``
+  ``masakari-api``
 
 * Related options:
 
-    None
+  None
 """),
 ]
 

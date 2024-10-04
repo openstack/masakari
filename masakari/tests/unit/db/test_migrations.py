@@ -79,7 +79,7 @@ class MigrationsWalk(
         if revision not in self.init_versions:
             self.assertIsNotNone(
                 check_method,
-                f"DB Migration {revision} doesn't have a test; add one"
+                f"DB Migration {revision} doesn't have a test, add one"
             )
 
         pre_upgrade = getattr(self, f'_pre_upgrade_{revision}', None)

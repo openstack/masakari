@@ -108,10 +108,10 @@ Reference Material
 
    * If you are a new contributor to Masakari please refer: :doc:`contributor/contributing`
 
-      .. toctree::
-         :hidden:
+   .. toctree::
+      :hidden:
 
-         contributor/contributing
+      contributor/contributing
 
    Search
    ======

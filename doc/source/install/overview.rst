@@ -15,17 +15,17 @@ KVM-based Virtual Machines(VM) from a failure events described below:
   evacuate all the VMs from failure host according to the following recovery
   methods (use nova evacuate API).
 
-    * ``auto`` -
-      evacuate all the VMs with no destination node for nova scheduler.
-    * ``reserved_host`` -
-      evacuate all the VMs with reserved hosts as the destination nodes for
-      nova scheduler.
-    * ``auto_priority`` -
-      evacuate all the VMs by using ``auto`` recovery method firstly.
-      If failed, then using ``reserved_host`` recovery method.
-    * ``rh_priority`` -
-      evacuate all the VMs by using ``reserved_host`` recovery method firstly.
-      If failed, then using ``auto`` recovery method.
+  * ``auto`` -
+    evacuate all the VMs with no destination node for nova scheduler.
+  * ``reserved_host`` -
+    evacuate all the VMs with reserved hosts as the destination nodes for
+    nova scheduler.
+  * ``auto_priority`` -
+    evacuate all the VMs by using ``auto`` recovery method firstly.
+    If failed, then using ``reserved_host`` recovery method.
+  * ``rh_priority`` -
+    evacuate all the VMs by using ``reserved_host`` recovery method firstly.
+    If failed, then using ``auto`` recovery method.
 
 The below services enables deplores to integrate with the Masakari directly
 or through custom plug-ins.

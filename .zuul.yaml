@@ -57,6 +57,14 @@
     parent: masakari-functional-devstack
     description: |
       Masakari functional tests job based on devstack (two-node).
+    nodeset: openstack-two-node-noble
+
+- job:
+    name: masakari-functional-devstack-multinode-jammy
+    voting: false
+    parent: masakari-functional-devstack
+    description: |
+      Masakari functional tests job based on devstack (Jammy two-node).
     nodeset: openstack-two-node-jammy
 
 - job:
@@ -91,11 +99,13 @@
       jobs:
         - openstack-tox-linters
         - masakari-functional-devstack-multinode
+        - masakari-functional-devstack-multinode-jammy
         - masakari-functional-devstack-ipv6
     gate:
       jobs:
         - openstack-tox-linters
         - masakari-functional-devstack-multinode
+        - masakari-functional-devstack-multinode-jammy
         - masakari-functional-devstack-ipv6
     periodic:
       jobs:
