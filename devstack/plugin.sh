@@ -86,7 +86,6 @@ function create_masakari_accounts {
 # runs that a clean run would need to clean up
 function cleanup_masakari {
 # Clean up dirs
-    rm -fr $MASAKARI_AUTH_CACHE_DIR/*
     rm -fr $MASAKARI_CONF_DIR/*
 
     if [ "$MASAKARI_USE_MOD_WSGI" == "True" ]; then
@@ -118,8 +117,8 @@ function iniset_conditional {
 function configure_masakari {
     setup_develop $MASAKARI_DIR
 
-    # Create the masakari conf dir and cache dirs if they don't exist
-    sudo install -d -o $STACK_USER ${MASAKARI_CONF_DIR} ${MASAKARI_AUTH_CACHE_DIR}
+    # Create the masakari conf dir if it doesn't exist
+    sudo install -d -o $STACK_USER ${MASAKARI_CONF_DIR}
 
     # Copy api-paste file over to the masakari conf dir
     cp $MASAKARI_LOCAL_API_PASTE_INI $MASAKARI_API_PASTE_INI
@@ -142,7 +141,7 @@ function configure_masakari {
 
         setup_masakari_logging $MASAKARI_CONF
 
-        configure_auth_token_middleware $MASAKARI_CONF masakari $MASAKARI_AUTH_CACHE_DIR
+        configure_keystone_authtoken_middleware $MASAKARI_CONF masakari
     fi
 
     # Set os_privileged_user credentials (used for connecting nova service)
@@ -167,7 +166,7 @@ function configure_masakari {
 function configure_masakarimonitors {
     git_clone $MASAKARI_MONITORS_REPO $MASAKARI_MONITORS_DIR $MASAKARI_MONITORS_BRANCH
 
-    # Create masakarimonitors conf dir and cache dirs if they don't exist
+    # Create masakarimonitors conf dir if it doesn't exist
     sudo install -d -o $STACK_USER ${MASAKARI_MONITORS_CONF_DIR}
     setup_develop $MASAKARI_MONITORS_DIR
 
