@@ -212,7 +212,7 @@ function init_masakari {
     ALT_TENANT_NAME=${ALT_TENANT_NAME:-alt_demo}
     get_or_create_project ${ALT_TENANT_NAME} default
     get_or_create_user ${ALT_USERNAME} "$ADMIN_PASSWORD" "default" "alt_demo@example.com"
-    get_or_add_user_project_role Member ${ALT_USERNAME} ${ALT_TENANT_NAME}
+    get_or_add_user_project_role member ${ALT_USERNAME} ${ALT_TENANT_NAME}
 
     # The second part adds an admin user to the tenant.
     ADMIN_ALT_USERNAME=${ADMIN_ALT_USERNAME:-admin_${ALT_USERNAME}}
