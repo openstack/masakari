@@ -29,11 +29,13 @@ class NotificationVMTestCase(base.NotificationTestBase):
         super(NotificationVMTestCase, self).setUp(ha_api_version)
 
     def _test_create_notification(self):
+        # need at least api 2.37 to create a server without a network
+        self.conn.compute.default_microversion = "2.37"
         # Create server
         server = self.conn.compute.create_server(
             name='masakari_test', flavorRef=self.flavors[0],
             imageRef=self.image_uuids[0],
-            networks=[{'uuid': self.private_net}],
+            networks="none",
             metadata={'HA_Enabled': 'True'})
 
         self.addCleanup(self.conn.compute.delete_server, server)
