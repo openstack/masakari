@@ -17,7 +17,6 @@ import os
 import sys
 
 import openstack
-from openstack import connection
 from oslotest import base
 
 openstack.enable_logging(
@@ -27,11 +26,14 @@ openstack.enable_logging(
     format_stream=True,
     format_template='%(asctime)s %(name)-32s %(message)s',
 )
-#: Defines the OpenStack Client Config (OCC) cloud key in your OCC config
+#: Defines the OpenStack Client Config (OCC) cloud keys in your OCC config
 #: file, typically in /etc/openstack/clouds.yaml. That configuration
 #: will determine where the functional tests will be run and what resource
 #: defaults will be used to run the functional tests.
-TEST_CLOUD_NAME = os.getenv('OS_CLOUD', 'devstack-admin')
+ADMIN_CLOUD_NAME = os.getenv(
+    "MASAKARI_FUNCTIONAL_TESTS_ADMIN", "devstack-admin"
+)
+USER_CLOUD_NAME = os.getenv("MASAKARI_FUNCTIONAL_TESTS_USER", "devstack")
 
 
 class BaseFunctionalTest(base.BaseTestCase):
@@ -39,20 +41,9 @@ class BaseFunctionalTest(base.BaseTestCase):
     def setUp(self, ha_api_version="1.0"):
         super(BaseFunctionalTest, self).setUp()
 
-        config = openstack.config.get_cloud_region(
-            cloud=TEST_CLOUD_NAME,
+        self.admin_conn = openstack.connect(
+            cloud=ADMIN_CLOUD_NAME,
             ha_api_version=ha_api_version,
         )
-        self.admin_conn = connection.Connection(config=config)
-
-        devstack_user = os.getenv('OS_CLOUD', 'devstack')
-        devstack_region = openstack.config.get_cloud_region(
-            cloud=devstack_user)
-        self.conn = connection.Connection(config=devstack_region)
-
-        self.hypervisors = self._hypervisors()
-
-    def _hypervisors(self):
-        hypervisors = connection.Connection.list_hypervisors(
-            connection.from_config(cloud_name=TEST_CLOUD_NAME))
-        return hypervisors
+        self.conn = openstack.connect(cloud=USER_CLOUD_NAME)
+        self.hypervisors = self.admin_conn.list_hypervisors()
