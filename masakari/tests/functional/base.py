@@ -13,14 +13,20 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import logging
 import os
 import sys
 
-import openstack.config
+import openstack
 from openstack import connection
 from oslotest import base
 
+openstack.enable_logging(
+    debug=True,
+    http_debug=True,
+    stream=sys.stdout,
+    format_stream=True,
+    format_template='%(asctime)s %(name)-32s %(message)s',
+)
 #: Defines the OpenStack Client Config (OCC) cloud key in your OCC config
 #: file, typically in /etc/openstack/clouds.yaml. That configuration
 #: will determine where the functional tests will be run and what resource
@@ -32,21 +38,6 @@ class BaseFunctionalTest(base.BaseTestCase):
 
     def setUp(self, ha_api_version="1.0"):
         super(BaseFunctionalTest, self).setUp()
-        _log_stream = sys.stdout
-
-        handler = logging.StreamHandler(_log_stream)
-        formatter = logging.Formatter('%(asctime)s %(name)-32s %(message)s')
-        handler.setFormatter(formatter)
-
-        logger = logging.getLogger('openstack')
-        logger.setLevel(logging.DEBUG)
-        logger.addHandler(handler)
-
-        # Enable HTTP level tracing
-        logger = logging.getLogger('keystoneauth')
-        logger.setLevel(logging.DEBUG)
-        logger.addHandler(handler)
-        logger.propagate = False
 
         config = openstack.config.get_cloud_region(
             cloud=TEST_CLOUD_NAME,
