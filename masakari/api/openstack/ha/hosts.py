@@ -17,7 +17,6 @@
 
 from http import HTTPStatus
 
-from oslo_utils import encodeutils
 from oslo_utils import strutils
 from webob import exc
 
@@ -73,8 +72,7 @@ class HostsController(wsgi.Controller):
                     filters['on_maintenance'] = strutils.bool_from_string(
                         req.params['on_maintenance'], strict=True)
                 except ValueError as ex:
-                    msg = _("Invalid value for on_maintenance: "
-                            "%s") % encodeutils.exception_to_unicode(ex)
+                    msg = _("Invalid value for on_maintenance: %s") % ex
                     raise exc.HTTPBadRequest(explanation=msg)
 
             if 'reserved' in req.params:
@@ -82,8 +80,7 @@ class HostsController(wsgi.Controller):
                     filters['reserved'] = strutils.bool_from_string(
                         req.params['reserved'], strict=True)
                 except ValueError as ex:
-                    msg = _("Invalid value for reserved: "
-                            "%s") % encodeutils.exception_to_unicode(ex)
+                    msg = _("Invalid value for reserved: %s") % ex
                     raise exc.HTTPBadRequest(explanation=msg)
 
             hosts = self.api.get_all(context, filters=filters,

@@ -26,7 +26,6 @@ from novaclient import api_versions
 from novaclient import client as nova_client
 from novaclient import exceptions as nova_exception
 from oslo_log import log as logging
-from oslo_utils import encodeutils
 from requests import exceptions as request_exceptions
 
 from masakari import conf
@@ -59,21 +58,21 @@ def translate_nova_exception(method):
         except (request_exceptions.Timeout,
                 nova_exception.CommandError,
                 keystone_exception.ConnectionError) as exc:
-            err_msg = encodeutils.exception_to_unicode(exc)
+            err_msg = str(exc)
             _reraise(exception.MasakariException(reason=err_msg))
         except (keystone_exception.BadRequest,
                 nova_exception.BadRequest) as exc:
-            err_msg = encodeutils.exception_to_unicode(exc)
+            err_msg = str(exc)
             _reraise(exception.InvalidInput(reason=err_msg))
         except (keystone_exception.Forbidden,
                 nova_exception.Forbidden) as exc:
-            err_msg = encodeutils.exception_to_unicode(exc)
+            err_msg = str(exc)
             _reraise(exception.Forbidden(err_msg))
         except (nova_exception.NotFound) as exc:
-            err_msg = encodeutils.exception_to_unicode(exc)
+            err_msg = str(exc)
             _reraise(exception.NotFound(reason=err_msg))
         except nova_exception.Conflict as exc:
-            err_msg = encodeutils.exception_to_unicode(exc)
+            err_msg = str(exc)
             _reraise(exception.Conflict(reason=err_msg))
         return res
     return wrapper
