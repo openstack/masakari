@@ -81,7 +81,7 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
                 return "print the whole trace"
 
         exc = FakeMasakariException_Remote()
-        self.assertEqual(u"print the whole trace", str(exc))
+        self.assertEqual("print the whole trace", str(exc))
         self.assertEqual("some message", exc.format_message())
 
     def test_format_message_remote_error(self):
@@ -89,7 +89,7 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
             msg_fmt = "some message %(somearg)s"
 
             def __unicode__(self):
-                return u"print the whole trace"
+                return "print the whole trace"
 
         self.flags(fatal_exception_format_errors=False)
         exc = FakeMasakariException_Remote(lame_arg='lame')
