@@ -23,10 +23,10 @@ import webob.dec
 import webob.exc
 
 from masakari.api.openstack import wsgi
+from masakari.api import wsgi as base_wsgi
 import masakari.conf
 from masakari.i18n import translate
 from masakari import utils
-from masakari import wsgi as base_wsgi
 
 
 LOG = logging.getLogger(__name__)
@@ -153,7 +153,7 @@ class APIRouterV1(base_wsgi.Router):
     def factory(cls, global_config, **local_config):
         """Simple paste factory
 
-        :class:`masakari.wsgi.Router` doesn't have one.
+        :class:`masakari.api.wsgi.Router` doesn't have one.
         """
         return cls()
 

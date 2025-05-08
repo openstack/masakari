@@ -25,10 +25,10 @@ import webob
 
 from masakari.api import api_version_request as api_version
 from masakari.api import versioned_method
+from masakari.api import wsgi
 from masakari import exception
 from masakari import i18n
 from masakari.i18n import _
-from masakari import wsgi
 
 
 LOG = logging.getLogger(__name__)

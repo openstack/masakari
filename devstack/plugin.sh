@@ -158,7 +158,7 @@ function configure_masakari {
     fi
 
     if [ "$MASAKARI_USE_MOD_WSGI" == "True" ]; then
-        write_uwsgi_config "$MASAKARI_UWSGI_CONF" "$MASAKARI_UWSGI" "/instance-ha"
+        write_uwsgi_config "$MASAKARI_UWSGI_CONF" "$MASAKARI_UWSGI" "/instance-ha" "" "masakari-api"
     fi
 }
 
