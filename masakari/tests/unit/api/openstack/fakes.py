@@ -24,9 +24,9 @@ from masakari.api.openstack import ha
 from masakari.api.openstack.ha import versions
 from masakari.api.openstack import wsgi as os_wsgi
 from masakari.api import urlmap
+from masakari.api import wsgi
 from masakari import context
 from masakari.tests import uuidsentinel
-from masakari import wsgi
 
 
 @webob.dec.wsgify

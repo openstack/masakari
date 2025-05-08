@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Unit tests for `masakari.wsgi`."""
+"""Unit tests for `masakari.api.wsgi`."""
 
 import os.path
 import socket
@@ -27,10 +27,10 @@ from oslo_config import cfg
 import requests
 import testtools
 
+from masakari.api import wsgi
 import masakari.exception
 from masakari import test
 from masakari.tests.unit import utils
-import masakari.wsgi
 
 SSL_CERT_DIR = os.path.normpath(os.path.join(
                                 os.path.dirname(os.path.abspath(__file__)),
@@ -49,7 +49,7 @@ class TestLoaderNothingExists(test.NoDBTestCase):
         self.flags(api_paste_config='api-paste.ini', group='wsgi')
         self.assertRaises(
             masakari.exception.ConfigNotFound,
-            masakari.wsgi.Loader,
+            wsgi.Loader,
         )
 
     def test_asbpath_config_not_found(self):
@@ -57,7 +57,7 @@ class TestLoaderNothingExists(test.NoDBTestCase):
                    group='wsgi')
         self.assertRaises(
             masakari.exception.ConfigNotFound,
-            masakari.wsgi.Loader,
+            wsgi.Loader,
         )
 
 
@@ -76,7 +76,7 @@ document_root = /tmp
         self.config.write(self._paste_config.lstrip())
         self.config.seek(0)
         self.config.flush()
-        self.loader = masakari.wsgi.Loader(self.config.name)
+        self.loader = wsgi.Loader(self.config.name)
 
     def test_config_found(self):
         self.assertEqual(self.config.name, self.loader.config_path)
@@ -101,18 +101,18 @@ class TestWSGIServer(test.NoDBTestCase):
     """WSGI server tests."""
 
     def test_no_app(self):
-        server = masakari.wsgi.Server("test_app", None)
+        server = wsgi.Server("test_app", None)
         self.assertEqual("test_app", server.name)
 
     def test_custom_max_header_line(self):
         self.flags(max_header_line=4096, group='wsgi')  # Default is 16384
-        masakari.wsgi.Server("test_custom_max_header_line", None)
+        wsgi.Server("test_custom_max_header_line", None)
         self.assertEqual(CONF.wsgi.max_header_line,
                          eventlet.wsgi.MAX_HEADER_LINE)
 
     def test_start_random_port(self):
-        server = masakari.wsgi.Server("test_random_port", None,
-                                  host="127.0.0.1", port=0)
+        server = wsgi.Server("test_random_port", None, host="127.0.0.1",
+                             port=0)
         server.start()
         self.assertNotEqual(0, server.port)
         server.stop()
@@ -120,8 +120,7 @@ class TestWSGIServer(test.NoDBTestCase):
 
     @testtools.skipIf(not utils.is_ipv6_supported(), "no ipv6 support")
     def test_start_random_port_with_ipv6(self):
-        server = masakari.wsgi.Server("test_random_port", None,
-            host="::1", port=0)
+        server = wsgi.Server("test_random_port", None, host="::1", port=0)
         server.start()
         self.assertEqual("::1", server.host)
         self.assertNotEqual(0, server.port)
@@ -134,8 +133,8 @@ class TestWSGIServer(test.NoDBTestCase):
     def test_socket_options_for_simple_server(self):
         # test normal socket options has set properly
         self.flags(tcp_keepidle=500, group='wsgi')
-        server = masakari.wsgi.Server("test_socket_options", None,
-                                  host="127.0.0.1", port=0)
+        server = wsgi.Server(
+            "test_socket_options", None, host="127.0.0.1", port=0)
         server.start()
         sock = server._socket
         self.assertEqual(1, sock.getsockopt(socket.SOL_SOCKET,
@@ -151,7 +150,7 @@ class TestWSGIServer(test.NoDBTestCase):
 
     def test_server_pool_waitall(self):
         # test pools waitall method gets called while stopping server
-        server = masakari.wsgi.Server("test_server", None,
+        server = wsgi.Server("test_server", None,
             host="127.0.0.1")
         server.start()
         with mock.patch.object(server._pool,
@@ -161,7 +160,7 @@ class TestWSGIServer(test.NoDBTestCase):
             mock_waitall.assert_called_once_with()
 
     def test_uri_length_limit(self):
-        server = masakari.wsgi.Server("test_uri_length_limit", None,
+        server = wsgi.Server("test_uri_length_limit", None,
             host="127.0.0.1", max_url_len=16384)
         server.start()
 
@@ -180,7 +179,7 @@ class TestWSGIServer(test.NoDBTestCase):
         server.wait()
 
     def test_reset_pool_size_to_default(self):
-        server = masakari.wsgi.Server("test_resize", None,
+        server = wsgi.Server("test_resize", None,
             host="127.0.0.1", max_url_len=16384)
         server.start()
 
@@ -200,8 +199,7 @@ class TestWSGIServer(test.NoDBTestCase):
         # configured 'client_socket_timeout' value.
         with mock.patch.object(eventlet,
                                'spawn') as mock_spawn:
-            server = masakari.wsgi.Server("test_app", None,
-                                      host="127.0.0.1", port=0)
+            server = wsgi.Server("test_app", None, host="127.0.0.1", port=0)
             server.start()
             _, kwargs = mock_spawn.call_args
             self.assertEqual(CONF.wsgi.client_socket_timeout,
@@ -215,8 +213,7 @@ class TestWSGIServer(test.NoDBTestCase):
         # configured 'keep_alive' value.
         with mock.patch.object(eventlet,
                                'spawn') as mock_spawn:
-            server = masakari.wsgi.Server("test_app", None,
-                                      host="127.0.0.1", port=0)
+            server = wsgi.Server("test_app", None, host="127.0.0.1", port=0)
             server.start()
             _, kwargs = mock_spawn.call_args
             self.assertEqual(CONF.wsgi.keep_alive,

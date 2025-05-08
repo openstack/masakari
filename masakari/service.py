@@ -25,6 +25,7 @@ import oslo_messaging as messaging
 from oslo_service import service
 from oslo_utils import importutils
 
+from masakari.api import wsgi
 import masakari.conf
 from masakari import context
 from masakari import coordination as masakari_coordination
@@ -34,7 +35,6 @@ from masakari.objects import base as objects_base
 from masakari import rpc
 from masakari import utils
 from masakari import version
-from masakari import wsgi
 
 
 LOG = logging.getLogger(__name__)

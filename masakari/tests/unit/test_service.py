@@ -116,7 +116,7 @@ class TestWSGIService(test.NoDBTestCase):
 
     def setUp(self):
         super(TestWSGIService, self).setUp()
-        self.stub_out('masakari.wsgi.Loader.load_app', mock.MagicMock())
+        self.stub_out('masakari.api.wsgi.Loader.load_app', mock.MagicMock())
 
     def test_workers_set_default(self):
         test_service = service.WSGIService("masakari_api")

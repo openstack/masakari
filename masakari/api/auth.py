@@ -13,7 +13,6 @@
 #    under the License.
 """
 Common Auth Middleware.
-
 """
 
 from oslo_log import log as logging
@@ -22,10 +21,10 @@ from oslo_serialization import jsonutils
 import webob.dec
 import webob.exc
 
+from masakari.api import wsgi
 import masakari.conf
 from masakari import context
 from masakari.i18n import _
-from masakari import wsgi
 
 
 CONF = masakari.conf.CONF

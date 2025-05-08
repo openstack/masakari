@@ -45,7 +45,7 @@ MASAKARI_MANAGE=$MASAKARI_BIN_DIR/masakari-manage
 MASAKARI_SERVICE_PORT=${MASAKARI_SERVICE_PORT:-15868}
 MASAKARI_SERVICE_PORT_INT=${MASAKARI_SERVICE_PORT_INT:-25868}
 
-MASAKARI_UWSGI=$MASAKARI_BIN_DIR/masakari-wsgi
+MASAKARI_UWSGI=masakari.wsgi.api:application
 MASAKARI_UWSGI_CONF=$MASAKARI_CONF_DIR/masakari-api-uwsgi.ini
 
 enable_service masakari masakari-api masakari-engine
