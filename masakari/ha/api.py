@@ -317,6 +317,9 @@ class NotificationAPI(object):
         notification.payload = notification_data.get('payload')
         notification.status = fields.NotificationStatus.NEW
 
+        segment = host_object.failover_segment
+        notification.failover_segment_uuid = segment.uuid
+
         if self._is_duplicate_notification(context, notification):
             message = (_("Notification received from host %(host)s of "
                          "type %(type)s is duplicate.") %

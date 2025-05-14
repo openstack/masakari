@@ -659,7 +659,7 @@ object_data = {
     'FailoverSegmentList': '1.0-dfc5c6f5704d24dcaa37b0bbb03cbe60',
     'Host': '1.2-f05735b156b687bc916d46b551bc45e3',
     'HostList': '1.0-25ebe1b17fbd9f114fae8b6a10d198c0',
-    'Notification': '1.1-91e3a051078e35300e325a3e2ae5fde5',
+    'Notification': '1.2-d59495957ac67ee9863863d92def4178',
     'NotificationProgressDetails': '1.0-fc611ac932b719fbc154dbe34bb8edee',
     'NotificationList': '1.0-25ebe1b17fbd9f114fae8b6a10d198c0',
     'EventType': '1.0-d1d2010a7391fa109f0868d964152607',

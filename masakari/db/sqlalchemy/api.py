@@ -530,6 +530,11 @@ def notifications_get_all_by_filters(
         query = query.filter(models.Notification.source_host_uuid == filters[
             'source_host_uuid'])
 
+    if 'failover_segment_uuid' in filters:
+        query = query.filter(
+            models.Notification.failover_segment_uuid == filters[
+                'failover_segment_uuid'])
+
     if 'type' in filters:
         query = query.filter(models.Notification.type == filters['type'])
 

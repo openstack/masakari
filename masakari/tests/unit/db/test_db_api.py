@@ -399,7 +399,9 @@ class NotificationsTestCase(test.TestCase, ModelsObjectComparatorMixin):
             'source_host_uuid': uuidsentinel.source_host,
             'type': 'fake_type',
             'payload': 'fake_payload',
-            'status': 'new'
+            'status': 'new',
+            'failover_segment_uuid': uuidsentinel.fake_segment,
+            'message': None
         }
 
     def _get_fake_values_list(self):
@@ -407,15 +409,21 @@ class NotificationsTestCase(test.TestCase, ModelsObjectComparatorMixin):
             {'id': 1, 'notification_uuid': uuidsentinel.notification_1,
              'generated_time': NOW,
              'source_host_uuid': uuidsentinel.s_host_1, 'type': 'fake_type',
-             'payload': 'fake_payload', 'status': 'new'},
+             'payload': 'fake_payload', 'status': 'new',
+             'failover_segment_uuid': uuidsentinel.fake_segment,
+             'message': None},
             {'id': 2, 'notification_uuid': uuidsentinel.notification_2,
              'generated_time': NOW,
              'source_host_uuid': uuidsentinel.s_host_2, 'type': 'fake_type',
-             'payload': 'fake_payload', 'status': 'new'},
+             'payload': 'fake_payload', 'status': 'new',
+             'failover_segment_uuid': uuidsentinel.fake_segment,
+             'message': None},
             {'id': 3, 'notification_uuid': uuidsentinel.notification_3,
              'generated_time': NOW,
              'source_host_uuid': uuidsentinel.s_host_3, 'type': 'fake_type',
-             'payload': 'fake_payload', 'status': 'failed'}]
+             'payload': 'fake_payload', 'status': 'failed',
+             'failover_segment_uuid': uuidsentinel.fake_segment,
+             'message': None}]
 
     def _create_notification(self, values):
         return db.notification_create(self.ctxt, values)
@@ -449,7 +457,9 @@ class NotificationsTestCase(test.TestCase, ModelsObjectComparatorMixin):
                    'source_host_uuid': uuidsentinel.source_host,
                    'type': 'updated_type',
                    'payload': 'updated_payload',
-                   'status': 'new'}
+                   'status': 'new',
+                   'failover_segment_uuid': uuidsentinel.fake_segment,
+                   'message': None}
         ignored_keys = ['deleted', 'created_at', 'updated_at', 'deleted_at',
                         'id']
         self._create_notification(self._get_fake_values())

@@ -141,6 +141,8 @@ class Notification(BASE, MasakariAPIBase, models.SoftDeleteMixin):
                          'ignored', 'finished', name='notification_status'),
                     nullable=False)
     source_host_uuid = Column(String(36), nullable=False)
+    failover_segment_uuid = Column(String(36), nullable=False)
+    message = Column(Text)
 
 
 class VMove(BASE, MasakariAPIBase, models.SoftDeleteMixin):

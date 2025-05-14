@@ -37,7 +37,8 @@ class Notification(base.MasakariPersistentObject, base.MasakariObject,
     # Version 1.0: Initial version
     # Version 1.1: Added recovery_workflow_details field.
     #              Note: This field shouldn't be persisted.
-    VERSION = '1.1'
+    # Version 1.2: Added failover_segment_uuid and message field.
+    VERSION = '1.2'
 
     fields = {
         'id': fields.IntegerField(),
@@ -51,7 +52,9 @@ class Notification(base.MasakariPersistentObject, base.MasakariObject,
         # The recovery workflow details read from the 'notification_driver'
         # will be set to this field.
         'recovery_workflow_details': fields.ListOfObjectsField(
-            'NotificationProgressDetails', default=[])
+            'NotificationProgressDetails', default=[]),
+        'failover_segment_uuid': fields.UUIDField(),
+        'message': fields.StringField(nullable=True),
         }
 
     @staticmethod
