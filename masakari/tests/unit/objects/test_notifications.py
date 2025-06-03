@@ -44,6 +44,8 @@ def _fake_db_notification(**kwargs):
         'payload': '{"fake_key": "fake_value"}',
         'status': 'new',
         'source_host_uuid': uuidsentinel.fake_host,
+        'failover_segment_uuid': uuidsentinel.fake_segment,
+        'message': None,
         }
     fake_notification.update(kwargs)
     return fake_notification
@@ -62,6 +64,8 @@ def _fake_object_notification(**kwargs):
         'payload': {"fake_key": "fake_value"},
         'status': 'new',
         'source_host_uuid': uuidsentinel.fake_host,
+        'failover_segment_uuid': uuidsentinel.fake_segment,
+        'message': None,
         }
     fake_notification.update(kwargs)
     return fake_notification
@@ -108,6 +112,7 @@ class TestNotificationObject(test_objects._LocalTest):
         if not skip_uuid:
             notification_obj.notification_uuid = uuidsentinel.fake_notification
         notification_obj.source_host_uuid = uuidsentinel.fake_host
+        notification_obj.failover_segment_uuid = uuidsentinel.fake_segment
 
         return notification_obj
 
@@ -123,6 +128,7 @@ class TestNotificationObject(test_objects._LocalTest):
                          allow_missing=OPTIONAL)
         mock_db_create.assert_called_once_with(self.context, {
             'source_host_uuid': uuidsentinel.fake_host,
+            'failover_segment_uuid': uuidsentinel.fake_segment,
             'notification_uuid': uuidsentinel.fake_notification,
             'generated_time': NOW, 'status': 'new',
             'type': 'COMPUTE_HOST', 'payload': '{"fake_key": "fake_value"}'})
@@ -148,6 +154,7 @@ class TestNotificationObject(test_objects._LocalTest):
 
         mock_notification_create.assert_called_once_with(self.context, {
             'source_host_uuid': uuidsentinel.fake_host,
+            'failover_segment_uuid': uuidsentinel.fake_segment,
             'notification_uuid': uuidsentinel.fake_notification,
             'generated_time': NOW, 'status': 'new',
             'type': 'COMPUTE_HOST', 'payload': '{"fake_key": "fake_value"}'})
@@ -177,6 +184,7 @@ class TestNotificationObject(test_objects._LocalTest):
                          allow_missing=OPTIONAL)
         mock_db_create.assert_called_once_with(self.context, {
             'source_host_uuid': uuidsentinel.fake_host,
+            'failover_segment_uuid': uuidsentinel.fake_segment,
             'notification_uuid': uuidsentinel.fake_notification,
             'generated_time': NOW, 'status': 'new',
             'type': 'COMPUTE_HOST', 'payload': '{"fake_key": "fake_value"}'})
@@ -257,6 +265,8 @@ class TestNotificationObject(test_objects._LocalTest):
         (mock_notification_update.
          assert_called_once_with(self.context, uuidsentinel.fake_notification,
                                  {'source_host_uuid': uuidsentinel.fake_host,
+                                  'failover_'
+                                  'segment_uuid': uuidsentinel.fake_segment,
                                   'notificati'
                                   'on_uuid': uuidsentinel.fake_notification,
                                   'status': 'new', 'generated_time': NOW,

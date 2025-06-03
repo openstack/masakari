@@ -71,7 +71,7 @@ class MigrationsWalk(
         super().setUp()
         self.engine = enginefacade.writer.get_engine()
         self.config = migration._find_alembic_conf()
-        self.init_versions = {'8f848eb45d03', '8bdf5929c5a6'}
+        self.init_versions = {'8f848eb45d03', '8bdf5929c5a6', '13adff5efb9a'}
 
     def _migrate_up(self, revision, connection):
         check_method = getattr(self, f'_check_{revision}', None)

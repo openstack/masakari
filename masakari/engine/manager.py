@@ -339,6 +339,7 @@ class MasakariManager(manager.Manager):
         if not host.failover_segment.enabled:
             update_data = {
                 'status': fields.NotificationStatus.IGNORED,
+                'message': 'Recovery aboart: the segment HA is disabled.',
             }
             notification.update(update_data)
             notification.save()
