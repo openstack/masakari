@@ -15,8 +15,8 @@ from unittest import mock
 
 from masakari.api.openstack.ha import extension_info
 from masakari import policy
-from masakari import test
 from masakari.tests.unit.api.openstack import fakes
+from masakari.tests.unit import base
 
 
 class fake_extension(object):
@@ -44,7 +44,7 @@ def fake_policy_authorize_selective(context, action, target):
     return action != 'os_masakari_api:ext1-alias:discoverable'
 
 
-class ExtensionInfoTest(test.NoDBTestCase):
+class ExtensionInfoTest(base.NoDBTestCase):
 
     def setUp(self):
         super(ExtensionInfoTest, self).setUp()

@@ -25,8 +25,8 @@ from masakari.ha import api as ha_api
 from masakari.objects import base as obj_base
 from masakari.objects import notification as notification_obj
 from masakari.objects import vmove as vmove_obj
-from masakari import test
 from masakari.tests.unit.api.openstack import fakes
+from masakari.tests.unit import base
 from masakari.tests.unit import fakes as fakes_data
 from masakari.tests import uuidsentinel
 
@@ -41,7 +41,7 @@ def _make_vmoves_list(vmove_list):
 
 
 @ddt.ddt
-class VMoveTestCase(test.TestCase):
+class VMoveTestCase(base.TestCase):
     """Test Case for vmove api."""
 
     bad_request = exception.ValidationError
@@ -168,7 +168,7 @@ class VMoveTestCase(test.TestCase):
                           uuidsentinel.fake_notification1, "2")
 
 
-class VMoveTestCasePolicyNotAuthorized(test.NoDBTestCase):
+class VMoveTestCasePolicyNotAuthorized(base.NoDBTestCase):
     """Test Case for vmove non admin."""
 
     def _set_up(self):

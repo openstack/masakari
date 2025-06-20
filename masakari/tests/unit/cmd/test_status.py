@@ -15,10 +15,10 @@
 from oslo_upgradecheck.upgradecheck import Code
 
 from masakari.cmd import status
-from masakari import test
+from masakari.tests.unit import base
 
 
-class TestUpgradeChecks(test.TestCase):
+class TestUpgradeChecks(base.TestCase):
 
     def setUp(self):
         super(TestUpgradeChecks, self).setUp()

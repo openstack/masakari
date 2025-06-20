@@ -15,10 +15,10 @@
 import functools
 
 from masakari import safe_utils
-from masakari import test
+from masakari.tests.unit import base
 
 
-class WrappedCodeTestCase(test.NoDBTestCase):
+class WrappedCodeTestCase(base.NoDBTestCase):
     """Test the get_wrapped_function utility method."""
 
     def _wrapper(self, function):

@@ -22,8 +22,8 @@ import webob
 
 from masakari.api import api_version_request as avr
 from masakari.api.openstack.ha.views import versions
-from masakari import test
 from masakari.tests.unit.api.openstack import fakes
+from masakari.tests.unit import base
 
 
 NS = {
@@ -93,7 +93,7 @@ def _get_self_href(response):
     return ''
 
 
-class VersionsViewBuilderTests(test.NoDBTestCase):
+class VersionsViewBuilderTests(base.NoDBTestCase):
     def test_view_builder(self):
         base_url = "http://example.org/"
 
@@ -203,7 +203,7 @@ class VersionsViewBuilderTests(test.NoDBTestCase):
         self.assertEqual(actual, expected)
 
 
-class VersionsTest(test.NoDBTestCase):
+class VersionsTest(base.NoDBTestCase):
     exp_versions = copy.deepcopy(EXP_VERSIONS)
     exp_versions['v1.0']['links'].insert(0, {
         'href': 'http://localhost/v1/', 'rel': 'self'},

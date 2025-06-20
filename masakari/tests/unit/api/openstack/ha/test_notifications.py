@@ -31,8 +31,8 @@ from masakari.ha import api as ha_api
 from masakari.objects import base as obj_base
 from masakari.objects import fields
 from masakari.objects import notification as notification_obj
-from masakari import test
 from masakari.tests.unit.api.openstack import fakes
+from masakari.tests.unit import base
 from masakari.tests.unit.objects import test_objects
 from masakari.tests import uuidsentinel
 
@@ -110,7 +110,7 @@ NOTIFICATION_LIST = _make_notifications_list(NOTIFICATION_LIST)
 
 
 @ddt.ddt
-class NotificationTestCase(test.TestCase):
+class NotificationTestCase(base.TestCase):
     """Test Case for notifications api."""
 
     bad_request = exception.ValidationError
@@ -433,7 +433,7 @@ class NotificationTestCase(test.TestCase):
         self.assertEqual(HTTPStatus.METHOD_NOT_ALLOWED, resp.status_code)
 
 
-class NotificationCasePolicyNotAuthorized(test.NoDBTestCase):
+class NotificationCasePolicyNotAuthorized(base.NoDBTestCase):
     """Test Case for notifications non admin."""
 
     @mock.patch.object(engine_rpcapi, 'EngineAPI')

@@ -23,7 +23,7 @@ import testtools
 
 from masakari import context
 from masakari import rpc
-from masakari import test
+from masakari.tests.unit import base
 
 
 class FakeAPI(rpc.RPCAPI):
@@ -32,7 +32,7 @@ class FakeAPI(rpc.RPCAPI):
     BINARY = 'masakari-engine'
 
 
-class RPCAPITestCase(test.TestCase):
+class RPCAPITestCase(base.TestCase):
     """Tests RPCAPI mixin aggregating stuff related to RPC compatibility."""
 
     def setUp(self):
@@ -245,7 +245,7 @@ class TestRPC(testtools.TestCase):
                          "the versioned notifiers properly.")
 
 
-class TestJsonPayloadSerializer(test.NoDBTestCase):
+class TestJsonPayloadSerializer(base.NoDBTestCase):
     def test_serialize_entity(self):
         with mock.patch.object(jsonutils, 'to_primitive') as mock_prim:
             rpc.JsonPayloadSerializer.serialize_entity('context', 'entity')
@@ -253,7 +253,7 @@ class TestJsonPayloadSerializer(test.NoDBTestCase):
         mock_prim.assert_called_once_with('entity', convert_instances=True)
 
 
-class TestRequestContextSerializer(test.NoDBTestCase):
+class TestRequestContextSerializer(base.NoDBTestCase):
     def setUp(self):
         super(TestRequestContextSerializer, self).setUp()
         self.mock_base = mock.Mock()

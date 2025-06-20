@@ -25,8 +25,8 @@ from webob import exc
 from masakari.api.openstack.ha import segments
 from masakari import exception
 from masakari.objects import segment as segment_obj
-from masakari import test
 from masakari.tests.unit.api.openstack import fakes
+from masakari.tests.unit import base
 from masakari.tests import uuidsentinel
 
 
@@ -60,7 +60,7 @@ FAILOVER_SEGMENT = _make_segment_obj(FAILOVER_SEGMENT)
 
 
 @ddt.ddt
-class FailoverSegmentTestCase(test.TestCase):
+class FailoverSegmentTestCase(base.TestCase):
     """Test Case for failover segment api."""
 
     bad_request = exception.ValidationError
@@ -410,7 +410,7 @@ class FailoverSegmentTestCase(test.TestCase):
         self.assertEqual(HTTPStatus.NO_CONTENT, resp.status_code)
 
 
-class FailoverSegmentTestCasePolicyNotAuthorized(test.NoDBTestCase):
+class FailoverSegmentTestCasePolicyNotAuthorized(base.NoDBTestCase):
     """Test Case for failover segment non admin."""
 
     def setUp(self):

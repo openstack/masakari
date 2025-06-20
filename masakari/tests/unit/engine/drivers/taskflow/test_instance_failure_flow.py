@@ -23,11 +23,11 @@ from masakari.compute import nova
 from masakari import context
 from masakari.engine.drivers.taskflow import instance_failure
 from masakari import exception
-from masakari import test
+from masakari.tests.unit import base
 from masakari.tests.unit import fakes
 
 
-class InstanceFailureTestCase(test.TestCase):
+class InstanceFailureTestCase(base.TestCase):
 
     def setUp(self):
         super(InstanceFailureTestCase, self).setUp()

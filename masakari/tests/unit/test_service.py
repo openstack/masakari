@@ -27,7 +27,7 @@ from masakari import exception
 from masakari import manager
 from masakari import rpc
 from masakari import service
-from masakari import test
+from masakari.tests.unit import base
 
 CONF = cfg.CONF
 
@@ -38,7 +38,7 @@ class FakeManager(manager.Manager):
         return 'manager'
 
 
-class ServiceManagerTestCase(test.NoDBTestCase):
+class ServiceManagerTestCase(base.NoDBTestCase):
     """Test cases for Services."""
 
     @mock.patch.object(rpc, 'init')
@@ -50,7 +50,7 @@ class ServiceManagerTestCase(test.NoDBTestCase):
         self.assertEqual('manager', serv.test_method())
 
 
-class ServiceTestCase(test.NoDBTestCase):
+class ServiceTestCase(base.NoDBTestCase):
     """Test cases for Services."""
 
     def setUp(self):
@@ -112,7 +112,7 @@ class ServiceTestCase(test.NoDBTestCase):
             mock_reset.assert_called_once_with()
 
 
-class TestWSGIService(test.NoDBTestCase):
+class TestWSGIService(base.NoDBTestCase):
 
     def setUp(self):
         super(TestWSGIService, self).setUp()
@@ -153,7 +153,7 @@ class TestWSGIService(test.NoDBTestCase):
                          CONF.wsgi.default_pool_size)
 
 
-class TestLauncher(test.NoDBTestCase):
+class TestLauncher(base.NoDBTestCase):
 
     @mock.patch.object(_service, 'launch')
     def test_launch_app(self, mock_launch):

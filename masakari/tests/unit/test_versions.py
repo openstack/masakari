@@ -17,11 +17,11 @@ import builtins
 import io
 from oslo_config import cfg
 
-from masakari import test
+from masakari.tests.unit import base
 from masakari import version
 
 
-class VersionTestCase(test.NoDBTestCase):
+class VersionTestCase(base.NoDBTestCase):
     """Test cases for Versions code."""
 
     def test_version_string_with_package_is_good(self):

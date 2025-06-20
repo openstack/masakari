@@ -27,11 +27,11 @@ from masakari.api.openstack import extensions
 from masakari.api.openstack import wsgi
 from masakari.api import versioned_method
 from masakari import exception
-from masakari import test
 from masakari.tests.unit.api.openstack import fakes
+from masakari.tests.unit import base
 
 
-class MicroversionedTest(testscenarios.WithScenarios, test.NoDBTestCase):
+class MicroversionedTest(testscenarios.WithScenarios, base.NoDBTestCase):
 
     header_name = 'OpenStack-API-Version'
 
@@ -144,7 +144,7 @@ class RequestTest(MicroversionedTest):
                           request.set_api_version_request)
 
 
-class ActionDispatcherTest(test.NoDBTestCase):
+class ActionDispatcherTest(base.NoDBTestCase):
     def test_dispatch(self):
         serializer = wsgi.ActionDispatcher()
         serializer.create = lambda x: 'pants'
@@ -163,7 +163,7 @@ class ActionDispatcherTest(test.NoDBTestCase):
         self.assertEqual(serializer.dispatch({}, action='update'), 'trousers')
 
 
-class JSONDictSerializerTest(test.NoDBTestCase):
+class JSONDictSerializerTest(base.NoDBTestCase):
     def test_json(self):
         input_dict = dict(segments=dict(a=(2, 3)))
         expected_json = '{"segments":{"a":[2,3]}}'
@@ -173,7 +173,7 @@ class JSONDictSerializerTest(test.NoDBTestCase):
         self.assertEqual(result, expected_json)
 
 
-class JSONDeserializerTest(test.NoDBTestCase):
+class JSONDeserializerTest(base.NoDBTestCase):
     def test_json(self):
         data = """{"a": {
                 "a1": "1",
@@ -920,7 +920,7 @@ class ResourceTest(MicroversionedTest):
         self.assertRaises(UnicodeDecodeError, req.get_response, app)
 
 
-class ResponseObjectTest(test.NoDBTestCase):
+class ResponseObjectTest(base.NoDBTestCase):
     def test_default_code(self):
         robj = wsgi.ResponseObject({})
         self.assertEqual(robj.code, HTTPStatus.OK)
@@ -963,7 +963,7 @@ class ResponseObjectTest(test.NoDBTestCase):
         self.assertEqual(robj['hEADER'], 'foo')
 
 
-class ValidBodyTest(test.NoDBTestCase):
+class ValidBodyTest(base.NoDBTestCase):
 
     def setUp(self):
         super(ValidBodyTest, self).setUp()
@@ -992,7 +992,7 @@ class ValidBodyTest(test.NoDBTestCase):
         self.assertFalse(self.controller.is_valid_body(body, 'foo'))
 
 
-class TestController(test.NoDBTestCase):
+class TestController(base.NoDBTestCase):
     def test_check_for_versions_intersection_negative(self):
         func_list = [
             versioned_method.VersionedMethod('foo', (

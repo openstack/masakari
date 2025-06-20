@@ -24,7 +24,7 @@ from masakari.api import validation
 from masakari.api.validation import parameter_types
 from masakari.api.validation import validators
 from masakari import exception
-from masakari import test
+from masakari.tests.unit import base
 
 
 class FakeRequest(object):
@@ -34,7 +34,7 @@ class FakeRequest(object):
         self.api_version_request = api_version.APIVersionRequest(version)
 
 
-class ValidationRegex(test.NoDBTestCase):
+class ValidationRegex(base.NoDBTestCase):
 
     def test_build_regex_range(self):
 
@@ -80,7 +80,7 @@ class ValidationRegex(test.NoDBTestCase):
                          re.escape('\x00') + '-' + re.escape('\x1f') + 'A-CZ')
 
 
-class APIValidationTestCase(test.NoDBTestCase):
+class APIValidationTestCase(base.NoDBTestCase):
 
     def setUp(self, schema=None):
         super(APIValidationTestCase, self).setUp()
@@ -112,7 +112,7 @@ class APIValidationTestCase(test.NoDBTestCase):
             self.fail('Any exception does not happen.')
 
 
-class FormatCheckerTestCase(test.NoDBTestCase):
+class FormatCheckerTestCase(base.NoDBTestCase):
 
     def test_format_checker_failed(self):
         format_checker = validators.FormatChecker()

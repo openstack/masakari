@@ -24,13 +24,13 @@ from masakari import conf
 from masakari import context
 from masakari.engine.drivers.taskflow import process_failure
 from masakari import exception
-from masakari import test
+from masakari.tests.unit import base
 from masakari.tests.unit import fakes
 
 CONF = conf.CONF
 
 
-class ProcessFailureTestCase(test.TestCase):
+class ProcessFailureTestCase(base.TestCase):
 
     def setUp(self):
         super(ProcessFailureTestCase, self).setUp()

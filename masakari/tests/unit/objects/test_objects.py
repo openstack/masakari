@@ -27,7 +27,7 @@ from masakari import objects
 from masakari.objects import base
 from masakari.objects import fields
 from masakari.objects import segment
-from masakari import test
+from masakari.tests.unit import base as test_base
 from masakari.tests.unit.objects import fake_args
 
 
@@ -99,7 +99,7 @@ class MyObj(base.MasakariPersistentObject, base.MasakariObject,
             primitive['bar'] = 'old%s' % primitive['bar']
 
 
-class TestObjMakeList(test.NoDBTestCase):
+class TestObjMakeList(test_base.NoDBTestCase):
 
     def test_obj_make_list(self):
         class MyList(base.ObjectListBase, base.MasakariObject):
@@ -157,7 +157,7 @@ def compare_obj(test, obj, db_obj, subs=None, allow_missing=None,
             test.assertEqual(db_val, obj_val)
 
 
-class _BaseTestCase(test.TestCase):
+class _BaseTestCase(test_base.TestCase):
     def setUp(self):
         super(_BaseTestCase, self).setUp()
         self.user_id = 'fake-user'
@@ -615,7 +615,7 @@ class TestObject(_LocalTest, _TestObject):
         self.assertTrue(obj.deleted)
 
 
-class TestRegistry(test.NoDBTestCase):
+class TestRegistry(test_base.NoDBTestCase):
     @mock.patch('masakari.objects.base.objects')
     def test_hook_chooses_newer_properly(self, mock_objects):
         del mock_objects.MyObj
@@ -703,9 +703,9 @@ def get_masakari_objects():
     return masakari_classes
 
 
-class TestObjectVersions(test.NoDBTestCase, _BaseTestCase):
+class TestObjectVersions(test_base.NoDBTestCase, _BaseTestCase):
     def setUp(self):
-        super(test.NoDBTestCase, self).setUp()
+        super(test_base.NoDBTestCase, self).setUp()
         base.MasakariObjectRegistry.register_notification_objects()
 
     def test_versions(self):
@@ -716,7 +716,7 @@ class TestObjectVersions(test.NoDBTestCase, _BaseTestCase):
         if os.getenv('GENERATE_HASHES'):
             open('object_hashes.txt', 'w').write(
                 pprint.pformat(fingerprints))
-            raise test.TestingException(
+            raise base.TestingException(
                 'Generated hashes in object_hashes.txt')
 
         expected, actual = checker.test_hashes(object_data)
@@ -834,7 +834,7 @@ class TestObjEqualPrims(_BaseTestCase):
                         "should be equal")
 
 
-class TestObjMethodOverrides(test.NoDBTestCase):
+class TestObjMethodOverrides(test_base.NoDBTestCase):
     def test_obj_reset_changes(self):
         args = inspect.getfullargspec(base.MasakariObject.obj_reset_changes)
         obj_classes = base.MasakariObjectRegistry.obj_classes()

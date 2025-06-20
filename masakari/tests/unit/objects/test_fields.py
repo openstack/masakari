@@ -19,7 +19,7 @@ import iso8601
 from oslo_versionedobjects import exception as ovo_exc
 
 from masakari.objects import fields
-from masakari import test
+from masakari.tests.unit import base
 from masakari import utils
 
 
@@ -66,7 +66,7 @@ class FakeEnumAltField(fields.BaseEnumField):
     AUTO_TYPE = FakeEnumAlt()
 
 
-class TestField(test.NoDBTestCase):
+class TestField(base.NoDBTestCase):
     def setUp(self):
         super(TestField, self).setUp()
         self.field = fields.Field(FakeFieldType())

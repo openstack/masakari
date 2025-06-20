@@ -20,10 +20,10 @@ import inspect
 from webob.util import status_reasons
 
 from masakari import exception
-from masakari import test
+from masakari.tests.unit import base
 
 
-class MasakariExceptionTestCase(test.NoDBTestCase):
+class MasakariExceptionTestCase(base.NoDBTestCase):
     def test_default_error_msg(self):
         class FakeMasakariException(exception.MasakariException):
             msg_fmt = "default message"
@@ -96,7 +96,7 @@ class MasakariExceptionTestCase(test.NoDBTestCase):
         self.assertEqual("some message %(somearg)s", exc.format_message())
 
 
-class ConvertedExceptionTestCase(test.NoDBTestCase):
+class ConvertedExceptionTestCase(base.NoDBTestCase):
     def test_instantiate(self):
         exc = exception.ConvertedException(int(HTTPStatus.BAD_REQUEST),
                                            'Bad Request', 'reason')
@@ -118,7 +118,7 @@ class ConvertedExceptionTestCase(test.NoDBTestCase):
         self.assertRaises(KeyError, exception.ConvertedException, 10)
 
 
-class ExceptionTestCase(test.NoDBTestCase):
+class ExceptionTestCase(base.NoDBTestCase):
     @staticmethod
     def _raise_exc(exc):
         raise exc(int(HTTPStatus.INTERNAL_SERVER_ERROR))
@@ -135,7 +135,7 @@ class ExceptionTestCase(test.NoDBTestCase):
                 self.assertRaises(exc, self._raise_exc, exc)
 
 
-class ExceptionValidMessageTestCase(test.NoDBTestCase):
+class ExceptionValidMessageTestCase(base.NoDBTestCase):
 
     def test_messages(self):
         failures = []

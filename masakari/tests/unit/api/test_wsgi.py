@@ -29,7 +29,7 @@ import testtools
 
 from masakari.api import wsgi
 import masakari.exception
-from masakari import test
+from masakari.tests.unit import base
 from masakari.tests.unit import utils
 
 SSL_CERT_DIR = os.path.normpath(os.path.join(
@@ -38,7 +38,7 @@ SSL_CERT_DIR = os.path.normpath(os.path.join(
 CONF = cfg.CONF
 
 
-class TestLoaderNothingExists(test.NoDBTestCase):
+class TestLoaderNothingExists(base.NoDBTestCase):
     """Loader tests where os.path.exists always returns False."""
 
     def setUp(self):
@@ -61,7 +61,7 @@ class TestLoaderNothingExists(test.NoDBTestCase):
         )
 
 
-class TestLoaderNormalFilesystem(test.NoDBTestCase):
+class TestLoaderNormalFilesystem(base.NoDBTestCase):
     """Loader tests with normal filesystem (unmodified os.path module)."""
 
     _paste_config = """
@@ -97,7 +97,7 @@ document_root = /tmp
         super(TestLoaderNormalFilesystem, self).tearDown()
 
 
-class TestWSGIServer(test.NoDBTestCase):
+class TestWSGIServer(base.NoDBTestCase):
     """WSGI server tests."""
 
     def test_no_app(self):

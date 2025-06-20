@@ -23,12 +23,12 @@ from unittest import mock
 import webob
 
 from masakari.api.openstack import common
-from masakari import test
 from masakari.tests.unit.api.openstack import fakes
+from masakari.tests.unit import base
 from masakari.tests import uuidsentinel
 
 
-class MiscFunctionsTest(test.TestCase):
+class MiscFunctionsTest(base.TestCase):
 
     def test_remove_trailing_version_from_href(self):
         fixture = 'http://www.testsite.com/v1.1'
@@ -67,7 +67,7 @@ class MiscFunctionsTest(test.TestCase):
                           fixture)
 
 
-class TestCollectionLinks(test.NoDBTestCase):
+class TestCollectionLinks(base.NoDBTestCase):
     """Tests the _get_collection_links method."""
 
     @mock.patch('masakari.api.openstack.common.ViewBuilder._get_next_link')
@@ -143,7 +143,7 @@ class TestCollectionLinks(test.NoDBTestCase):
         self.assertThat(results, matchers.HasLength(1))
 
 
-class LinkPrefixTest(test.NoDBTestCase):
+class LinkPrefixTest(base.NoDBTestCase):
 
     def test_update_link_prefix(self):
         vb = common.ViewBuilder()
@@ -162,7 +162,7 @@ class LinkPrefixTest(test.NoDBTestCase):
                          result)
 
 
-class UrlJoinTest(test.NoDBTestCase):
+class UrlJoinTest(base.NoDBTestCase):
     def test_url_join(self):
         pieces = ["one", "two", "three"]
         joined = common.url_join(*pieces)
@@ -194,7 +194,7 @@ class UrlJoinTest(test.NoDBTestCase):
         self.assertEqual("", joined)
 
 
-class ViewBuilderLinkTest(test.NoDBTestCase):
+class ViewBuilderLinkTest(base.NoDBTestCase):
     project_id = uuidsentinel.fake_project_id
     api_version = "1.0"
 
@@ -240,7 +240,7 @@ class ViewBuilderLinkTest(test.NoDBTestCase):
         self.assertEqual(expected, bookmark_link)
 
 
-class PaginationParamsTest(test.NoDBTestCase):
+class PaginationParamsTest(base.NoDBTestCase):
     """Unit tests for the `masakari.api.openstack.common.get_pagination_params`
     method which takes in a request object and returns 'marker' and 'limit'
     GET params.
@@ -295,7 +295,7 @@ class PaginationParamsTest(test.NoDBTestCase):
                          {'page_size': 5, 'limit': 20})
 
 
-class SortParamTest(test.NoDBTestCase):
+class SortParamTest(base.NoDBTestCase):
 
     def test_get_sort_params_defaults(self):
         # Verifies the default sort key and direction.

@@ -20,12 +20,12 @@ import webob.exc
 
 import masakari.api.auth
 import masakari.conf
-from masakari import test
+from masakari.tests.unit import base
 
 CONF = masakari.conf.CONF
 
 
-class TestMasakariKeystoneContextMiddleware(test.NoDBTestCase):
+class TestMasakariKeystoneContextMiddleware(base.NoDBTestCase):
 
     def setUp(self):
         super(TestMasakariKeystoneContextMiddleware, self).setUp()
@@ -80,7 +80,7 @@ class TestMasakariKeystoneContextMiddleware(test.NoDBTestCase):
         self.assertEqual(req_id, self.context.request_id)
 
 
-class TestNoAuthMiddleware(test.NoDBTestCase):
+class TestNoAuthMiddleware(base.NoDBTestCase):
 
     def setUp(self):
         super(TestNoAuthMiddleware, self).setUp()
@@ -133,7 +133,7 @@ class TestNoAuthMiddleware(test.NoDBTestCase):
         self.assertEqual(req_id, self.context.request_id)
 
 
-class TestKeystoneMiddlewareRoles(test.NoDBTestCase):
+class TestKeystoneMiddlewareRoles(base.NoDBTestCase):
 
     def setUp(self):
         super(TestKeystoneMiddlewareRoles, self).setUp()
@@ -166,7 +166,7 @@ class TestKeystoneMiddlewareRoles(test.NoDBTestCase):
         self.assertEqual(response.status, '200 Role Match')
 
 
-class TestPipeLineFactory(test.NoDBTestCase):
+class TestPipeLineFactory(base.NoDBTestCase):
 
     class FakeFilter(object):
         def __init__(self, name):

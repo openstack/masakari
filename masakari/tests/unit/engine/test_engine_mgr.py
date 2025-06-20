@@ -29,7 +29,7 @@ from masakari.objects import fields
 from masakari.objects import host as host_obj
 from masakari.objects import notification as notification_obj
 from masakari import rpc
-from masakari import test
+from masakari.tests.unit import base
 from masakari.tests.unit import fakes
 from masakari.tests import uuidsentinel
 
@@ -52,7 +52,7 @@ def _get_vm_type_notification(status="new"):
 
 
 @mock.patch.object(notification_obj.Notification, "get_by_uuid")
-class EngineManagerUnitTestCase(test.NoDBTestCase):
+class EngineManagerUnitTestCase(base.NoDBTestCase):
     def setUp(self):
         super(EngineManagerUnitTestCase, self).setUp()
         rpc.init(CONF)

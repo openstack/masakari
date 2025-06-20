@@ -33,8 +33,8 @@ from masakari.objects import host as host_obj
 from masakari.objects import notification as notification_obj
 from masakari.objects import segment as segment_obj
 from masakari.objects import vmove as vmove_obj
-from masakari import test
 from masakari.tests.unit.api.openstack import fakes
+from masakari.tests.unit import base
 from masakari.tests.unit import fakes as fakes_data
 from masakari.tests import uuidsentinel
 
@@ -57,7 +57,7 @@ def _make_notification_obj(notification_dict):
     return notification_obj.Notification(**notification_dict)
 
 
-class FailoverSegmentAPITestCase(test.NoDBTestCase):
+class FailoverSegmentAPITestCase(base.NoDBTestCase):
     """Test Case for failover segment api."""
 
     def setUp(self):
@@ -286,7 +286,7 @@ class FailoverSegmentAPITestCase(test.NoDBTestCase):
         mock_notify_about_segment_api.assert_has_calls(notify_calls)
 
 
-class HostAPITestCase(test.NoDBTestCase):
+class HostAPITestCase(base.NoDBTestCase):
     """Test Case for host api."""
 
     def setUp(self):
@@ -695,7 +695,7 @@ class HostAPITestCase(test.NoDBTestCase):
                           uuidsentinel.fake_host_1)
 
 
-class NotificationAPITestCase(test.NoDBTestCase):
+class NotificationAPITestCase(base.NoDBTestCase):
     """Test Case for notification api."""
 
     @mock.patch.object(engine_rpcapi, 'EngineAPI')
@@ -945,7 +945,7 @@ class NotificationAPITestCase(test.NoDBTestCase):
                           self.context, self.req)
 
 
-class VMoveAPITestCase(test.NoDBTestCase):
+class VMoveAPITestCase(base.NoDBTestCase):
     """Test Case for vmove api."""
 
     def setUp(self):

@@ -30,7 +30,7 @@ from masakari import exception
 from masakari import objects
 from masakari.objects import fields
 from masakari.objects import vmove as vmove_obj
-from masakari import test
+from masakari.tests.unit import base
 from masakari.tests.unit import fakes
 from masakari.tests import uuidsentinel as uuids
 
@@ -41,7 +41,7 @@ CONF = conf.CONF
 @mock.patch.object(nova.API, "enable_disable_service")
 @mock.patch.object(nova.API, "lock_server")
 @mock.patch.object(nova.API, "unlock_server")
-class HostFailureTestCase(test.TestCase):
+class HostFailureTestCase(base.TestCase):
 
     def setUp(self):
         super(HostFailureTestCase, self).setUp()

@@ -25,7 +25,7 @@ import masakari.conf
 from masakari import context
 from masakari import exception
 from masakari import policy
-from masakari import test
+from masakari.tests.unit import base
 from masakari.tests.unit import fake_policy
 from masakari.tests.unit import policy_fixture
 from masakari import utils
@@ -33,7 +33,7 @@ from masakari import utils
 CONF = masakari.conf.CONF
 
 
-class PolicyFileTestCase(test.NoDBTestCase):
+class PolicyFileTestCase(base.NoDBTestCase):
     def setUp(self):
         super(PolicyFileTestCase, self).setUp()
         self.context = context.RequestContext('fake', 'fake')
@@ -64,7 +64,7 @@ class PolicyFileTestCase(test.NoDBTestCase):
                               self.context, action, self.target)
 
 
-class PolicyTestCase(test.NoDBTestCase):
+class PolicyTestCase(base.NoDBTestCase):
     def setUp(self):
         super(PolicyTestCase, self).setUp()
         rules = [
@@ -155,7 +155,7 @@ class PolicyTestCase(test.NoDBTestCase):
         policy.authorize(admin_context, uppercase_action, self.target)
 
 
-class IsAdminCheckTestCase(test.NoDBTestCase):
+class IsAdminCheckTestCase(base.NoDBTestCase):
     def setUp(self):
         super(IsAdminCheckTestCase, self).setUp()
         policy.init(suppress_deprecation_warnings=True)
@@ -191,7 +191,7 @@ class IsAdminCheckTestCase(test.NoDBTestCase):
                                policy._ENFORCER), True)
 
 
-class AdminRolePolicyTestCase(test.NoDBTestCase):
+class AdminRolePolicyTestCase(base.NoDBTestCase):
     def setUp(self):
         super(AdminRolePolicyTestCase, self).setUp()
         self.policy = self.useFixture(policy_fixture.RoleBasedPolicyFixture())
@@ -208,7 +208,7 @@ class AdminRolePolicyTestCase(test.NoDBTestCase):
                           self.context, action, self.target)
 
 
-class RealRolePolicyTestCase(test.NoDBTestCase):
+class RealRolePolicyTestCase(base.NoDBTestCase):
     def setUp(self):
         super(RealRolePolicyTestCase, self).setUp()
         self.policy = self.useFixture(policy_fixture.RealPolicyFixture())

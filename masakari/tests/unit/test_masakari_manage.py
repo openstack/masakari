@@ -18,10 +18,10 @@ from unittest import mock
 from masakari.cmd import manage
 from masakari import context
 from masakari.db import api as db_api
-from masakari import test
+from masakari.tests.unit import base
 
 
-class DBCommandsTestCase(test.TestCase):
+class DBCommandsTestCase(base.TestCase):
 
     def setUp(self):
         super(DBCommandsTestCase, self).setUp()

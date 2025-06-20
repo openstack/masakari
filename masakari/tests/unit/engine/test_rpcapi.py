@@ -23,11 +23,11 @@ from unittest import mock
 from masakari import context
 from masakari.engine import rpcapi as engine_rpcapi
 from masakari import objects
-from masakari import test
+from masakari.tests.unit import base
 from masakari.tests.unit.engine import fake_engine
 
 
-class EngineRpcAPITestCase(test.TestCase):
+class EngineRpcAPITestCase(base.TestCase):
     def setUp(self):
         super(EngineRpcAPITestCase, self).setUp()
         self.context = context.RequestContext()

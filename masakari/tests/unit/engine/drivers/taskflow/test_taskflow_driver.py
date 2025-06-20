@@ -25,7 +25,7 @@ from masakari.engine.drivers.taskflow import driver
 from masakari.engine.drivers.taskflow import host_failure
 from masakari import exception
 from masakari.objects import fields
-from masakari import test
+from masakari.tests.unit import base as test_base
 from masakari.tests.unit import fakes
 from masakari.tests import uuidsentinel
 
@@ -41,7 +41,7 @@ class FakeFlow(object):
         pass
 
 
-class TaskflowDriverTestCase(test.TestCase):
+class TaskflowDriverTestCase(test_base.TestCase):
 
     def setUp(self):
         super(TaskflowDriverTestCase, self).setUp()

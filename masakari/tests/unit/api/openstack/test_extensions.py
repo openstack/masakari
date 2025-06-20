@@ -23,7 +23,7 @@ from masakari.api.openstack import extensions
 from masakari.api.openstack import ha
 from masakari.api.openstack.ha import extension_info
 from masakari import exception
-from masakari import test
+from masakari.tests.unit import base
 
 CONF = cfg.CONF
 
@@ -33,7 +33,7 @@ class fake_bad_extension(object):
     alias = "fake-bad"
 
 
-class ExtensionLoadingTestCase(test.NoDBTestCase):
+class ExtensionLoadingTestCase(base.NoDBTestCase):
 
     @mock.patch('masakari.rpc.get_client')
     def test_extensions_loaded(self, mock_get_client):

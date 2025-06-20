@@ -16,10 +16,10 @@ from oslo_context import context as o_context
 from oslo_context import fixture as o_fixture
 
 from masakari import context
-from masakari import test
+from masakari.tests.unit import base
 
 
-class ContextTestCase(test.NoDBTestCase):
+class ContextTestCase(base.NoDBTestCase):
 
     def setUp(self):
         super(ContextTestCase, self).setUp()

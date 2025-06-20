@@ -14,11 +14,11 @@
 
 from masakari.api import api_version_request
 from masakari import exception
-from masakari import test
 from masakari.tests.unit.api.openstack import fakes
+from masakari.tests.unit import base
 
 
-class APIVersionRequestTests(test.NoDBTestCase):
+class APIVersionRequestTests(base.NoDBTestCase):
     def test_valid_version_strings(self):
         def _test_string(version, exp_major, exp_minor):
             v = api_version_request.APIVersionRequest(version)

@@ -1,7 +1,7 @@
 [run]
 branch = True
 source = masakari
-omit = masakari/openstack/*
+omit = masakari/tests/*
 
 [report]
 ignore_errors = True

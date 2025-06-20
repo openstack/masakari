@@ -19,11 +19,11 @@ import ddt
 import pycodestyle
 
 from masakari.hacking import checks
-from masakari import test
+from masakari.tests.unit import base
 
 
 @ddt.ddt
-class HackingTestCase(test.NoDBTestCase):
+class HackingTestCase(base.NoDBTestCase):
     """This class tests the hacking checks in masakari.hacking.checks by
     passing strings to the check methods like the pycodestyle/flake8 parser
     would.
@@ -278,7 +278,7 @@ class HackingTestCase(test.NoDBTestCase):
 
     def test_check_contextlib_use(self):
         code = """
-               with test.nested(
+               with base.nested(
                    mock.patch.object(network_model.NetworkInfo, 'hydrate'),
                    mock.patch.object(objects.InstanceInfoCache, 'save'),
                ) as (

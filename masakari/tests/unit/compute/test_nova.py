@@ -21,11 +21,11 @@ from novaclient import exceptions as nova_exception
 from masakari.compute import nova
 from masakari import context
 from masakari import exception
-from masakari import test
+from masakari.tests.unit import base
 from masakari.tests import uuidsentinel
 
 
-class NovaClientTestCase(test.TestCase):
+class NovaClientTestCase(base.TestCase):
     def setUp(self):
         super(NovaClientTestCase, self).setUp()
 
@@ -145,7 +145,7 @@ class NovaClientTestCase(test.TestCase):
         )
 
 
-class NovaApiTestCase(test.TestCase):
+class NovaApiTestCase(base.TestCase):
     def setUp(self):
         super(NovaApiTestCase, self).setUp()
         self.api = nova.API()

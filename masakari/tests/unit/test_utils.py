@@ -23,13 +23,13 @@ from oslo_context import fixture as context_fixture
 import masakari
 from masakari import context
 from masakari import exception
-from masakari import test
+from masakari.tests.unit import base
 from masakari import utils
 
 CONF = cfg.CONF
 
 
-class UTF8TestCase(test.NoDBTestCase):
+class UTF8TestCase(base.NoDBTestCase):
     def test_none_value(self):
         self.assertIsInstance(utils.utf8(None), type(None))
 
@@ -50,7 +50,7 @@ class UTF8TestCase(test.NoDBTestCase):
         self.assertEqual(some_value, utils.utf8(some_value).decode("utf-8"))
 
 
-class MonkeyPatchTestCase(test.NoDBTestCase):
+class MonkeyPatchTestCase(base.NoDBTestCase):
     """Unit test for utils.monkey_patch()."""
     def setUp(self):
         super(MonkeyPatchTestCase, self).setUp()
@@ -95,7 +95,7 @@ class MonkeyPatchTestCase(test.NoDBTestCase):
             masakari.tests.unit.monkey_patch_example.CALLED_FUNCTION))
 
 
-class MonkeyPatchDefaultTestCase(test.NoDBTestCase):
+class MonkeyPatchDefaultTestCase(base.NoDBTestCase):
     """Unit test for default monkey_patch_modules value."""
 
     def setUp(self):
@@ -118,7 +118,7 @@ class MonkeyPatchDefaultTestCase(test.NoDBTestCase):
             getattr(decorator_module, decorator_name[1])
 
 
-class ExpectedArgsTestCase(test.NoDBTestCase):
+class ExpectedArgsTestCase(base.NoDBTestCase):
     def test_passes(self):
         @utils.expects_func_args('foo', 'baz')
         def dec(f):
@@ -170,7 +170,7 @@ class ExpectedArgsTestCase(test.NoDBTestCase):
         self.assertRaises(TypeError, dec, func)
 
 
-class SpawnNTestCase(test.NoDBTestCase):
+class SpawnNTestCase(base.NoDBTestCase):
     def setUp(self):
         super(SpawnNTestCase, self).setUp()
         self.useFixture(context_fixture.ClearRequestContext())
@@ -235,7 +235,7 @@ class SpawnTestCase(SpawnNTestCase):
         self.spawn_name = 'spawn'
 
 
-class ValidateIntegerTestCase(test.NoDBTestCase):
+class ValidateIntegerTestCase(base.NoDBTestCase):
     def test_exception_converted(self):
         self.assertRaises(exception.InvalidInput,
                           utils.validate_integer,

@@ -17,7 +17,7 @@ from oslo_utils import timeutils
 from masakari import context
 from masakari import db
 from masakari import exception
-from masakari import test
+from masakari.tests.unit import base
 from masakari.tests import uuidsentinel
 
 NOW = timeutils.utcnow().replace(microsecond=0)
@@ -50,7 +50,7 @@ class ModelsObjectComparatorMixin(object):
         self.assertEqual(conv_and_sort(objs1), conv_and_sort(objs2))
 
 
-class FailoverSegmentsTestCase(test.TestCase, ModelsObjectComparatorMixin):
+class FailoverSegmentsTestCase(base.TestCase, ModelsObjectComparatorMixin):
 
     def setUp(self):
         super(FailoverSegmentsTestCase, self).setUp()
@@ -187,7 +187,7 @@ class FailoverSegmentsTestCase(test.TestCase, ModelsObjectComparatorMixin):
                           {'name': 'test_1'})
 
 
-class HostsTestCase(test.TestCase, ModelsObjectComparatorMixin):
+class HostsTestCase(base.TestCase, ModelsObjectComparatorMixin):
 
     def setUp(self):
         super(HostsTestCase, self).setUp()
@@ -386,7 +386,7 @@ class HostsTestCase(test.TestCase, ModelsObjectComparatorMixin):
                           self.ctxt, uuidsentinel.uuid_2, {'name': 'name_1'})
 
 
-class NotificationsTestCase(test.TestCase, ModelsObjectComparatorMixin):
+class NotificationsTestCase(base.TestCase, ModelsObjectComparatorMixin):
 
     def setUp(self):
         super(NotificationsTestCase, self).setUp()
@@ -513,7 +513,7 @@ class NotificationsTestCase(test.TestCase, ModelsObjectComparatorMixin):
                           context=self.ctxt, sort_keys=['invalid_sort_key'])
 
 
-class VMoveTestCase(test.TestCase, ModelsObjectComparatorMixin):
+class VMoveTestCase(base.TestCase, ModelsObjectComparatorMixin):
 
     def setUp(self):
         super(VMoveTestCase, self).setUp()

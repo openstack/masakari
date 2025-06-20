@@ -28,8 +28,8 @@ from masakari.ha import api as ha_api
 from masakari.objects import base as obj_base
 from masakari.objects import host as host_obj
 from masakari.objects import segment as segment_obj
-from masakari import test
 from masakari.tests.unit.api.openstack import fakes
+from masakari.tests.unit import base
 from masakari.tests.unit import fakes as fakes_data
 from masakari.tests import uuidsentinel
 
@@ -44,7 +44,7 @@ def _make_hosts_list(hosts_list):
 
 
 @ddt.ddt
-class HostTestCase(test.TestCase):
+class HostTestCase(base.TestCase):
     """Test Case for host api."""
 
     bad_request = exception.ValidationError
@@ -486,7 +486,7 @@ class HostTestCase(test.TestCase):
                           uuidsentinel.fake_host_3)
 
 
-class HostTestCasePolicyNotAuthorized(test.NoDBTestCase):
+class HostTestCasePolicyNotAuthorized(base.NoDBTestCase):
     """Test Case for host non admin."""
 
     def _set_up(self):

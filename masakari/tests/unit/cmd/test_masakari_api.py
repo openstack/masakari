@@ -16,11 +16,11 @@ from unittest import mock
 from masakari.cmd import api
 from masakari import config
 from masakari import exception
-from masakari import test
+from masakari.tests.unit import base
 
 
 @mock.patch.object(config, 'parse_args', new=lambda *args, **kwargs: None)
-class TestMasakariAPI(test.NoDBTestCase):
+class TestMasakariAPI(base.NoDBTestCase):
 
     def test_continues_without_failure(self):
 

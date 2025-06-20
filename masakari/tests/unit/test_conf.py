@@ -19,10 +19,10 @@ import fixtures
 from oslo_config import cfg
 
 import masakari.conf.api
-from masakari import test
+from masakari.tests.unit import base
 
 
-class ConfTest(test.NoDBTestCase):
+class ConfTest(base.NoDBTestCase):
     """This is a test and pattern for parsing tricky options."""
 
     class TestConfigOpts(cfg.ConfigOpts):

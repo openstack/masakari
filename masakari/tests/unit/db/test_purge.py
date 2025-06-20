@@ -25,10 +25,10 @@ from sqlalchemy.sql import func, select
 from masakari import context
 from masakari import db
 from masakari.db.sqlalchemy import api as db_api
-from masakari import test
+from masakari.tests.unit import base
 
 
-class PurgeDeletedTest(test.TestCase):
+class PurgeDeletedTest(base.TestCase):
 
     def setUp(self):
         super(PurgeDeletedTest, self).setUp()

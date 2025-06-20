@@ -22,10 +22,10 @@ from oslo_versionedobjects import fixture
 from masakari.notifications.objects import base as notification
 from masakari.objects import base
 from masakari.objects import fields
-from masakari import test
+from masakari.tests.unit import base as test_base
 
 
-class TestNotificationBase(test.NoDBTestCase):
+class TestNotificationBase(test_base.NoDBTestCase):
 
     @base.MasakariObjectRegistry.register_if(False)
     class TestObject(base.MasakariObject):
@@ -245,7 +245,7 @@ class TestNotificationBase(test.NoDBTestCase):
         self.assertIn('test-update-2.json', self.TestNotification.samples)
 
 
-class TestNotificationObjectVersions(test.NoDBTestCase):
+class TestNotificationObjectVersions(test_base.NoDBTestCase):
 
     def test_notification_payload_version_depends_on_the_schema(self):
         @base.MasakariObjectRegistry.register_if(False)
