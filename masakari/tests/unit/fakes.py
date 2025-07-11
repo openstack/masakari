@@ -13,7 +13,6 @@
 #    under the License.
 
 import datetime
-import iso8601
 from oslo_utils import timeutils
 from oslo_utils import uuidutils
 
@@ -203,7 +202,7 @@ def create_fake_host(**updates):
         'control_attributes': 'fake', 'uuid': uuidsentinel.fake_host,
         'failover_segment': FAILOVER_SEGMENT,
         'created_at': datetime.datetime(
-            2019, 8, 8, 0, 0, 0, tzinfo=iso8601.UTC),
+            2019, 8, 8, 0, 0, 0, tzinfo=datetime.timezone.utc),
         'updated_at': None, 'deleted_at': None, 'deleted': False
     }
     if updates:
