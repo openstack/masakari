@@ -17,12 +17,11 @@ from oslo_db.sqlalchemy import models
 from oslo_utils import timeutils
 from sqlalchemy import (Column, DateTime, Index, Integer, Enum, String,
                         schema)
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import orm
 from sqlalchemy import ForeignKey, Boolean, Text
 
 
-BASE = declarative_base()
+BASE = orm.declarative_base()
 
 
 class MasakariTimestampMixin(object):
