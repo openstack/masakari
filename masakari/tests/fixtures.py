@@ -25,7 +25,7 @@ from masakari.db.sqlalchemy import api as session
 from masakari import exception
 
 CONF = cfg.CONF
-DB_SCHEMA = {'main': ""}
+DB_SCHEMA = None
 SESSION_CONFIGURED = False
 
 
@@ -97,7 +97,7 @@ class DatabasePoisonFixture(fixtures.Fixture):
 
 
 class Database(fixtures.Fixture):
-    def __init__(self, database='main', connection=None):
+    def __init__(self):
         """Create a database fixture.
 
         :param database: The type of database, 'main'
@@ -108,23 +108,15 @@ class Database(fixtures.Fixture):
         if not SESSION_CONFIGURED:
             session.configure(CONF)
             SESSION_CONFIGURED = True
-        self.database = database
-        if connection is not None:
-            ctxt_mgr = session.create_context_manager(
-                connection=connection)
-            facade = ctxt_mgr.get_legacy_facade()
-            self.get_engine = facade.get_engine
-        else:
-            self.get_engine = session.get_engine
+        self.get_engine = session.get_engine
 
     def _cache_schema(self):
         global DB_SCHEMA
-        if not DB_SCHEMA[self.database]:
+        if not DB_SCHEMA:
             engine = self.get_engine()
             conn = engine.connect()
             migration.db_sync()
-            DB_SCHEMA[self.database] = "".join(line for line
-                                               in conn.connection.iterdump())
+            DB_SCHEMA = "".join(line for line in conn.connection.iterdump())
             engine.dispose()
 
     def cleanup(self):
@@ -136,7 +128,7 @@ class Database(fixtures.Fixture):
         engine = self.get_engine()
         engine.dispose()
         conn = engine.connect()
-        conn.connection.executescript(DB_SCHEMA[self.database])
+        conn.connection.executescript(DB_SCHEMA)
 
     def setUp(self):
         super(Database, self).setUp()
