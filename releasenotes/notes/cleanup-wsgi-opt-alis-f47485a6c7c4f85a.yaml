@@ -1,0 +1,5 @@
+---
+upgrade:
+  - |
+    This alises of the ``[wsgi]`` options, which were loaded from
+    the ``[DEFAULT]`` sections, have been removed.
