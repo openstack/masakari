@@ -40,7 +40,7 @@ LOG = logging.getLogger(__name__)
 
 CONF = masakari.conf.CONF
 
-main_context_manager = enginefacade.transaction_context()
+context_manager = enginefacade.transaction_context()
 
 
 def _get_db_conf(conf_group, connection=None):
@@ -50,41 +50,23 @@ def _get_db_conf(conf_group, connection=None):
     return kw
 
 
-def _context_manager_from_context(context):
-    if context:
-        try:
-            return context.db_connection
-        except AttributeError:
-            pass
-
-
 def get_backend():
     """The backend is this module itself."""
     return sys.modules[__name__]
 
 
 def configure(conf):
-    main_context_manager.configure(**_get_db_conf(conf.database))
+    context_manager.configure(**_get_db_conf(conf.database))
 
 
-def get_engine(use_slave=False, context=None):
+def get_engine(use_slave=False):
     """Get a database engine object.
 
     :param use_slave: Whether to use the slave connection
-    :param context: The request context that can contain a context manager
     """
-    ctxt_mgr = _context_manager_from_context(context) or main_context_manager
-    return ctxt_mgr.get_legacy_facade().get_engine(use_slave=use_slave)
-
-
-def create_context_manager(connection=None):
-    """Create a database context manager object.
-
-    : param connection: The database connection string
-    """
-    ctxt_mgr = enginefacade.transaction_context()
-    ctxt_mgr.configure(**_get_db_conf(CONF.database, connection=connection))
-    return ctxt_mgr
+    if use_slave:
+        return context_manager.reader.get_engine()
+    return context_manager.writer.get_engine()
 
 
 def model_query(context, model, args=None, read_deleted=None):
@@ -187,7 +169,7 @@ def _process_sort_params(sort_keys, sort_dirs,
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def failover_segment_get_all_by_filters(
         context, filters=None, sort_keys=None,
         sort_dirs=None, limit=None, marker=None):
@@ -233,7 +215,7 @@ def failover_segment_get_all_by_filters(
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def failover_segment_get_by_id(context, segment_id):
     query = model_query(context,
                         models.FailoverSegment).filter_by(id=segment_id)
@@ -246,7 +228,7 @@ def failover_segment_get_by_id(context, segment_id):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def failover_segment_get_by_uuid(context, segment_uuid):
     return _failover_segment_get_by_uuid(context, segment_uuid)
 
@@ -263,7 +245,7 @@ def _failover_segment_get_by_uuid(context, segment_uuid):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def failover_segment_get_by_name(context, name):
     query = model_query(context, models.FailoverSegment).filter_by(name=name)
 
@@ -275,7 +257,7 @@ def failover_segment_get_by_name(context, name):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def failover_segment_create(context, values):
 
     segment = models.FailoverSegment()
@@ -289,7 +271,7 @@ def failover_segment_create(context, values):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def failover_segment_update(context, segment_uuid, values):
     segment = _failover_segment_get_by_uuid(context, segment_uuid)
 
@@ -303,7 +285,7 @@ def failover_segment_update(context, segment_uuid, values):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def failover_segment_delete(context, segment_uuid):
     count = model_query(context, models.FailoverSegment
                         ).filter_by(uuid=segment_uuid
@@ -318,7 +300,7 @@ def failover_segment_delete(context, segment_uuid):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def is_failover_segment_under_recovery(context, failover_segment_id,
                                        filters=None):
     filters = filters or {}
@@ -349,7 +331,7 @@ def is_failover_segment_under_recovery(context, failover_segment_id,
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def host_get_all_by_filters(
         context, filters=None, sort_keys=None,
         sort_dirs=None, limit=None, marker=None):
@@ -403,7 +385,7 @@ def host_get_all_by_filters(
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def host_get_by_uuid(context, host_uuid, segment_uuid=None):
     return _host_get_by_uuid(context, host_uuid, segment_uuid=segment_uuid)
 
@@ -432,7 +414,7 @@ def _host_get_by_uuid(context, host_uuid, segment_uuid=None):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def host_get_by_id(context, host_id):
     query = model_query(
         context, models.Host,
@@ -450,7 +432,7 @@ def host_get_by_id(context, host_id):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def host_get_by_name(context, name):
     query = model_query(
         context, models.Host,
@@ -468,7 +450,7 @@ def host_get_by_name(context, name):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def host_create(context, values):
     host = models.Host()
     host.update(values)
@@ -481,7 +463,7 @@ def host_create(context, values):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def host_update(context, host_uuid, values):
     host = _host_get_by_uuid(context, host_uuid)
 
@@ -495,7 +477,7 @@ def host_update(context, host_uuid, values):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def host_delete(context, host_uuid):
 
     count = model_query(context, models.Host
@@ -510,7 +492,7 @@ def host_delete(context, host_uuid):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def notifications_get_all_by_filters(
         context, filters=None, sort_keys=None,
         sort_dirs=None, limit=None, marker=None):
@@ -572,7 +554,7 @@ def notifications_get_all_by_filters(
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def notification_get_by_uuid(context, notification_uuid):
     return _notification_get_by_uuid(context, notification_uuid)
 
@@ -590,7 +572,7 @@ def _notification_get_by_uuid(context, notification_uuid):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def notification_get_by_id(context, notification_id):
     query = model_query(context, models.Notification
                         ).filter_by(id=notification_id
@@ -604,7 +586,7 @@ def notification_get_by_id(context, notification_id):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def notification_create(context, values):
     notification = models.Notification()
     notification.update(values)
@@ -615,7 +597,7 @@ def notification_create(context, values):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def notification_update(context, notification_uuid, values):
     notification = _notification_get_by_uuid(context, notification_uuid)
 
@@ -627,7 +609,7 @@ def notification_update(context, notification_uuid, values):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def notification_delete(context, notification_uuid):
 
     count = model_query(context, models.Notification
@@ -646,7 +628,7 @@ def notification_delete(context, notification_uuid):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def vmoves_get_all_by_filters(
         context, filters=None, sort_keys=None,
         sort_dirs=None, limit=None, marker=None):
@@ -697,7 +679,7 @@ def vmoves_get_all_by_filters(
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.reader
+@context_manager.reader
 def vmove_get_by_uuid(context, uuid):
     return _vmove_get_by_uuid(context, uuid)
 
@@ -713,7 +695,7 @@ def _vmove_get_by_uuid(context, uuid):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def vmove_create(context, values):
     vm_move = models.VMove()
     vm_move.update(values)
@@ -724,7 +706,7 @@ def vmove_create(context, values):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def vmove_update(context, uuid, values):
     vm_move = _vmove_get_by_uuid(context, uuid)
     vm_move.update(values)
@@ -735,7 +717,7 @@ def vmove_update(context, uuid, values):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def vmove_delete(context, vmove_uuid):
     count = model_query(context, models.VMove
                         ).filter_by(uuid=vmove_uuid
@@ -766,7 +748,7 @@ def visit_delete_from_select(element, compiler, **kw):
 
 
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
-@main_context_manager.writer
+@context_manager.writer
 def purge_deleted_rows(context, age_in_days, max_rows):
     """Purges soft deleted rows
 
