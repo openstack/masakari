@@ -13,6 +13,9 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import eventlet
+"""Masakari command-line interface package.
 
-eventlet.monkey_patch()
+This package contains the command-line interface modules for Masakari services.
+Since the migration from eventlet to threading, no monkey patching is required.
+All services now use pure Python threading throughout the codebase.
+"""

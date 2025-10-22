@@ -20,7 +20,3 @@
 .. automodule:: masakari.tests.unit
    :platform: Unix
 """
-
-import eventlet
-
-eventlet.monkey_patch(os=False)

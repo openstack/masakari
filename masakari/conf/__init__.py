@@ -27,6 +27,7 @@ from masakari.conf import osapi_v1
 from masakari.conf import paths
 from masakari.conf import service
 from masakari.conf import ssl
+from masakari.conf import threading
 from masakari.conf import wsgi
 
 CONF = cfg.CONF
@@ -43,4 +44,5 @@ osapi_v1.register_opts(CONF)
 paths.register_opts(CONF)
 ssl.register_opts(CONF)
 service.register_opts(CONF)
+threading.register_opts(CONF)
 wsgi.register_opts(CONF)

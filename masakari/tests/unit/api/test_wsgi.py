@@ -21,11 +21,11 @@ import socket
 import tempfile
 from unittest import mock
 
-import eventlet
-import eventlet.wsgi
-from oslo_config import cfg
 import requests
 import testtools
+import time
+
+from oslo_config import cfg
 
 from masakari.api import wsgi
 import masakari.exception
@@ -104,12 +104,6 @@ class TestWSGIServer(base.NoDBTestCase):
         server = wsgi.Server("test_app", None)
         self.assertEqual("test_app", server.name)
 
-    def test_custom_max_header_line(self):
-        self.flags(max_header_line=4096, group='wsgi')  # Default is 16384
-        wsgi.Server("test_custom_max_header_line", None)
-        self.assertEqual(CONF.wsgi.max_header_line,
-                         eventlet.wsgi.MAX_HEADER_LINE)
-
     def test_start_random_port(self):
         server = wsgi.Server("test_random_port", None, host="127.0.0.1",
                              port=0)
@@ -166,13 +160,13 @@ class TestWSGIServer(base.NoDBTestCase):
 
         uri = "http://127.0.0.1:%d/%s" % (server.port, 10000 * 'x')
         resp = requests.get(uri, proxies={"http": ""})
-        eventlet.sleep(0)
+        time.sleep(0)
         self.assertNotEqual(resp.status_code,
                             requests.codes.REQUEST_URI_TOO_LARGE)
 
         uri = "http://127.0.0.1:%d/%s" % (server.port, 20000 * 'x')
         resp = requests.get(uri, proxies={"http": ""})
-        eventlet.sleep(0)
+        time.sleep(0)
         self.assertEqual(resp.status_code,
                          requests.codes.REQUEST_URI_TOO_LARGE)
         server.stop()
@@ -191,31 +185,3 @@ class TestWSGIServer(base.NoDBTestCase):
         server.reset()
         server.start()
         self.assertEqual(server._pool.size, CONF.wsgi.default_pool_size)
-
-    def test_client_socket_timeout(self):
-        self.flags(client_socket_timeout=5, group='wsgi')
-
-        # mocking eventlet spawn method to check it is called with
-        # configured 'client_socket_timeout' value.
-        with mock.patch.object(eventlet,
-                               'spawn') as mock_spawn:
-            server = wsgi.Server("test_app", None, host="127.0.0.1", port=0)
-            server.start()
-            _, kwargs = mock_spawn.call_args
-            self.assertEqual(CONF.wsgi.client_socket_timeout,
-                             kwargs['socket_timeout'])
-            server.stop()
-
-    def test_keep_alive(self):
-        self.flags(keep_alive=False, group='wsgi')
-
-        # mocking eventlet spawn method to check it is called with
-        # configured 'keep_alive' value.
-        with mock.patch.object(eventlet,
-                               'spawn') as mock_spawn:
-            server = wsgi.Server("test_app", None, host="127.0.0.1", port=0)
-            server.start()
-            _, kwargs = mock_spawn.call_args
-            self.assertEqual(CONF.wsgi.keep_alive,
-                             kwargs['keepalive'])
-            server.stop()

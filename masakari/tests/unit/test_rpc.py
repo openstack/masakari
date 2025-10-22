@@ -118,7 +118,7 @@ class RPCAPITestCase(base.TestCase):
 
         mock_ser.assert_called_once_with('foo')
         mock_get.assert_called_once_with(rpc.TRANSPORT, tgt, ends,
-                                         executor='eventlet', serializer=ser,
+                                         executor='threading', serializer=ser,
                                          access_policy=access_policy)
         self.assertEqual('server', server)
 

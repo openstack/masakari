@@ -21,9 +21,7 @@ inline callbacks.
 """
 import contextlib
 import datetime
-import eventlet
-eventlet.monkey_patch(os=False)
-from unittest import mock  # noqa: E402
+from unittest import mock
 
 import fixtures  # noqa: E402
 from oslo_config import cfg  # noqa: E402

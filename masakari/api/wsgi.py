@@ -14,14 +14,13 @@
 
 """Utility methods for working with WSGI servers."""
 
+from concurrent import futures
 import os.path
 import socket
 import ssl
 import sys
+from wsgiref import simple_server
 
-import eventlet
-import eventlet.wsgi
-import greenlet
 from oslo_log import log as logging
 from oslo_service import service
 from oslo_utils import excutils
@@ -46,7 +45,7 @@ class Server(service.ServiceBase):
     default_pool_size = CONF.wsgi.default_pool_size
 
     def __init__(self, name, app, host='0.0.0.0', port=0, pool_size=None,
-                 protocol=eventlet.wsgi.HttpProtocol, backlog=128,
+                 protocol=None, backlog=128,
                  use_ssl=False, max_url_len=None):
         """Initialize, but do not start, a WSGI server.
 
@@ -54,20 +53,20 @@ class Server(service.ServiceBase):
         :param app: The WSGI application to serve.
         :param host: IP address to serve the application.
         :param port: Port number to server the application.
-        :param pool_size: Maximum number of eventlets to spawn concurrently.
+        :param pool_size: Maximum number of threads to spawn concurrently.
         :param backlog: Maximum number of queued connections.
         :param max_url_len: Maximum length of permitted URLs.
         :returns: None
         :raises: masakari.exception.InvalidInput
         """
-        # Allow operators to customize http requests max header line size.
-        eventlet.wsgi.MAX_HEADER_LINE = CONF.wsgi.max_header_line
         self.name = name
         self.app = app
         self._server = None
         self._protocol = protocol
         self.pool_size = pool_size or self.default_pool_size
-        self._pool = eventlet.GreenPool(self.pool_size)
+        self._pool = futures.ThreadPoolExecutor(
+            max_workers=self.pool_size,
+            thread_name_prefix='masakari-wsgi-')
         self._logger = logging.getLogger("masakari.%s.wsgi.server" % self.name)
         self._use_ssl = use_ssl
         self._max_url_len = max_url_len
@@ -90,7 +89,10 @@ class Server(service.ServiceBase):
             family = socket.AF_INET
 
         try:
-            self._socket = eventlet.listen(bind_addr, family, backlog=backlog)
+            self._socket = socket.socket(family, socket.SOCK_STREAM)
+            self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self._socket.bind(bind_addr)
+            self._socket.listen(backlog)
         except EnvironmentError:
             LOG.error("Could not bind to %(host)s:%(port)d",
                       {'host': host, 'port': port})
@@ -146,19 +148,16 @@ class Server(service.ServiceBase):
                         _("When running server in SSL mode, you must "
                           "specify both a cert_file and key_file "
                           "option value in your configuration file"))
-                ssl_kwargs = {
-                    'server_side': True,
-                    'certfile': cert_file,
-                    'keyfile': key_file,
-                    'cert_reqs': ssl.CERT_NONE,
-                }
-
+                ssl_context = ssl.create_default_context(
+                    ssl.Purpose.CLIENT_AUTH)
+                ssl_context.load_cert_chain(cert_file, key_file)
                 if CONF.wsgi.ssl_ca_file:
-                    ssl_kwargs['ca_certs'] = ca_file
-                    ssl_kwargs['cert_reqs'] = ssl.CERT_REQUIRED
-
-                dup_socket = eventlet.wrap_ssl(dup_socket,
-                                               **ssl_kwargs)
+                    ssl_context.load_verify_locations(ca_file)
+                    ssl_context.verify_mode = ssl.CERT_REQUIRED
+                else:
+                    ssl_context.verify_mode = ssl.CERT_NONE
+                dup_socket = ssl_context.wrap_socket(dup_socket,
+                                                    server_side=True)
             except Exception:
                 with excutils.save_and_reraise_exception():
                     LOG.error("Failed to start %(name)s on %(host)s"
@@ -166,37 +165,83 @@ class Server(service.ServiceBase):
                               {'name': self.name, 'host': self.host,
                                'port': self.port})
 
-        wsgi_kwargs = {
-            'func': eventlet.wsgi.server,
-            'sock': dup_socket,
-            'site': self.app,
-            'protocol': self._protocol,
-            'custom_pool': self._pool,
-            'log': self._logger,
-            'log_format': CONF.wsgi.wsgi_log_format,
-            'debug': False,
-            'keepalive': CONF.wsgi.keep_alive,
-            'socket_timeout': self.client_socket_timeout
-            }
+        # Create a custom threading-based WSGI server
+        def serve_forever():
+            """Run the WSGI server using threading."""
+            try:
+                # Create a custom WSGI server class with threading support
+                class ThreadedWSGIServer(simple_server.WSGIServer):
+                    """Custom WSGI server with threading and proper logging."""
 
-        if self._max_url_len:
-            wsgi_kwargs['url_length_limit'] = self._max_url_len
+                    def __init__(self, server_address, RequestHandlerClass,
+                                app, logger, socket_timeout=None):
+                        super().__init__(server_address, RequestHandlerClass)
+                        self.set_app(app)
+                        self.logger = logger
+                        self.socket_timeout = socket_timeout
+                        # Use our pre-configured socket
+                        self.socket.close()  # Close the default socket
+                        self.socket = dup_socket
+                        self.server_bind()  # Re-bind to our socket
 
-        self._server = utils.spawn(**wsgi_kwargs)
+                    def log_message(self, format_str, *args):
+                        """Override to use oslo logging."""
+                        self.logger.info(format_str % args)
+
+                    def handle_request(self):
+                        """Handle a single request with timeout."""
+                        if self.socket_timeout:
+                            self.socket.settimeout(self.socket_timeout)
+                        return super().handle_request()
+
+                # Create custom request handler with threading support
+                class ThreadedWSGIRequestHandler(
+                        simple_server.WSGIRequestHandler):
+                    """WSGI request handler with threading support."""
+
+                    def log_message(self, format_str, *args):
+                        """Use the server's logger instead of stderr."""
+                        if hasattr(self.server, 'logger'):
+                            self.server.logger.info(format_str % args)
+                        else:
+                            super().log_message(format_str, *args)
+
+                # Create the server instance
+                httpd = ThreadedWSGIServer(
+                    (self.host, self.port),
+                    ThreadedWSGIRequestHandler,
+                    self.app,
+                    self._logger,
+                    self.client_socket_timeout
+                )
+
+                LOG.info("Starting threaded WSGI server on %(host)s:%(port)d",
+                        {'host': self.host, 'port': self.port})
+
+                # Serve requests forever
+                httpd.serve_forever()
+
+            except Exception as e:
+                LOG.error("WSGI server error: %s", e)
+                raise
+
+        # Spawn the server in the thread pool
+        self._server = utils.spawn(serve_forever)
 
     def reset(self):
-        """Reset server greenpool size to default.
+        """Reset server thread pool size to default.
 
         :returns: None
 
         """
-        self._pool.resize(self.pool_size)
+        LOG.warning("Thread pool resize requested from current size to %d, "
+                   "but ThreadPoolExecutor doesn't support dynamic resizing",
+                   self.pool_size)
 
     def stop(self):
         """Stop this server.
 
-        This is not a very nice action, as currently the method by which a
-        server is stopped is by killing its eventlet.
+        This stops the WSGI server by canceling the server thread.
 
         :returns: None
 
@@ -204,24 +249,26 @@ class Server(service.ServiceBase):
         LOG.info("Stopping WSGI server.")
 
         if self._server is not None:
-            # Resize pool to stop new requests from being processed
-            self._pool.resize(0)
-            self._server.kill()
+            # Shutdown pool to stop new requests from being processed
+            self._pool.shutdown(wait=False)
+            # Cancel the server future/thread
+            self._server.cancel()
 
     def wait(self):
         """Block, until the server has stopped.
 
-        Waits on the server's eventlet to finish, then returns.
+        Waits on the server thread to finish, then returns.
 
         :returns: None
 
         """
         try:
             if self._server is not None:
-                self._pool.waitall()
-                self._server.wait()
-        except greenlet.GreenletExit:
-            LOG.info("WSGI server has stopped.")
+                self._pool.shutdown(wait=True)
+                # Wait for the server future to complete
+                self._server.result()
+        except Exception as e:
+            LOG.info("WSGI server has stopped: %s", e)
 
 
 class Request(webob.Request):

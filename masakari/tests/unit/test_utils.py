@@ -15,7 +15,6 @@
 import importlib
 from unittest import mock
 
-import eventlet
 from oslo_config import cfg
 from oslo_context import context as common_context
 from oslo_context import fixture as context_fixture
@@ -187,7 +186,9 @@ class SpawnNTestCase(base.NoDBTestCase):
         def fake(arg):
             pass
 
-        with mock.patch.object(eventlet, self.spawn_name, _fake_spawn):
+        with mock.patch(
+                'masakari.utils._get_general_executor') as mock_executor:
+            mock_executor.return_value.submit = _fake_spawn
             getattr(utils, self.spawn_name)(fake, 'test')
         self.assertIsNone(common_context.get_current())
 
@@ -204,7 +205,9 @@ class SpawnNTestCase(base.NoDBTestCase):
         def fake(context, kwarg1=None):
             pass
 
-        with mock.patch.object(eventlet, self.spawn_name, _fake_spawn):
+        with mock.patch(
+                'masakari.utils._get_general_executor') as mock_executor:
+            mock_executor.return_value.submit = _fake_spawn
             getattr(utils, self.spawn_name)(fake, ctxt, kwarg1='test')
         self.assertEqual(ctxt, common_context.get_current())
 
@@ -224,7 +227,9 @@ class SpawnNTestCase(base.NoDBTestCase):
         def fake(context, kwarg1=None):
             pass
 
-        with mock.patch.object(eventlet, self.spawn_name, _fake_spawn):
+        with mock.patch(
+                'masakari.utils._get_general_executor') as mock_executor:
+            mock_executor.return_value.submit = _fake_spawn
             getattr(utils, self.spawn_name)(fake, ctxt_passed, kwarg1='test')
         self.assertEqual(ctxt, common_context.get_current())
 
