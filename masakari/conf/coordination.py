@@ -17,6 +17,7 @@ from oslo_config import cfg
 
 coordination_opts = [
     cfg.StrOpt('backend_url',
+               secret=True,
                default=None,
                help="The backend URL to use for distributed coordination."
                     "By default it's None which means that coordination is "
