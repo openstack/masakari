@@ -118,6 +118,7 @@ can be overridden to make the metadata key different per failure type.
 
 taskflow_options = [
     cfg.StrOpt('connection',
+               secret=True,
                help="""
 The SQLAlchemy connection string to use to connect to the taskflow database.
 """),
