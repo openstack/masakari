@@ -279,8 +279,9 @@ def load_standard_extensions(ext_mgr, logger, path, package, ext_list=None):
             try:
                 ext_mgr.load_extension(classpath)
             except Exception as exc:
-                logger.warn('Failed to load extension %(classpath)s: %(exc)s',
-                            {'classpath': classpath, 'exc': exc})
+                logger.warning(
+                    'Failed to load extension %(classpath)s: %(exc)s',
+                    {'classpath': classpath, 'exc': exc})
 
         # Now, let's consider any subdirectories we may have...
         subdirs = []
@@ -301,9 +302,9 @@ def load_standard_extensions(ext_mgr, logger, path, package, ext_list=None):
                 try:
                     ext(ext_mgr)
                 except Exception as exc:
-                    logger.warn('Failed to load extension %(ext_name)s:'
-                                '%(exc)s',
-                                {'ext_name': ext_name, 'exc': exc})
+                    logger.warning('Failed to load extension %(ext_name)s:'
+                                   '%(exc)s',
+                                   {'ext_name': ext_name, 'exc': exc})
 
         # Update the list of directories we'll explore...
         # using os.walk 'the caller can modify the dirnames list in-place,
