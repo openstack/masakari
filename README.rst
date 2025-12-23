@@ -2,6 +2,10 @@
 Masakari
 ========
 
+.. image:: https://governance.openstack.org/tc/badges/masakari.svg
+
+.. Change things from this point on
+
 Virtual Machine High Availability (VMHA) service for OpenStack
 
 Masakari provides Virtual Machine High Availability (VMHA) service
@@ -32,7 +36,6 @@ detailed in the LICENSE file.
 * Release notes: https://docs.openstack.org/releasenotes/masakari/
 * Source: https://opendev.org/openstack/masakari
 * Bugs: https://bugs.launchpad.net/masakari
-
 
 Configure masakari-api
 ----------------------
@@ -66,13 +69,13 @@ Configure masakari-api
 
    .. code-block:: shell-session
 
-      git clone https://github.com/openstack/masakari.git
+      git clone https://opendev.org/openstack/masakari
 
 #. Run setup.py from masakari
 
    .. code-block:: shell-session
 
-      sudo python setup.py install
+      sudo python3 setup.py install
 
 #. Create directory ``/etc/masakari``
 
@@ -96,8 +99,3 @@ Configure masakari database
    .. code-block:: shell-session
 
       masakari-manage db sync
-
-Features
---------
-
-* TODO
