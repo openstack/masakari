@@ -39,6 +39,10 @@ wsgi_log_format = cfg.StrOpt(
 
 secure_proxy_ssl_header = cfg.StrOpt(
     'secure_proxy_ssl_header',
+    deprecated_for_removal=True,
+    deprecated_reason='The functionality of this parameter is duplicate of '
+                      'the http_proxy_to_wsgi middleware of oslo.middleware '
+                      'and will be completely replaced.',
     help='The HTTP header used to determine the scheme for the '
          'original request, even if it was removed by an SSL '
          'terminating proxy. Typical value is '
