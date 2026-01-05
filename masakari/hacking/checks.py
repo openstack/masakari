@@ -38,37 +38,6 @@ cfg_re = re.compile(r".*\scfg\.")
 cfg_opt_re = re.compile(r".*[\s\[]cfg\.[a-zA-Z]*Opt\(")
 rule_default_re = re.compile(r".*RuleDefault\(")
 policy_enforce_re = re.compile(r".*_ENFORCER\.enforce\(")
-asse_trueinst_re = re.compile(
-    r"(.)*assertTrue\(isinstance\((\w|\.|\'|\"|\[|\])+, "
-    r"(\w|\.|\'|\"|\[|\])+\)\)")
-asse_equal_type_re = re.compile(
-    r"(.)*assertEqual\(type\((\w|\.|\'|\"|\[|\])+\), "
-    r"(\w|\.|\'|\"|\[|\])+\)")
-asse_equal_in_end_with_true_or_false_re = re.compile(
-    r"assertEqual\("r"(\w|[][.'\"])+ in (\w|[][.'\", ])+, (True|False)\)")
-asse_equal_in_start_with_true_or_false_re = re.compile(
-    r"assertEqual\("r"(True|False), (\w|[][.'\"])+ in (\w|[][.'\", ])+\)")
-asse_equal_end_with_none_re = re.compile(
-    r"assertEqual\(.*?,\s+None\)$")
-asse_equal_start_with_none_re = re.compile(
-    r"assertEqual\(None,")
-# NOTE(abhishekk): Next two regexes weren't united to one for more readability.
-#                 asse_true_false_with_in_or_not_in regex checks
-#                 assertTrue/False(A in B) cases where B argument has no spaces
-#                 asse_true_false_with_in_or_not_in_spaces regex checks cases
-#                 where B argument has spaces and starts/ends with [, ', ".
-#                 For example: [1, 2, 3], "some string", 'another string'.
-#                 We have to separate these regexes to escape a false positives
-#                 results. B argument should have spaces only if it starts
-#                 with [, ", '. Otherwise checking of string
-#                 "assertFalse(A in B and C in D)" will be false positives.
-#                 In this case B argument is "B and C in D".
-asse_true_false_with_in_or_not_in = re.compile(
-    r"assert(True|False)\("r"(\w|[][.'\"])+( not)? in (\w|[][.'\",])"
-    r"+(, .*)?\)")
-asse_true_false_with_in_or_not_in_spaces = re.compile(
-    r"assert(True|False)"r"\((\w|[][.'\"])+( not)? in [\[|'|\"](\w|"
-    r"[][.'\", ])+[\[|'|\"](, .*)?\)")
 conf_attribute_set_re = re.compile(r"CONF\.[a-z0-9_.]+\s*=\s*\w")
 translated_log = re.compile(
     r"(.)*LOG\.(audit|error|info|critical|exception)"
@@ -132,27 +101,6 @@ def capital_cfg_help(logical_line, tokens):
                 txt = tokens[t + 2][1]
                 if len(txt) > 1 and txt[1].islower():
                     yield (0, msg)
-
-
-@core.flake8ext
-def assert_true_instance(logical_line):
-    """Check for assertTrue(isinstance(a, b)) sentences
-
-    M305
-    """
-    if asse_trueinst_re.match(logical_line):
-        yield (0, "M305: assertTrue(isinstance(a, b)) sentences "
-                  "not allowed")
-
-
-@core.flake8ext
-def assert_equal_type(logical_line):
-    """Check for assertEqual(type(A), B) sentences
-
-    M306
-    """
-    if asse_equal_type_re.match(logical_line):
-        yield (0, "M306: assertEqual(type(A), B) sentences not allowed")
 
 
 @core.flake8ext
@@ -246,42 +194,11 @@ def use_jsonutils(logical_line, filename):
 
 
 @core.flake8ext
-def assert_true_or_false_with_in(logical_line):
-    """Check for assertTrue/False(A in B), assertTrue/False(A not in B),
-    assertTrue/False(A in B, message) or assertTrue/False(A not in B, message)
-    sentences.
-
-    M318
-    """
-    res = (asse_true_false_with_in_or_not_in.search(logical_line) or
-           asse_true_false_with_in_or_not_in_spaces.search(logical_line))
-    if res:
-        yield (0, "M318: Use assertIn/NotIn(A, B) rather than "
-                  "assertTrue/False(A in/not in B) when checking collection "
-                  "contents.")
-
-
-@core.flake8ext
 def dict_constructor_with_list_copy(logical_line):
     msg = ("M320: Must use a dict comprehension instead of a dict "
            "constructor with a sequence of key-value pairs.")
     if dict_constructor_with_list_copy_re.match(logical_line):
         yield (0, msg)
-
-
-@core.flake8ext
-def assert_equal_in(logical_line):
-    """Check for assertEqual(A in B, True), assertEqual(True, A in B),
-    assertEqual(A in B, False) or assertEqual(False, A in B) sentences
-
-    M321
-    """
-    res = (asse_equal_in_start_with_true_or_false_re.search(logical_line) or
-           asse_equal_in_end_with_true_or_false_re.search(logical_line))
-    if res:
-        yield (0, "M321: Use assertIn/NotIn(A, B) rather than "
-                  "assertEqual(A in B, True/False) when checking collection "
-                  "contents.")
 
 
 @core.flake8ext
