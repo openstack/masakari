@@ -28,7 +28,6 @@ Masakari Specific Commandments
 - [M317] Ensure that jsonutils.%(fun)s must be used instead of json.%(fun)s
 - [M318] Change assertTrue/False(A in/not in B, message) to the more specific
   assertIn/NotIn(A, B, message)
-- [M319] Check for usage of deprecated assertRaisesRegexp
 - [M320] Must use a dict comprehension instead of a dict constructor with a sequence of key-value pairs.
 - [M321] Change assertEqual(A in B, True), assertEqual(True, A in B),
   assertEqual(A in B, False) or assertEqual(False, A in B) to the more specific
@@ -42,7 +41,6 @@ Masakari Specific Commandments
 - [M328] Python 3: do not use dict.itervalues.
 - [M329] Deprecated library function os.popen()
 - [M331] LOG.warn is deprecated. Enforce use of LOG.warning.
-- [M332] Yield must always be followed by a space when yielding a value.
 - [M333] Policy registration should be in the central location ``masakari/policies/``
 - [M334] Do not use the oslo_policy.policy.Enforcer.enforce() method.
 

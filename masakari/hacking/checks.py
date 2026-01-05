@@ -69,7 +69,6 @@ asse_true_false_with_in_or_not_in = re.compile(
 asse_true_false_with_in_or_not_in_spaces = re.compile(
     r"assert(True|False)"r"\((\w|[][.'\"])+( not)? in [\[|'|\"](\w|"
     r"[][.'\", ])+[\[|'|\"](, .*)?\)")
-asse_raises_regexp = re.compile(r"assertRaisesRegexp\(")
 conf_attribute_set_re = re.compile(r"CONF\.[a-z0-9_.]+\s*=\s*\w")
 translated_log = re.compile(
     r"(.)*LOG\.(audit|error|info|critical|exception)"
@@ -88,7 +87,6 @@ spawn_re = re.compile(
 contextlib_nested = re.compile(r"^with (contextlib\.)?nested\(")
 doubled_words_re = re.compile(
     r"\b(then?|[iao]n|i[fst]|but|f?or|at|and|[dt]o)\s+\1\b")
-yield_not_followed_by_space = re.compile(r"^\s*yield(?:\(|{|\[|\"|').*$")
 _all_log_levels = {'critical', 'error', 'exception', 'info',
                    'warning', 'debug'}
 _all_hints = {'_', '_LE', '_LI', '_LW', '_LC'}
@@ -264,18 +262,6 @@ def assert_true_or_false_with_in(logical_line):
 
 
 @core.flake8ext
-def assert_raises_regexp(logical_line):
-    """Check for usage of deprecated assertRaisesRegexp
-
-    M319
-    """
-    res = asse_raises_regexp.search(logical_line)
-    if res:
-        yield (0, "M319: assertRaisesRegex must be used instead "
-                  "of assertRaisesRegexp")
-
-
-@core.flake8ext
 def dict_constructor_with_list_copy(logical_line):
     msg = ("M320: Must use a dict comprehension instead of a dict "
            "constructor with a sequence of key-value pairs.")
@@ -420,24 +406,6 @@ def no_log_warn(logical_line):
     msg = ("M331: LOG.warn is deprecated, please use LOG.warning!")
     if "LOG.warn(" in logical_line:
         yield (0, msg)
-
-
-@core.flake8ext
-def yield_followed_by_space(logical_line):
-    """Yield should be followed by a space.
-
-    Yield should be followed by a space to clarify that yield is
-    not a function. Adding a space may force the developer to rethink
-    if there are unnecessary parentheses in the written code.
-
-    Not correct: yield(x), yield(a, b)
-    Correct: yield x, yield (a, b), yield a, b
-
-    M332
-    """
-    if yield_not_followed_by_space.match(logical_line):
-        yield (0,
-               "M332: Yield keyword should be followed by a space.")
 
 
 @core.flake8ext

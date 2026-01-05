@@ -238,16 +238,6 @@ class HackingTestCase(base.NoDBTestCase):
     def _assert_has_no_errors(self, code, checker, filename=None):
         self._assert_has_errors(code, checker, filename=filename)
 
-    def test_oslo_assert_raises_regexp(self):
-        code = """
-               self.assertRaisesRegexp(ValueError,
-                                       "invalid literal for.*XYZ'$",
-                                       int,
-                                       'XYZ')
-               """
-        self._assert_has_errors(code, checks.assert_raises_regexp,
-                                expected_errors=[(1, 0, "M319")])
-
     def test_dict_constructor_with_list_copy(self):
         self.assertEqual(1, len(list(checks.dict_constructor_with_list_copy(
             "    dict([(i, connect_info[i])"))))
@@ -439,28 +429,6 @@ class HackingTestCase(base.NoDBTestCase):
         errors = [(1, 0, 'M308')]
         self._assert_has_errors(log_statement, checks.no_translate_logs,
                                 expected_errors=errors)
-
-    def test_yield_followed_by_space(self):
-        code = """
-                  yield(x, y)
-                  yield{"type": "test"}
-                  yield[a, b, c]
-                  yield"test"
-                  yield'test'
-               """
-        errors = [(x + 1, 0, 'M332') for x in range(5)]
-        self._assert_has_errors(code, checks.yield_followed_by_space,
-                                expected_errors=errors)
-        code = """
-                  yield x
-                  yield (x, y)
-                  yield {"type": "test"}
-                  yield [a, b, c]
-                  yield "test"
-                  yield 'test'
-                  yieldx_func(a, b)
-               """
-        self._assert_has_no_errors(code, checks.yield_followed_by_space)
 
     def test_check_policy_registration_in_central_place(self):
         errors = [(3, 0, "M333")]
