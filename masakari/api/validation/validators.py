@@ -30,6 +30,9 @@ from masakari import exception
 from masakari.i18n import _
 
 
+_FORMAT_CHECKER = jsonschema.FormatChecker()
+
+
 def _soft_validate_additional_properties(validator,
                                          additional_properties_value,
                                          instance,
@@ -85,7 +88,7 @@ def _soft_validate_additional_properties(validator,
             del instance[prop]
 
 
-@jsonschema.FormatChecker.cls_checks('date-time')
+@_FORMAT_CHECKER.checks('date-time')
 def _validate_datetime_format(instance):
     try:
         timeutils.parse_isotime(instance)
@@ -95,12 +98,12 @@ def _validate_datetime_format(instance):
         return True
 
 
-@jsonschema.FormatChecker.cls_checks('uuid')
+@_FORMAT_CHECKER.checks('uuid')
 def _validate_uuid_format(instance):
     return uuidutils.is_uuid_like(instance)
 
 
-@jsonschema.FormatChecker.cls_checks('name', exception.InvalidName)
+@_FORMAT_CHECKER.checks('name', exception.InvalidName)
 def _validate_name(instance):
     regex = parameter_types.valid_name_regex
     try:
@@ -111,41 +114,6 @@ def _validate_name(instance):
         # TypeError will be raised at here.
         pass
     raise exception.InvalidName(reason=regex.reason)
-
-
-class FormatChecker(jsonschema.FormatChecker):
-    """A FormatChecker can output the message from cause exception
-
-       We need understandable validation errors messages for users. When a
-       custom checker has an exception, the FormatChecker will output a
-       readable message provided by the checker.
-    """
-
-    def check(self, instance, format):
-        """Check whether the instance conforms to the given format.
-
-        :argument instance: the instance to check
-        :type: any primitive type (str, number, bool)
-        :argument str format: the format that instance should conform to
-        :raises: :exc:`FormatError` if instance does not conform to format
-        """
-
-        if format not in self.checkers:
-            return
-
-        # For safety reasons custom checkers can be registered with
-        # allowed exception types. Anything else will fall into the
-        # default formatter.
-        func, raises = self.checkers[format]
-        result, cause = None, None
-
-        try:
-            result = func(instance)
-        except raises as e:
-            cause = e
-        if not result:
-            msg = "%r is not a %r" % (instance, format)
-            raise jsonschema_exc.FormatError(msg, cause=cause)
 
 
 class _SchemaValidator(object):
@@ -172,8 +140,7 @@ class _SchemaValidator(object):
 
         validator_cls = jsonschema.validators.extend(self.validator_org,
                                                      validators)
-        format_checker = FormatChecker()
-        self.validator = validator_cls(schema, format_checker=format_checker)
+        self.validator = validator_cls(schema, format_checker=_FORMAT_CHECKER)
 
     def validate(self, *args, **kwargs):
         try:

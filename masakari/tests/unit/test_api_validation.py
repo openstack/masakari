@@ -115,7 +115,7 @@ class APIValidationTestCase(base.NoDBTestCase):
 class FormatCheckerTestCase(base.NoDBTestCase):
 
     def test_format_checker_failed(self):
-        format_checker = validators.FormatChecker()
+        format_checker = validators._FORMAT_CHECKER
         exc = self.assertRaises(jsonschema_exc.FormatError,
                                 format_checker.check, "   ", "name")
         self.assertIsInstance(exc.cause, exception.InvalidName)
@@ -126,7 +126,7 @@ class FormatCheckerTestCase(base.NoDBTestCase):
 
     def test_format_checker_failed_with_non_string(self):
         checks = ["name"]
-        format_checker = validators.FormatChecker()
+        format_checker = validators._FORMAT_CHECKER
 
         for check in checks:
             exc = self.assertRaises(jsonschema_exc.FormatError,
