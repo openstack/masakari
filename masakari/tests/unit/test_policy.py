@@ -36,7 +36,8 @@ CONF = masakari.conf.CONF
 class PolicyFileTestCase(base.NoDBTestCase):
     def setUp(self):
         super(PolicyFileTestCase, self).setUp()
-        self.context = context.RequestContext('fake', 'fake')
+        self.context = context.RequestContext(
+            user_id='fake', project_id='fake')
         self.target = {}
 
     def test_modified_policy_reloads(self):
@@ -87,7 +88,8 @@ class PolicyTestCase(base.NoDBTestCase):
         policy.init(suppress_deprecation_warnings=True)
         # before a policy rule can be used, its default has to be registered.
         policy._ENFORCER.register_defaults(rules)
-        self.context = context.RequestContext('fake', 'fake', roles=['member'])
+        self.context = context.RequestContext(
+            user_id='fake', project_id='fake', roles=['member'])
         self.target = {}
 
     def test_authorize_nonexistent_action_throws(self):
@@ -148,9 +150,8 @@ class PolicyTestCase(base.NoDBTestCase):
     def test_ignore_case_role_check(self):
         lowercase_action = "example:lowercase_admin"
         uppercase_action = "example:uppercase_admin"
-        admin_context = context.RequestContext('admin',
-                                               'fake',
-                                               roles=['AdMiN'])
+        admin_context = context.RequestContext(
+            user_id='admin', project_id='fake', roles=['AdMiN'])
         policy.authorize(admin_context, lowercase_action, self.target)
         policy.authorize(admin_context, uppercase_action, self.target)
 
@@ -195,7 +196,8 @@ class AdminRolePolicyTestCase(base.NoDBTestCase):
     def setUp(self):
         super(AdminRolePolicyTestCase, self).setUp()
         self.policy = self.useFixture(policy_fixture.RoleBasedPolicyFixture())
-        self.context = context.RequestContext('fake', 'fake', roles=['member'])
+        self.context = context.RequestContext(
+            user_id='fake', project_id='fake', roles=['member'])
         self.actions = policy.get_rules().keys()
         self.target = {}
 
@@ -212,10 +214,11 @@ class RealRolePolicyTestCase(base.NoDBTestCase):
     def setUp(self):
         super(RealRolePolicyTestCase, self).setUp()
         self.policy = self.useFixture(policy_fixture.RealPolicyFixture())
-        self.admin_context = context.RequestContext('fake', 'fake', True,
-                                                    roles=['member'])
-        self.non_admin_context = context.RequestContext('fake', 'fake',
-                                                        roles=['member'])
+        self.admin_context = context.RequestContext(
+            user_id='fake', project_id='fake', is_admin=True,
+            roles=['member'])
+        self.non_admin_context = context.RequestContext(
+            user_id='fake', project_id='fake', roles=['member'])
         self.target = {}
         self.fake_policy = jsonutils.loads(fake_policy.policy_data)
 

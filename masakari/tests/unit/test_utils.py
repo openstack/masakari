@@ -193,7 +193,7 @@ class SpawnTestCase(base.NoDBTestCase):
 
     def test_spawn_context(self):
         self.assertIsNone(common_context.get_current())
-        ctxt = context.RequestContext('user', 'project')
+        ctxt = context.RequestContext(user_id='user', project_id='project')
 
         def _fake_spawn(func, *args, **kwargs):
             # call the method to ensure no error is raised
@@ -210,9 +210,9 @@ class SpawnTestCase(base.NoDBTestCase):
 
     def test_spawn_context_different_from_passed(self):
         self.assertIsNone(common_context.get_current())
-        ctxt = context.RequestContext('user', 'project')
-        ctxt_passed = context.RequestContext('user', 'project',
-                overwrite=False)
+        ctxt = context.RequestContext(user_id='user', project_id='project')
+        ctxt_passed = context.RequestContext(
+            user_id='user', project_id='project', overwrite=False)
         self.assertEqual(ctxt, common_context.get_current())
 
         def _fake_spawn(func, *args, **kwargs):

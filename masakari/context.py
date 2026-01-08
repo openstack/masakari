@@ -71,8 +71,7 @@ class RequestContext(context.RequestContext):
         'timestamp', 'service_catalog',
     ]
 
-    def __init__(self, user_id=None, project_id=None, is_admin=None,
-                 read_deleted="no", remote_address=None,
+    def __init__(self, is_admin=None, read_deleted="no", remote_address=None,
                  timestamp=None, service_catalog=None, user_auth_plugin=None,
                  **kwargs):
         """:param read_deleted: 'no' indicates deleted records are hidden,
@@ -86,7 +85,6 @@ class RequestContext(context.RequestContext):
                 because they possibly came in from older rpc messages.
         """
         super(RequestContext, self).__init__(
-            user_id=user_id, project_id=project_id,
             is_admin=is_admin, **kwargs)
 
         if read_deleted is None:

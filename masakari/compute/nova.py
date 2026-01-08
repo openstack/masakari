@@ -88,7 +88,8 @@ def novaclient(context, timeout=None):
     service_type, service_name, endpoint_type = nova_catalog_info.split(':')
 
     context = ctx.RequestContext(
-        CONF.os_privileged_user_name, None,
+        user_id=CONF.os_privileged_user_name,
+        project_id=None,
         auth_token=CONF.os_privileged_user_password,
         project_name=CONF.os_privileged_user_tenant,
         service_catalog=context.service_catalog,

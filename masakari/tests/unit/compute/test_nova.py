@@ -29,8 +29,9 @@ class NovaClientTestCase(base.TestCase):
     def setUp(self):
         super(NovaClientTestCase, self).setUp()
 
-        self.ctx = context.RequestContext('adminuser', 'e3f0833dc08b4cea',
-                                          auth_token='token', is_admin=True)
+        self.ctx = context.RequestContext(
+            user_id='adminuser', project_id='e3f0833dc08b4cea',
+            auth_token='token', is_admin=True)
         self.ctx.service_catalog = [
             {'type': 'compute', 'name': 'nova', 'endpoints':
                 [{'publicURL': 'http://novahost:8774/v2/e3f0833dc08b4cea'}]},

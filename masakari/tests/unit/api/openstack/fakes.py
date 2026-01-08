@@ -41,7 +41,8 @@ def wsgi_app_v1(fake_auth_context=None, init_only=None):
     if fake_auth_context is not None:
         ctxt = fake_auth_context
     else:
-        ctxt = context.RequestContext('fake', 'fake', auth_token=True)
+        ctxt = context.RequestContext(user_id='fake', project_id='fake',
+                                      auth_token='auth_token')
     api_v1 = (
         openstack_api.FaultWrapper(api_auth.InjectContext(ctxt, inner_app_v1)))
     mapper = urlmap.URLMap()
@@ -65,7 +66,7 @@ class FakeToken(object):
 
 class FakeRequestContext(context.RequestContext):
     def __init__(self, *args, **kwargs):
-        kwargs['auth_token'] = kwargs.get('auth_token', 'fake_auth_token')
+        kwargs.setdefault('auth_token', 'fake_auth_token')
         super(FakeRequestContext, self).__init__(*args, **kwargs)
 
 
