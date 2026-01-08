@@ -71,18 +71,13 @@ class RequestContext(context.RequestContext):
         'timestamp', 'service_catalog',
     ]
 
-    def __init__(self, user_id=None, project_id=None,
-                 is_admin=None, read_deleted="no",
-                 roles=None, remote_address=None, timestamp=None,
-                 request_id=None, auth_token=None, overwrite=True,
-                 user_name=None, project_name=None, service_catalog=None,
-                 user_auth_plugin=None, **kwargs):
+    def __init__(self, user_id=None, project_id=None, is_admin=None,
+                 read_deleted="no", remote_address=None,
+                 timestamp=None, service_catalog=None, user_auth_plugin=None,
+                 **kwargs):
         """:param read_deleted: 'no' indicates deleted records are hidden,
                 'yes' indicates deleted records are visible,
                 'only' indicates that *only* deleted records are visible.
-
-           :param overwrite: Set to False to ensure that the greenthread local
-                copy of the index is not overwritten.
 
            :param user_auth_plugin: The auth plugin for the current request's
                 authentication data.
@@ -90,32 +85,9 @@ class RequestContext(context.RequestContext):
            :param kwargs: Extra arguments that might be present, but we ignore
                 because they possibly came in from older rpc messages.
         """
-        user = kwargs.pop('user', None)
-        tenant = kwargs.pop('tenant', None)
         super(RequestContext, self).__init__(
-            auth_token=auth_token,
-            user_id=user_id or user,
-            project_id=project_id or tenant,
-            domain_id=kwargs.pop('domain', None),
-            user_domain_id=kwargs.pop('user_domain', None),
-            project_domain_id=kwargs.pop('project_domain', None),
-            is_admin=is_admin,
-            read_only=kwargs.pop('read_only', False),
-            show_deleted=kwargs.pop('show_deleted', False),
-            request_id=request_id,
-            resource_uuid=kwargs.pop('resource_uuid', None),
-            overwrite=overwrite,
-            roles=roles,
-            user_name=user_name,
-            project_name=project_name,
-            is_admin_project=kwargs.pop('is_admin_project', True),
-            global_request_id=kwargs.pop('global_request_id', None))
-        # oslo_context's RequestContext.to_dict() generates this field, we can
-        # safely ignore this as we don't use it.
-        kwargs.pop('user_identity', None)
-        if kwargs:
-            LOG.debug('Arguments dropped when creating context: %s',
-                      str(kwargs))
+            user_id=user_id, project_id=project_id,
+            is_admin=is_admin, **kwargs)
 
         if read_deleted is None:
             # If we did not get a value for read_deleted, ensure we default
@@ -170,15 +142,13 @@ class RequestContext(context.RequestContext):
         # removed once we figure out why we are seeing stack
         # traces
         values.update({
-            'user_id': getattr(self, 'user_id', None),
-            'project_id': getattr(self, 'project_id', None),
-            'read_deleted': getattr(self, 'read_deleted', 'no'),
-            'remote_address': getattr(self, 'remote_address', None),
-            'timestamp': utils.strtime(self.timestamp) if hasattr(
-                self, 'timestamp') else None,
-            'user_name': getattr(self, 'user_name', None),
-            'service_catalog': getattr(self, 'service_catalog', None),
-            'project_name': getattr(self, 'project_name', None)
+            'user_id': self.user_id,
+            'read_deleted': self.read_deleted,
+            'remote_address': self.remote_address,
+            'timestamp': utils.strtime(self.timestamp),
+            'user_name': self.user_name,
+            'service_catalog': self.service_catalog,
+            'project_name': self.project_name
         })
         return values
 
