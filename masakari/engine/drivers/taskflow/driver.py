@@ -40,14 +40,18 @@ from masakari.objects import fields
 
 
 CONF = masakari.conf.CONF
-TASKFLOW_CONF = CONF.taskflow_driver_recovery_flows
-PERSISTENCE_BACKEND = CONF.taskflow.connection
 LOG = logging.getLogger(__name__)
 
 
 class TaskFlowDriver(driver.NotificationDriver):
     def __init__(self):
         super(TaskFlowDriver, self).__init__()
+        self._persistence_backend = CONF.taskflow.connection
+        if self._persistence_backend is None:
+            raise exception.InvalidConfiguration(
+                "[taskflow] connection should be configured to use "
+                "this driver.")
+        self._taskflow_conf = CONF.taskflow_driver_recovery_flows
 
     def _execute_auto_workflow(self, context, novaclient, process_what):
         flow_engine = host_failure.get_auto_flow(context, novaclient,
@@ -259,18 +263,18 @@ class TaskFlowDriver(driver.NotificationDriver):
 
         # Get linear task flow based on notification type
         if notification.type == fields.NotificationType.VM:
-            tasks = TASKFLOW_CONF.instance_failure_recovery_tasks
+            tasks = self._taskflow_conf.instance_failure_recovery_tasks
         elif notification.type == fields.NotificationType.PROCESS:
-            tasks = TASKFLOW_CONF.process_failure_recovery_tasks
+            tasks = self._taskflow_conf.process_failure_recovery_tasks
         elif notification.type == fields.NotificationType.COMPUTE_HOST:
             if recovery_method in [
                     fields.FailoverSegmentRecoveryMethod.AUTO,
                     fields.FailoverSegmentRecoveryMethod.AUTO_PRIORITY]:
-                tasks = TASKFLOW_CONF.host_auto_failure_recovery_tasks
+                tasks = self._taskflow_conf.host_auto_failure_recovery_tasks
             elif recovery_method in [
                     fields.FailoverSegmentRecoveryMethod.RESERVED_HOST,
                     fields.FailoverSegmentRecoveryMethod.RH_PRIORITY]:
-                tasks = TASKFLOW_CONF.host_rh_failure_recovery_tasks
+                tasks = self._taskflow_conf.host_rh_failure_recovery_tasks
 
         for plugin in base.get_recovery_flow(
                 tasks['pre'], context=context, novaclient=novaclient,
@@ -294,7 +298,7 @@ class TaskFlowDriver(driver.NotificationDriver):
                                                    notification):
         """Retrieve progress details in notification"""
 
-        backend = backends.fetch(PERSISTENCE_BACKEND)
+        backend = backends.fetch(self._persistence_backend)
         with contextlib.closing(backend.get_connection()) as conn:
             progress_details = []
             flow_details = conn.get_flows_for_book(

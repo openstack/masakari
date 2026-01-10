@@ -382,3 +382,7 @@ class InstanceEvacuateFailed(MasakariException):
 
 class FailoverSegmentDisabled(MasakariException):
     msg_fmt = _('Failover segment is disabled.')
+
+
+class InvalidConfiguration(MasakariException):
+    msg_fmt = _("Configuration is Invalid.")

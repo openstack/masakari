@@ -303,7 +303,6 @@ class TaskflowDriverTestCase(test_base.TestCase):
         atom_details = atom_detail_generator()
         mock_get_flows_for_book.return_value = flow_details
         mock_get_atoms_for_flow.return_value = atom_details
-        driver.PERSISTENCE_BACKEND = 'memory://'
 
         progress_details = (
             self.taskflow_driver.get_notification_recovery_workflow_details(
@@ -408,7 +407,6 @@ class TaskflowDriverTestCase(test_base.TestCase):
         atom_details = atom_detail_generator()
         mock_get_flows_for_book.return_value = flow_details
         mock_get_atoms_for_flow.return_value = atom_details
-        driver.PERSISTENCE_BACKEND = 'memory://'
 
         progress_details = (
             self.taskflow_driver.get_notification_recovery_workflow_details(
