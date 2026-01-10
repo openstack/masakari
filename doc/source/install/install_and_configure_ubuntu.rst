@@ -62,7 +62,7 @@ databases, service credentials, and API endpoints.
         | domain_id           | default                          |
         | enabled             | True                             |
         | id                  | 8a7dbf5279404537b1c7b86c033620fe |
-        | name                | masakari                             |
+        | name                | masakari                         |
         | options             | {}                               |
         | password_expires_at | None                             |
         +---------------------+----------------------------------+
@@ -102,7 +102,7 @@ databases, service credentials, and API endpoints.
       +--------------+-------------------------------------------------------+
       | enabled      | True                                                  |
       | id           | 38f7af91666a47cfb97b4dc790b94424                      |
-      | interface    | public                                                 |
+      | interface    | public                                                |
       | region       | RegionOne                                             |
       | region_id    | RegionOne                                             |
       | service_id   | 060d59eac51b4594815603d75a00aba2                      |
@@ -195,7 +195,7 @@ Install and configure Masakari
          masakari_api_workers = 2
 
          [database]
-         connection = mysql+pymysql://root:admin@1<CONTROLLER_IP>/masakari?charset=utf8
+         connection = mysql+pymysql://root:admin@<CONTROLLER_IP>/masakari?charset=utf8
 
          [keystone_authtoken]
          memcached_servers = localhost:11211
