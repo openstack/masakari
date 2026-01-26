@@ -135,9 +135,7 @@ class ContextTestCase(base.NoDBTestCase):
         self.assertEqual(values2, {**values2, **expected_values})
 
     def test_convert_from_dict_then_to_dict(self):
-        # TODO(tkajiam): Remove tenant once oslo.context is bumped to >= 4.0
         values = {'is_admin': True,
-                  'tenant': '222',
                   'project_id': '222',
                   'project_name': 'projname',
                   'read_deleted': 'yes',
@@ -153,6 +151,4 @@ class ContextTestCase(base.NoDBTestCase):
         self.assertEqual('111', ctx.user_id)
         self.assertEqual('222', ctx.project_id)
         values2 = ctx.to_dict()
-        # TODO(tkajiam): Remove this once oslo.context is bumped to >= 4.0
-        values2.setdefault('tenant', values2.get('project_id'))
         self.assertEqual(values2, {**values2, **values})
