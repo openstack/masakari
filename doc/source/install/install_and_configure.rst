@@ -18,7 +18,7 @@ Install and configure
 =====================
 
 This section describes how to install and configure Masakari services
-on the compute node.
+on the controller nodes.
 
 This section assumes that you already have a working OpenStack environment with
 the following components installed:
