@@ -26,8 +26,8 @@ class ContextTestCase(base.NoDBTestCase):
         self.useFixture(o_fixture.ClearRequestContext())
 
     def test_request_context_elevated(self):
-        user_ctxt = context.RequestContext('111',
-                                           '222',
+        user_ctxt = context.RequestContext(user_id='111',
+                                           project_id='222',
                                            is_admin=False)
         self.assertFalse(user_ctxt.is_admin)
         admin_ctxt = user_ctxt.elevated()
@@ -37,20 +37,20 @@ class ContextTestCase(base.NoDBTestCase):
         self.assertNotIn('admin', user_ctxt.roles)
 
     def test_request_context_sets_is_admin(self):
-        ctxt = context.RequestContext('111',
-                                      '222',
+        ctxt = context.RequestContext(user_id='111',
+                                      project_id='222',
                                       roles=['admin', 'weasel'])
         self.assertTrue(ctxt.is_admin)
 
     def test_request_context_sets_is_admin_upcase(self):
-        ctxt = context.RequestContext('111',
-                                      '222',
+        ctxt = context.RequestContext(user_id='111',
+                                      project_id='222',
                                       roles=['Admin', 'weasel'])
         self.assertTrue(ctxt.is_admin)
 
     def test_request_context_read_deleted(self):
-        ctxt = context.RequestContext('111',
-                                      '222',
+        ctxt = context.RequestContext(user_id='111',
+                                      project_id='222',
                                       read_deleted='yes')
         self.assertEqual('yes', ctxt.read_deleted)
 
@@ -58,18 +58,18 @@ class ContextTestCase(base.NoDBTestCase):
         self.assertEqual('no', ctxt.read_deleted)
 
     def test_request_context_read_deleted_none(self):
-        ctxt = context.RequestContext('111',
-                                    '222')
+        ctxt = context.RequestContext(user_id='111',
+                                      project_id='222')
         self.assertEqual('no', ctxt.read_deleted)
 
     def test_request_context_read_deleted_invalid(self):
         self.assertRaises(ValueError,
                           context.RequestContext,
-                          '111',
-                          '222',
+                          user_id='111',
+                          project_id='222',
                           read_deleted=True)
 
-        ctxt = context.RequestContext('111', '222')
+        ctxt = context.RequestContext(user_id='111', project_id='222')
         self.assertRaises(ValueError,
                           setattr,
                           ctxt,
@@ -77,48 +77,49 @@ class ContextTestCase(base.NoDBTestCase):
                           True)
 
     def test_service_catalog_default(self):
-        ctxt = context.RequestContext('111', '222')
+        ctxt = context.RequestContext(user_id='111', project_id='222')
         self.assertEqual([], ctxt.service_catalog)
 
-        ctxt = context.RequestContext('111', '222',
+        ctxt = context.RequestContext(user_id='111', project_id='222',
                 service_catalog=[])
         self.assertEqual([], ctxt.service_catalog)
 
-        ctxt = context.RequestContext('111', '222',
+        ctxt = context.RequestContext(user_id='111', project_id='222',
                 service_catalog=None)
         self.assertEqual([], ctxt.service_catalog)
 
     def test_store_when_no_overwrite(self):
         # If no context exists we store one even if overwrite is false
         # (since we are not overwriting anything).
-        ctx = context.RequestContext('111',
-                                     '222',
+        ctx = context.RequestContext(user_id='111',
+                                     project_id='222',
                                      overwrite=False)
         self.assertIs(o_context.get_current(), ctx)
 
     def test_no_overwrite(self):
         # If there is already a context in the cache a new one will
         # not overwrite it if overwrite=False.
-        ctx1 = context.RequestContext('111',
-                                      '222',
+        ctx1 = context.RequestContext(user_id='111',
+                                      project_id='222',
                                       overwrite=True)
-        context.RequestContext('333',
-                               '444',
+        context.RequestContext(user_id='333',
+                               project_id='444',
                                overwrite=False)
         self.assertIs(o_context.get_current(), ctx1)
 
     def test_admin_no_overwrite(self):
         # If there is already a context in the cache creating an admin
         # context will not overwrite it.
-        ctx1 = context.RequestContext('111',
-                                      '222',
+        ctx1 = context.RequestContext(user_id='111',
+                                      project_id='222',
                                       overwrite=True)
         context.get_admin_context()
         self.assertIs(o_context.get_current(), ctx1)
 
     def test_convert_from_rc_to_dict(self):
         ctx = context.RequestContext(
-            111, 222, request_id='req-679033b7-1755-4929-bf85-eb3bfaef7e0b',
+            user_id=111, project_id=222,
+            request_id='req-679033b7-1755-4929-bf85-eb3bfaef7e0b',
             timestamp='2016-03-02T22:31:56.641629')
         values2 = ctx.to_dict()
         expected_values = {'is_admin': False,
