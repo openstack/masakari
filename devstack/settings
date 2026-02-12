@@ -10,6 +10,13 @@ MASAKARI_DASHBOARD_BRANCH=${MASAKARI_DASHBOARD_BRANCH:-master}
 MASAKARI_MONITORS_DIR=${MASAKARI_MONITORS_DIR:-${DEST}/masakari-monitors}
 MASAKARI_MONITORS_REPO=${MASAKARI_MONITORS_REPO:-${GIT_BASE}/openstack/masakari-monitors.git}
 MASAKARI_MONITORS_BRANCH=${MASAKARI_MONITORS_BRANCH:-master}
+# python-masakariclient
+MASAKARI_CLIENT_DIR=${MASAKARI_CLIENT_DIR:-${DEST}/python-masakariclient}
+MASAKARI_CLIENT_REPO=${MASAKARI_CLIENT_REPO:-${GIT_BASE}/openstack/python-masakariclient.git}
+MASAKARI_CLIENT_BRANCH=${MASAKARI_CLIENT_BRANCH:-master}
+GITREPO["python-masakariclient"]=$MASAKARI_CLIENT_REPO
+GITBRANCH["python-masakariclient"]=$MASAKARI_CLIENT_BRANCH
+GITDIR["python-masakariclient"]=$MASAKARI_CLIENT_DIR
 
 # Set up configuration directory and files
 MASAKARI_CONF_DIR=${MASAKARI_CONF_DIR:-/etc/masakari}
