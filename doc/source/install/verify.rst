@@ -24,20 +24,14 @@ Verify Masakari installation.
       +-------------+----------------+--------------------------------------------------------+
       | Name        | Type           | Endpoints                                              |
       +-------------+----------------+--------------------------------------------------------+
-      | nova_legacy | compute_legacy | RegionOne                                              |
-      |             |                |   public: http://controller/compute/v2/<tenant_id>     |
-      |             |                |                                                        |
       | nova        | compute        | RegionOne                                              |
       |             |                |   public: http://controller/compute/v2.1               |
       |             |                |                                                        |
       | cinder      | block-storage  | RegionOne                                              |
-      |             |                |   public: http://controller/volume/v3/<tenant_id>      |
+      |             |                |   public: http://controller/volume/v3                  |
       |             |                |                                                        |
       | glance      | image          | RegionOne                                              |
       |             |                |   public: http://controller/image                      |
-      |             |                |                                                        |
-      | cinderv3    | volumev3       | RegionOne                                              |
-      |             |                |   public: http://controller/volume/v3/<tenant_id>      |
       |             |                |                                                        |
       | masakari    | instance-ha    | RegionOne                                              |
       |             |                | internal: http://controller/instance-ha/v1/<tenant_id> |
@@ -51,14 +45,11 @@ Verify Masakari installation.
       |             |                | RegionOne                                              |
       |             |                |   admin: http://controller/identity                    |
       |             |                |                                                        |
-      | cinderv2    | volumev2       | RegionOne                                              |
-      |             |                |   public: http://controller/volume/v2/<tenant_id>      |
-      |             |                |                                                        |
       | placement   | placement      | RegionOne                                              |
       |             |                |   public: http://controller/placement                  |
       |             |                |                                                        |
       | neutron     | network        | RegionOne                                              |
-      |             |                |   public: http://controller:9696/                      |
+      |             |                |   public: http://controller/networking                 |
       |             |                |                                                        |
       +-------------+----------------+--------------------------------------------------------+
 
