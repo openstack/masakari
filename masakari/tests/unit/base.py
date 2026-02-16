@@ -85,6 +85,7 @@ class TestCase(testtools.TestCase):
 
         self.useFixture(conf_fixture.ConfFixture(CONF))
         self.policy = self.useFixture(policy_fixture.PolicyFixture())
+        CONF.set_override('connection', 'memory://', 'taskflow')
 
         if self.USES_DB:
             self.useFixture(masakari_fixtures.Database())
