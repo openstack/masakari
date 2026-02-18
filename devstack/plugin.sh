@@ -191,9 +191,20 @@ function configure_masakarimonitors {
     touch $MASAKARI_MONITORS_CONF_DIR/process_list.yaml
 }
 
+# install_masakariclient() - Collect source and prepare
+function install_masakariclient {
+    if use_library_from_git "python-masakariclient"; then
+        git_clone_by_name "python-masakariclient"
+        setup_dev_lib "python-masakariclient"
+    else
+        pip_install_gr python-masakariclient
+    fi
+}
+
 # install_masakari() - Collect source and prepare
 function install_masakari {
     setup_develop $MASAKARI_DIR
+    install_masakariclient
 }
 
 # init_masakari() - Initializes Masakari Database as a Service
