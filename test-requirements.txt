@@ -5,6 +5,7 @@ ddt>=1.0.1 # MIT
 doc8>=0.6.0 # Apache-2.0
 pep8>=1.5.7
 psycopg2>=2.8 # LGPL/ZPL
+pycodestyle>=2.0.0 # MIT
 PyMySQL>=0.7.6 # MIT License
 openstacksdk>=0.35.0 # Apache-2.0
 oslotest>=3.2.0 # Apache-2.0
