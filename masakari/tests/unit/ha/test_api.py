@@ -821,6 +821,54 @@ class NotificationAPITestCase(base.NoDBTestCase):
                           self.notification_api.create_notification,
                           self.context, notification_data)
 
+    @mock.patch('masakari.ha.api.time.sleep')
+    @mock.patch('masakari.ha.api.random.uniform', return_value=2.5)
+    @mock.patch.object(ha_api.NotificationAPI,
+                       '_create_host_type_notification')
+    def test_create_notification_add_pause_when_no_coordinator(
+        self, mock_create_host, mock_uniform, mock_sleep
+    ):
+        # When no coordinator configured (backend_url=NULL) add a random pause
+        self.override_config('backend_url', '', group='coordination')
+        self.override_config('notification_delay_max', 5)
+
+        notification_data = {
+            "hostname": "host_1",
+            "type": fields.NotificationType.COMPUTE_HOST,
+        }
+
+        self.notification_api.create_notification(
+            self.context, notification_data)
+
+        mock_uniform.assert_called_once_with(0, 5)
+        mock_sleep.assert_called_once_with(2.5)
+        mock_create_host.assert_called_once_with(
+            self.context, notification_data)
+
+    @mock.patch('masakari.ha.api.time.sleep')
+    @mock.patch('masakari.ha.api.random.uniform')
+    @mock.patch.object(ha_api.NotificationAPI,
+                       '_create_host_type_notification')
+    def test_create_notification_disabled_pause_when_no_coordinator(
+        self, mock_create_host, mock_uniform, mock_sleep
+    ):
+        # When no coordinator configured (backend_url=NULL) add a random pause
+        self.override_config('backend_url', '', group='coordination')
+        self.override_config('notification_delay_max', 0)
+
+        notification_data = {
+            "hostname": "host_1",
+            "type": fields.NotificationType.COMPUTE_HOST,
+        }
+
+        self.notification_api.create_notification(
+            self.context, notification_data)
+
+        mock_uniform.assert_not_called()
+        mock_sleep.assert_not_called()
+        mock_create_host.assert_called_once_with(
+            self.context, notification_data)
+
     @mock.patch.object(exception, 'DuplicateNotification')
     @mock.patch.object(objects, 'Notification')
     @mock.patch.object(host_obj.Host, 'get_by_name')

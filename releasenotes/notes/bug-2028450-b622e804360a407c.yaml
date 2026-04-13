@@ -1,0 +1,19 @@
+---
+fixes:
+  - |
+    If coordination is NOT configured, synchronized becomes effectively
+    a no-op across multiple API workers, which can lead to duplicate
+    notifications due to race conditions.
+
+    When ``[coordination] backend_url`` is not set, Masakari can now apply a
+    small random delay before creating notifications. This significantly
+    reduces, but does not fully eliminate, the probability of duplicate
+    notifications being created.
+
+    The workaround is controlled by the ``[DEFAULT] notification_delay_max``
+    option. Default is 5, set it to ``0`` to disable the workaround.
+
+    This workaround is skipped entirely when coordination is configured.
+    Operators should treat coordination as the proper fix.
+
+    `LP#2028450 <https://launchpad.net/bugs/2028450>`__
