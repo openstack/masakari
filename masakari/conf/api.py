@@ -98,6 +98,33 @@ unchanged.
 
   None
 """),
+    cfg.IntOpt("notification_delay_max",
+        default=5,
+        min=0,
+        help="""
+Maximum random delay, in seconds, applied before creating a notification
+when the coordination backend is not configured.
+
+This is an interim workaround to reduce the chance of duplicate
+notifications being created concurrently by multiple HA API workers.
+
+Set to 0 to disable the workaround.
+
+When coordination is configured, this option is ignored and no delay
+is added.
+
+* Possible values:
+
+  Any positive integer. Default is 5. 0 to disable.
+
+* Services that use this:
+
+  ``masakari-api``
+
+* Related options:
+
+  None
+"""),
 ]
 
 

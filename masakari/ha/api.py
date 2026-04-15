@@ -13,6 +13,8 @@
 #    under the License.
 
 import datetime
+import random
+import time
 import traceback
 
 from oslo_log import log as logging
@@ -346,6 +348,19 @@ class NotificationAPI(object):
     def create_notification(self, context, notification_data):
         """Create notification"""
         create_notification_function = '_create_notification'
+        """If coordination is NOT configured, synchronized becomes effectively
+        a no-op across multiple API workers, which can lead to duplicate
+        notifications due to race conditions. Introduce a small randomized
+        pause to reduce probability of concurrent inserts.
+
+        This random pause only applies if notification_delay_max config is
+        set to a non-zero number.
+        """
+        if not CONF.coordination.backend_url:
+            delay_max = CONF.notification_delay_max
+            if delay_max > 0:
+                time.sleep(random.uniform(0, delay_max))
+
         if notification_data.get('type') == \
                 fields.NotificationType.COMPUTE_HOST:
             create_notification_function = '_create_host_type_notification'
