@@ -1089,3 +1089,62 @@ class BodyDecodingTest(base.NoDBTestCase):
             body,
             'application/json'
         )
+
+
+class WsgiHeaderTest(base.NoDBTestCase):
+
+    def _make_request_with_version(self, version_string='1.0'):
+        req = wsgi.Request.blank('/v1')
+        req.api_version_request = api_version.APIVersionRequest(
+            version_string)
+        return req
+
+    def test_406_does_not_include_api_version_header(self):
+        req = self._make_request_with_version('99.99')
+        exc = webob.exc.HTTPNotAcceptable(explanation='Not acceptable')
+        fault = wsgi.Fault(exc)
+        resp = fault(req)
+
+        self.assertNotIn(
+            wsgi.API_VERSION_REQUEST_HEADER,
+            resp.headers,
+            "406 response must NOT contain OpenStack-API-Version header"
+        )
+
+    def test_406_still_includes_vary_header(self):
+        req = self._make_request_with_version('99.99')
+        exc = webob.exc.HTTPNotAcceptable(explanation='Not acceptable')
+        fault = wsgi.Fault(exc)
+        resp = fault(req)
+
+        self.assertIn(
+            'Vary',
+            resp.headers,
+            "406 response MUST contain Vary header"
+        )
+        self.assertEqual(
+            wsgi.API_VERSION_REQUEST_HEADER,
+            resp.headers['Vary']
+        )
+
+    def test_error_response_uses_instance_ha_service_type(self):
+        req = self._make_request_with_version('1.0')
+        exc = webob.exc.HTTPBadRequest(explanation='Bad request')
+        fault = wsgi.Fault(exc)
+        resp = fault(req)
+
+        version_header = resp.headers.get(wsgi.API_VERSION_REQUEST_HEADER, '')
+        self.assertTrue(version_header.startswith('instance-ha '))
+
+    def test_success_response_uses_instance_ha_service_type(self):
+        class DummyController(object):
+            def index(self, req):
+                return {'status': 'success'}
+
+        app = fakes.TestRouter(DummyController())
+        req = fakes.HTTPRequest.blank('/tests')
+        req.api_version_request = api_version.APIVersionRequest('1.0')
+        resp = req.get_response(app)
+
+        version_header = resp.headers.get(wsgi.API_VERSION_REQUEST_HEADER, '')
+        self.assertTrue(version_header.startswith('instance-ha '))

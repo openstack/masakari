@@ -686,7 +686,7 @@ class Resource(wsgi.Application):
 
             if not request.api_version_request.is_null():
                 response.headers[API_VERSION_REQUEST_HEADER] = \
-                    'masakari ' + request.api_version_request.get_string()
+                    'instance-ha ' + request.api_version_request.get_string()
                 response.headers.add('Vary', API_VERSION_REQUEST_HEADER)
 
         return response
@@ -1047,8 +1047,9 @@ class Fault(webob.exc.HTTPException):
                 fault_data[fault_name]['retryAfter'] = retry
 
         if not req.api_version_request.is_null():
-            self.wrapped_exc.headers[API_VERSION_REQUEST_HEADER] = \
-                'instance-ha ' + req.api_version_request.get_string()
+            if code != HTTPStatus.NOT_ACCEPTABLE:
+                self.wrapped_exc.headers[API_VERSION_REQUEST_HEADER] = \
+                    'instance-ha ' + req.api_version_request.get_string()
             self.wrapped_exc.headers.add('Vary', API_VERSION_REQUEST_HEADER)
 
         self.wrapped_exc.content_type = 'application/json'
