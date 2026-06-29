@@ -67,7 +67,6 @@ class MasakariObjectRegistry(ovoo_base.VersionedObjectRegistry):
             cls.register(notification_cls)
 
 
-remotable_classmethod = ovoo_base.remotable_classmethod
 remotable = ovoo_base.remotable
 
 

@@ -59,17 +59,20 @@ class FailoverSegment(base.MasakariPersistentObject, base.MasakariObject,
         segment.obj_reset_changes()
         return segment
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_by_id(cls, context, id):
         db_inst = db.failover_segment_get_by_id(context, id)
         return cls._from_db_object(context, cls(), db_inst)
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_by_uuid(cls, context, uuid):
         db_inst = db.failover_segment_get_by_uuid(context, uuid)
         return cls._from_db_object(context, cls(), db_inst)
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_by_name(cls, context, name):
         db_inst = db.failover_segment_get_by_name(context, name)
         return cls._from_db_object(context, cls(), db_inst)
@@ -151,7 +154,8 @@ class FailoverSegmentList(base.ObjectListBase, base.MasakariObject):
         'objects': fields.ListOfObjectsField('FailoverSegment'),
         }
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_all(cls, ctxt, filters=None, sort_keys=None,
                 sort_dirs=None, limit=None, marker=None):
 

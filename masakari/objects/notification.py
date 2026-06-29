@@ -73,12 +73,14 @@ class Notification(base.MasakariPersistentObject, base.MasakariObject,
         notification._context = context
         return notification
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_by_id(cls, context, id):
         db_notification = db.notification_get_by_id(context, id)
         return cls._from_db_object(context, cls(), db_notification)
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_by_uuid(cls, context, uuid):
         db_notification = db.notification_get_by_uuid(context, uuid)
         return cls._from_db_object(context, cls(), db_notification)
@@ -149,7 +151,8 @@ class NotificationList(base.ObjectListBase, base.MasakariObject):
         'objects': fields.ListOfObjectsField('Notification'),
         }
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_all(cls, context, filters=None, sort_keys=None,
                 sort_dirs=None, limit=None, marker=None):
 

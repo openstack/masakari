@@ -53,7 +53,8 @@ class VMove(base.MasakariPersistentObject, base.MasakariObject,
         vmove.obj_reset_changes()
         return vmove
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_by_uuid(cls, context, uuid):
         db_inst = db.vmove_get_by_uuid(context, uuid)
         return cls._from_db_object(context, cls(), db_inst)
@@ -89,7 +90,8 @@ class VMoveList(base.ObjectListBase, base.MasakariObject):
         'objects': fields.ListOfObjectsField('VMove'),
         }
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_all(cls, ctxt, filters=None, sort_keys=None,
                 sort_dirs=None, limit=None, marker=None):
 
@@ -102,7 +104,8 @@ class VMoveList(base.ObjectListBase, base.MasakariObject):
         return base.obj_make_list(ctxt, cls(ctxt), objects.VMove,
                                   groups)
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_all_vmoves(cls, ctxt, notification_uuid, status=None):
         filters = {
             'notification_uuid': notification_uuid

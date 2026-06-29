@@ -69,17 +69,20 @@ class Host(base.MasakariPersistentObject, base.MasakariObject,
         host._context = context
         return host
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_by_id(cls, context, id):
         db_inst = db.host_get_by_id(context, id)
         return cls._from_db_object(context, cls(), db_inst)
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_by_uuid(cls, context, uuid, segment_uuid=None):
         db_inst = db.host_get_by_uuid(context, uuid, segment_uuid=segment_uuid)
         return cls._from_db_object(context, cls(), db_inst)
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_by_name(cls, context, name):
         db_inst = db.host_get_by_name(context, name)
         return cls._from_db_object(context, cls(), db_inst)
@@ -168,7 +171,8 @@ class HostList(base.ObjectListBase, base.MasakariObject):
         'objects': fields.ListOfObjectsField('Host'),
         }
 
-    @base.remotable_classmethod
+    @classmethod
+    @base.remotable
     def get_all(cls, context, filters=None, sort_keys=None, sort_dirs=None,
                 limit=None, marker=None):
 
