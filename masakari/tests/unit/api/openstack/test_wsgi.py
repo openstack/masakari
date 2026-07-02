@@ -917,7 +917,8 @@ class ResourceTest(MicroversionedTest):
         req.body = body
         req.headers['Content-Type'] = 'application/json'
         app = fakes.TestRouter(Controller())
-        self.assertRaises(UnicodeDecodeError, req.get_response, app)
+        response = req.get_response(app)
+        self.assertEqual(HTTPStatus.BAD_REQUEST, response.status_int)
 
 
 class ResponseObjectTest(base.NoDBTestCase):
@@ -1047,3 +1048,44 @@ class TestController(base.NoDBTestCase):
             wsgi.Controller.check_for_versions_intersection(func_list=func_list
                                                             ))
         self.assertTrue(result)
+
+
+class BodyDecodingTest(base.NoDBTestCase):
+    @mock.patch.object(wsgi.Resource, '_should_have_body')
+    @mock.patch.object(wsgi.Resource, 'dispatch')
+    @mock.patch.object(wsgi.Resource, 'pre_process_extensions')
+    @mock.patch.object(wsgi.Resource, 'get_method')
+    def test_invalid_utf8_body_does_not_raise(
+            self,
+            mock_get_method,
+            mock_pre,
+            mock_dispatch,
+            mock_should_have_body):
+
+        controller = mock.Mock()
+        controller.wsgi_actions = {}
+
+        resource = wsgi.Resource(controller)
+
+        mock_get_method.return_value = (mock.Mock(), [])
+
+        response = mock.Mock()
+        response.headers = {}
+        mock_pre.return_value = (response, [])
+
+        mock_should_have_body.return_value = False
+
+        req = wsgi.Request.blank('/v1')
+        req.api_version_request = mock.Mock()
+        req.api_version_request.is_null.return_value = True
+
+        body = b'\x80\x81\x82\xff'
+
+        resource._process_stack(
+            req,
+            'create',
+            {},
+            'application/json',
+            body,
+            'application/json'
+        )

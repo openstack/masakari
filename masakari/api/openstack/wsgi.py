@@ -611,7 +611,8 @@ class Resource(wsgi.Application):
         if body:
             msg = _("Action: '%(action)s', calling method: %(meth)s, body: "
                     "%(body)s") % {'action': action,
-                                   'body': str(body, 'utf-8'),
+                                   'body': body.decode(
+                                       'utf-8', errors='replace'),
                                    'meth': str(meth)}
             LOG.debug(strutils.mask_password(msg))
         else:
