@@ -208,19 +208,10 @@ class EvacuateInstancesTask(base.MasakariTask):
                 vmove.message = message
             vmove.save()
 
-        instance_uuid = vmove.instance_uuid
-        instance = self.novaclient.get_server(context, instance_uuid)
-
-        # Before locking the instance check whether it is already locked
-        # by user, if yes don't lock the instance
-        instance_already_locked = self.novaclient.get_server(
-            context, instance.id).locked
-
-        if not instance_already_locked:
-            # lock the instance so that until evacuation and confirmation
-            # is not complete, user won't be able to perform any actions
-            # on the instance.
-            self.novaclient.lock_server(context, instance.id)
+        # initialised so the finally block can't NameError if the
+        # first get_server/lock_server below raises before assignment.
+        instance = None
+        instance_already_locked = True
 
         def _wait_for_evacuation_confirmation():
             old_vm_state, new_vm_state, instance_host = (
@@ -255,6 +246,20 @@ class EvacuateInstancesTask(base.MasakariTask):
                 timer.stop()
 
         try:
+            instance_uuid = vmove.instance_uuid
+            instance = self.novaclient.get_server(context, instance_uuid)
+
+            # Before locking the instance check whether it is already locked
+            # by user, if yes don't lock the instance
+            instance_already_locked = self.novaclient.get_server(
+                context, instance.id).locked
+
+            if not instance_already_locked:
+                # lock the instance so that until evacuation and confirmation
+                # is not complete, user won't be able to perform any actions
+                # on the instance.
+                self.novaclient.lock_server(context, instance.id)
+
             vm_state = getattr(instance, "OS-EXT-STS:vm_state")
             task_state = getattr(instance, "OS-EXT-STS:task_state")
 
@@ -328,9 +333,18 @@ class EvacuateInstancesTask(base.MasakariTask):
                 message=str(e))
         finally:
             _update_vmove(vmove, end_time=timeutils.utcnow())
-            if not instance_already_locked:
-                # Unlock the server after evacuation and confirmation
-                self.novaclient.unlock_server(context, instance.id)
+            if instance and not instance_already_locked:
+                # Unlock the server after evacuation and confirmation.
+                # Wrapped so a transient nova/keystone failure here
+                # can't escape to greenpool.spawn_n and silently leave the
+                # instance locked (observed in LP#2158101).
+                try:
+                    self.novaclient.unlock_server(context, instance.id)
+                except Exception as unlock_err:
+                    LOG.warning(
+                        "Failed to unlock instance %(uuid)s after "
+                        "evacuation: %(error)s",
+                        {'uuid': instance.id, 'error': unlock_err})
 
     def execute(self, host_name, notification_uuid, reserved_host=None):
         all_vmoves = objects.VMoveList.get_all_vmoves(
@@ -414,6 +428,23 @@ class EvacuateInstancesTask(base.MasakariTask):
                        "'%(instance_list)s' from host "
                        "'%(host_name)s'") % {
                     'instance_list': ','.join(failed_vmoves),
+                    'host_name': host_name}
+                self.update_details(msg, 0.7)
+                raise exception.HostRecoveryFailureException(
+                    message=msg)
+
+            # vmoves still PENDING here were silently dropped by
+            # their greenpool thread (exception swallowed before the vmove
+            # status was updated). Treat them as failures so the notification
+            # is not marked 'finished' with VMs unaccounted for (LP#2158101).
+            pending_vmoves = [i.instance_uuid for i in all_vmoves
+                    if i.status not in (fields.VMoveStatus.SUCCEEDED,
+                                        fields.VMoveStatus.FAILED)]
+            if pending_vmoves:
+                msg = ("Instances '%(instance_list)s' were not evacuated "
+                       "from host '%(host_name)s': vmove status is still "
+                       "pending") % {
+                    'instance_list': ','.join(pending_vmoves),
                     'host_name': host_name}
                 self.update_details(msg, 0.7)
                 raise exception.HostRecoveryFailureException(

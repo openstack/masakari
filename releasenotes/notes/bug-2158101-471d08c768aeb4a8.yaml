@@ -1,0 +1,15 @@
+---
+fixes:
+  - |
+    Fixes an issue during ``COMPUTE_HOST`` recovery where transient failures
+    from Nova or Keystone API calls could leave instance evacuation records in
+    ``PENDING`` while the notification was still marked ``finished``.
+    Masakari now reports the host recovery as failed when any instance
+    evacuation cannot be accounted for, so operators can retry or investigate
+    the recovery instead of seeing a successful notification with missing
+    instance results.
+
+    Unlock failures during evacuation cleanup are now logged without escaping
+    the instance recovery worker.
+
+    `LP#2158101 <https://launchpad.net/bugs/2158101>`__

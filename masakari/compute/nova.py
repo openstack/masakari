@@ -57,7 +57,12 @@ def translate_nova_exception(method):
             res = method(self, ctx, *args, **kwargs)
         except (request_exceptions.Timeout,
                 nova_exception.CommandError,
-                keystone_exception.ConnectionError) as exc:
+                keystone_exception.ConnectionError,
+                # keystone 504/503 during endpoint discovery raises
+                # DiscoveryFailure (not ConnectionError) and would otherwise
+                # propagate raw, escaping host_failure's try/except
+                # (LP#2158101).
+                keystone_exception.DiscoveryFailure) as exc:
             err_msg = str(exc)
             _reraise(exception.MasakariException(reason=err_msg))
         except (keystone_exception.BadRequest,
