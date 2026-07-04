@@ -174,6 +174,65 @@ class HostFailureTestCase(base.TestCase):
         task._evacuate_and_confirm(self.ctxt, vmove)
         self.assertEqual(fields.VMoveStatus.FAILED, vmove.status)
 
+    @mock.patch.object(nova.API, "get_server")
+    @mock.patch('masakari.engine.drivers.taskflow.host_failure.LOG')
+    def test_evacuate_get_server_failure_marks_vmove_failed(
+            self, _mock_log, _mock_get, mock_unlock, mock_lock,
+            mock_enable_disable):
+        # LP#2158101: get_server at the top of _evacuate_and_confirm (outside
+        # try/except in the buggy code) raised DiscoveryFailure, the
+        # greenpool thread died silently and the vmove stayed PENDING. The
+        # fix wraps the get_server call in the try/except so the vmove is
+        # marked FAILED.
+        task = host_failure.EvacuateInstancesTask(
+            self.ctxt, self.novaclient,
+            update_host_method=manager.update_host_method)
+
+        vmove = vmove_obj.VMove(context=self.ctxt)
+        vmove.instance_uuid = uuids.instance
+        vmove.instance_name = 'fake'
+        vmove.notification_uuid = self.notification_uuid
+        vmove.source_host = self.instance_host
+        vmove.status = fields.VMoveStatus.PENDING
+        vmove.type = fields.VMoveType.EVACUATION
+        vmove.create()
+
+        _mock_get.side_effect = exception.MasakariException(reason="boom")
+        task._evacuate_and_confirm(self.ctxt, vmove)
+
+        self.assertEqual(fields.VMoveStatus.FAILED, vmove.status)
+        _mock_log.warning.assert_called()
+        # instance was never fetched, so lock/unlock must not be called
+        self.assertFalse(mock_lock.called)
+        self.assertFalse(mock_unlock.called)
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_evacuate_unlock_failure_does_not_escape(
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
+            mock_enable_disable):
+        # LP#2158101 variant: unlock_server in the finally block raised Nova
+        # 500, the exception was swallowed by greenpool.spawn_n and the VM was
+        # left locked. The fix wraps unlock_server in its own try/except so
+        # the failure is logged, not propagated, and the vmove stays
+        # SUCCEEDED (evacuation itself succeeded).
+        _mock_novaclient.return_value = self.fake_client
+
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host, ha_enabled=True)
+        self._test_instance_list(1)
+
+        mock_unlock.side_effect = exception.MasakariException(reason="500")
+
+        # Should NOT raise: unlock failure is caught, not propagated.
+        self._evacuate_instances(mock_enable_disable)
+
+        self.assertTrue(mock_unlock.called)
+        _mock_notify.assert_has_calls([
+            mock.call('Evacuation process completed!', 1.0)
+        ])
+
     @mock.patch('masakari.compute.nova.novaclient')
     @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
                 'update_details')
@@ -708,6 +767,39 @@ class HostFailureTestCase(base.TestCase):
             mock.call(f"Failed to evacuate instances '{uuids.server_1}' from "
                       f"host 'fake-host'", 0.7)
         ])
+
+    @mock.patch('masakari.compute.nova.novaclient')
+    @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
+                'update_details')
+    def test_host_failure_flow_pending_vmove_raises(
+            self, _mock_notify, _mock_novaclient, mock_unlock, mock_lock,
+            mock_enable_disable):
+        # LP#2158101: a vmove left PENDING (silently dropped by greenpool)
+        # used to fall through the SUCCEEDED/FAILED completion filters and the
+        # notification was marked 'finished' with a VM unaccounted for. The
+        # fix raises HostRecoveryFailureException when any vmove is still
+        # pending after waitall().
+        _mock_novaclient.return_value = self.fake_client
+        self.override_config("evacuate_all_instances", True, "host_failure")
+
+        self.fake_client.servers.create(
+            id=uuids.server_1, host=self.instance_host, ha_enabled=True)
+        self._test_instance_list(1)
+
+        # Simulate the silent-drop: the spawned thread dies before updating
+        # the vmove, so it stays PENDING after waitall().
+        with mock.patch.object(host_failure.EvacuateInstancesTask,
+                               '_evacuate_and_confirm',
+                               side_effect=lambda *a, **k: None):
+            self.assertRaises(
+                exception.HostRecoveryFailureException,
+                self._evacuate_instances, mock_enable_disable)
+
+        _mock_notify.assert_has_calls([
+            mock.call(f"Instances '{uuids.server_1}' were not evacuated "
+                      f"from host 'fake-host': vmove status is still "
+                      f"pending", 0.7)
+        ], any_order=True)
 
     @mock.patch('masakari.compute.nova.novaclient')
     @mock.patch('masakari.engine.drivers.taskflow.base.MasakariTask.'
