@@ -37,7 +37,9 @@ class Notification(base.MasakariPersistentObject, base.MasakariObject,
     # Version 1.1: Added recovery_workflow_details field.
     #              Note: This field shouldn't be persisted.
     # Version 1.2: Added failover_segment_uuid and message field.
-    VERSION = '1.2'
+    # Version 1.3: Make failover_segment_uuid field nullable to account
+    #              for older deployments.
+    VERSION = '1.3'
 
     fields = {
         'id': fields.IntegerField(),
@@ -52,9 +54,9 @@ class Notification(base.MasakariPersistentObject, base.MasakariObject,
         # will be set to this field.
         'recovery_workflow_details': fields.ListOfObjectsField(
             'NotificationProgressDetails', default=[]),
-        'failover_segment_uuid': fields.UUIDField(),
+        'failover_segment_uuid': fields.UUIDField(nullable=True),
         'message': fields.StringField(nullable=True),
-        }
+    }
 
     @staticmethod
     def _from_db_object(context, notification, db_notification):
