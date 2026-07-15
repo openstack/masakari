@@ -19,6 +19,7 @@ from masakari import db
 from masakari import exception
 from masakari.tests.unit import base
 from masakari.tests import uuidsentinel
+from oslo_utils import uuidutils
 
 NOW = timeutils.utcnow().replace(microsecond=0)
 
@@ -185,6 +186,46 @@ class FailoverSegmentsTestCase(base.TestCase, ModelsObjectComparatorMixin):
                           db.failover_segment_update, self.ctxt,
                           uuidsentinel.uuid_2,
                           {'name': 'test_1'})
+
+    def test_failover_segment_delete_blocked_with_active_notifications(self):
+        segment_uuid = uuidutils.generate_uuid()
+        host_uuid = uuidutils.generate_uuid()
+
+        segment = db.failover_segment_create(
+            self.ctxt,
+            {
+                'uuid': segment_uuid,
+                'name': 'test-segment',
+                'service_type': 'compute',
+                'recovery_method': 'auto',
+            }
+        )
+        db.host_create(
+            self.ctxt,
+            {
+                'uuid': host_uuid,
+                'name': 'test-host',
+                'failover_segment_id': segment['uuid'],
+                'type': 'compute',
+                'control_attributes': 'SSH',
+            }
+        )
+        db.notification_create(
+            self.ctxt,
+            {
+                'notification_uuid': uuidutils.generate_uuid(),
+                'generated_time': timeutils.utcnow(),
+                'type': 'COMPUTE_HOST',
+                'status': 'running',
+                'source_host_uuid': host_uuid,
+            }
+        )
+        self.assertRaises(
+            exception.Conflict,
+            db.failover_segment_delete,
+            self.ctxt,
+            segment['uuid']
+        )
 
 
 class HostsTestCase(base.TestCase, ModelsObjectComparatorMixin):
