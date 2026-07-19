@@ -1,0 +1,5 @@
+---
+deprecations:
+  - |
+    The ``[DEFAULT] use_forwarded_for`` option has been deprecated. Use
+    the ``[oslo_middleware] enable_proxy_headers_parsing`` option instead.
