@@ -124,9 +124,8 @@ class FailoverSegmentsTestCase(base.TestCase, ModelsObjectComparatorMixin):
         self._assertEqualObjects(updated, failover_seg_updated, ignored_keys)
 
     def test_failover_segment_delete(self):
-        ctxt = context.get_admin_context()
         result = self._create_failover_segment(self._get_fake_values())
-        db.failover_segment_delete(ctxt, result['uuid'])
+        db.failover_segment_delete(self.ctxt, result['uuid'])
         self.assertRaises(exception.FailoverSegmentNotFound,
                           db.failover_segment_get_by_uuid, self.ctxt,
                           uuidsentinel.fake_uuid)
@@ -308,9 +307,8 @@ class HostsTestCase(base.TestCase, ModelsObjectComparatorMixin):
                          host_updated['failover_segment'].items())
 
     def test_host_delete(self):
-        ctxt = context.get_admin_context()
         result = self._create_host(self._get_fake_values())
-        db.host_delete(ctxt, result['uuid'])
+        db.host_delete(self.ctxt, result['uuid'])
         self.assertRaises(exception.HostNotFound,
                           db.host_get_by_uuid, self.ctxt,
                           uuidsentinel.fake_uuid)
@@ -469,9 +467,8 @@ class NotificationsTestCase(base.TestCase, ModelsObjectComparatorMixin):
         self._assertEqualObjects(updated, notification_updated, ignored_keys)
 
     def test_notification_delete(self):
-        ctxt = context.get_admin_context()
         result = self._create_notification(self._get_fake_values())
-        db.notification_delete(ctxt, result['notification_uuid'])
+        db.notification_delete(self.ctxt, result['notification_uuid'])
         self.assertRaises(exception.NotificationNotFound,
                           db.notification_get_by_uuid, self.ctxt,
                           uuidsentinel.notification)
