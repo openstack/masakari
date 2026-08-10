@@ -1,0 +1,13 @@
+---
+fixes:
+  - |
+    Fixes an issue where the ``OpenStack-API-Version`` response header was
+    incorrectly included in 406 Not Acceptable error responses when a client
+    requested an unsupported API microversion. The header is now properly
+    suppressed to comply with API guidelines.
+    `LP#1646357 <https://launchpad.net/bugs/1646357>`__
+  - |
+    Corrects the service type string returned in the ``OpenStack-API-Version``
+    header during successful API responses. Previously, it incorrectly echoed
+    the internal project name (``masakari``). It now correctly returns the
+    official API service type (``instance-ha``).
