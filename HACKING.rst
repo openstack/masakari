@@ -27,9 +27,6 @@ Masakari Specific Commandments
 - [M323] contextlib.nested is deprecated
 - [M324] Config options should be in the central location ``masakari/conf/``
 - [M325] Check for common double word typos
-- [M326] Python 3: do not use dict.iteritems.
-- [M327] Python 3: do not use dict.iterkeys.
-- [M328] Python 3: do not use dict.itervalues.
 - [M329] Deprecated library function os.popen()
 - [M331] LOG.warn is deprecated. Enforce use of LOG.warning.
 - [M333] Policy registration should be in the central location ``masakari/policies/``
