@@ -271,31 +271,6 @@ def check_doubled_words(physical_line, filename):
 
 
 @core.flake8ext
-def check_python3_no_iteritems(logical_line):
-    msg = ("M326: Use dict.items() instead of dict.iteritems().")
-
-    if re.search(r".*\.iteritems\(\)", logical_line):
-        yield (0, msg)
-
-
-@core.flake8ext
-def check_python3_no_iterkeys(logical_line):
-    msg = ("M327: Use 'for key in dict' instead of 'for key in "
-           "dict.iterkeys()'.")
-
-    if re.search(r".*\.iterkeys\(\)", logical_line):
-        yield (0, msg)
-
-
-@core.flake8ext
-def check_python3_no_itervalues(logical_line):
-    msg = ("M328: Use dict.values() instead of dict.itervalues().")
-
-    if re.search(r".*\.itervalues\(\)", logical_line):
-        yield (0, msg)
-
-
-@core.flake8ext
 def no_os_popen(logical_line):
     """Disallow 'os.popen('
 
