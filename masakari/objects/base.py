@@ -24,6 +24,9 @@ from oslo_versionedobjects import fields as obj_fields
 from masakari import objects
 
 
+MasakariObjectDictCompat = ovoo_base.VersionedObjectDictCompat
+
+
 def get_attrname(name):
     """Return the mangled name of the attribute's underlying storage."""
     return '_obj_' + name
@@ -148,17 +151,6 @@ class MasakariObject(ovoo_base.VersionedObject):
             self._changed_fields -= set(fields)
         else:
             self._changed_fields.clear()
-
-
-class MasakariObjectDictCompat(ovoo_base.VersionedObjectDictCompat):
-    def __iter__(self):
-        for name in self.obj_fields:
-            if (self.obj_attr_is_set(name) or
-                    name in self.obj_extra_fields):
-                yield name
-
-    def keys(self):
-        return list(self)
 
 
 class MasakariPersistentObject(object):
