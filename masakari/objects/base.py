@@ -24,6 +24,7 @@ from oslo_versionedobjects import fields as obj_fields
 from masakari import objects
 
 
+obj_make_list = ovoo_base.obj_make_list
 MasakariObjectDictCompat = ovoo_base.VersionedObjectDictCompat
 
 
@@ -108,50 +109,6 @@ class MasakariObject(ovoo_base.VersionedObject):
         # Return modified dict
         return changes
 
-    def obj_reset_changes(self, fields=None, recursive=False):
-        """Reset the list of fields that have been changed.
-
-        .. note::
-
-          - This is NOT "revert to previous values"
-          - Specifying fields on recursive resets will only be honored at the
-            top level. Everything below the top will reset all.
-
-        :param fields: List of fields to reset, or "all" if None.
-        :param recursive: Call obj_reset_changes(recursive=True) on
-                          any sub-objects within the list of fields
-                          being reset.
-        """
-        if recursive:
-            for field in self.obj_get_changes():
-
-                # Ignore fields not in requested set (if applicable)
-                if fields and field not in fields:
-                    continue
-
-                # Skip any fields that are unset
-                if not self.obj_attr_is_set(field):
-                    continue
-
-                value = getattr(self, field)
-
-                # Don't reset nulled fields
-                if value is None:
-                    continue
-
-                # Reset straight Object and ListOfObjects fields
-                if isinstance(self.fields[field], obj_fields.ObjectField):
-                    value.obj_reset_changes(recursive=True)
-                elif isinstance(self.fields[field],
-                                obj_fields.ListOfObjectsField):
-                    for thing in value:
-                        thing.obj_reset_changes(recursive=True)
-
-        if fields:
-            self._changed_fields -= set(fields)
-        else:
-            self._changed_fields.clear()
-
 
 class MasakariPersistentObject(object):
     """Mixin class for Persistent objects.
@@ -196,29 +153,6 @@ class MasakariObjectSerializer(ovoo_base.VersionedObjectSerializer):
 
     def __init__(self):
         super(MasakariObjectSerializer, self).__init__()
-
-
-def obj_make_list(context, list_obj, item_cls, db_list, **extra_args):
-    """Construct an object list from a list of primitives.
-
-    This calls item_cls._from_db_object() on each item of db_list, and
-    adds the resulting object to list_obj.
-
-    :param:context: Request context
-    :param:list_obj: An ObjectListBase object
-    :param:item_cls: The MasakariObject class of the objects within the list
-    :param:db_list: The list of primitives to convert to objects
-    :param:extra_args: Extra arguments to pass to _from_db_object()
-    :returns: list_obj
-    """
-    list_obj.objects = []
-    for db_item in db_list:
-        item = item_cls._from_db_object(context, item_cls(), db_item,
-                                        **extra_args)
-        list_obj.objects.append(item)
-    list_obj._context = context
-    list_obj.obj_reset_changes()
-    return list_obj
 
 
 def obj_equal_prims(obj_1, obj_2, ignore=None):

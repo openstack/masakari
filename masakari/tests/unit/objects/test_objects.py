@@ -100,26 +100,6 @@ class MyObj(base.MasakariPersistentObject, base.MasakariObject,
             primitive['bar'] = 'old%s' % primitive['bar']
 
 
-class TestObjMakeList(test_base.NoDBTestCase):
-
-    def test_obj_make_list(self):
-        class MyList(base.ObjectListBase, base.MasakariObject):
-            fields = {
-                'objects': fields.ListOfObjectsField('MyObj'),
-            }
-
-        db_objs = [{'foo': 1, 'bar': 'baz', 'missing': 'banana'},
-                   {'foo': 2, 'bar': 'bat', 'missing': 'apple'},
-                   ]
-        mylist = base.obj_make_list('ctxt', MyList(), MyObj, db_objs)
-        self.assertEqual(2, len(mylist))
-        self.assertEqual('ctxt', mylist._context)
-        for index, item in enumerate(mylist):
-            self.assertEqual(db_objs[index]['foo'], item.foo)
-            self.assertEqual(db_objs[index]['bar'], item.bar)
-            self.assertEqual(db_objs[index]['missing'], item.missing)
-
-
 def compare_obj(test, obj, db_obj, subs=None, allow_missing=None,
                 comparators=None):
     """Compare a MasakariObject and a dict-like database object.

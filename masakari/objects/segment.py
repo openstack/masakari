@@ -20,7 +20,6 @@ from oslo_utils import versionutils
 from masakari.api import utils as api_utils
 from masakari import db
 from masakari import exception
-from masakari import objects
 from masakari.objects import base
 from masakari.objects import fields
 
@@ -165,5 +164,4 @@ class FailoverSegmentList(base.ObjectListBase, base.MasakariObject):
                                                         limit=limit,
                                                         marker=marker)
 
-        return base.obj_make_list(ctxt, cls(ctxt), objects.FailoverSegment,
-                                  groups)
+        return base.obj_make_list(ctxt, cls(ctxt), groups)

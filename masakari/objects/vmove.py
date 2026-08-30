@@ -17,7 +17,6 @@ from oslo_utils import uuidutils
 
 from masakari import db
 from masakari import exception
-from masakari import objects
 from masakari.objects import base
 from masakari.objects import fields
 
@@ -94,15 +93,12 @@ class VMoveList(base.ObjectListBase, base.MasakariObject):
     @base.remotable
     def get_all(cls, ctxt, filters=None, sort_keys=None,
                 sort_dirs=None, limit=None, marker=None):
-
         groups = db.vmoves_get_all_by_filters(ctxt, filters=filters,
                                               sort_keys=sort_keys,
                                               sort_dirs=sort_dirs,
                                               limit=limit,
                                               marker=marker)
-
-        return base.obj_make_list(ctxt, cls(ctxt), objects.VMove,
-                                  groups)
+        return base.obj_make_list(ctxt, cls(ctxt), groups)
 
     @classmethod
     @base.remotable
@@ -114,5 +110,4 @@ class VMoveList(base.ObjectListBase, base.MasakariObject):
             filters['status'] = status
 
         groups = db.vmoves_get_all_by_filters(ctxt, filters=filters)
-        return base.obj_make_list(ctxt, cls(ctxt), objects.VMove,
-                                  groups)
+        return base.obj_make_list(ctxt, cls(ctxt), groups)

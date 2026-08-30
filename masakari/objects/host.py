@@ -181,4 +181,4 @@ class HostList(base.ObjectListBase, base.MasakariObject):
                                             sort_dirs=sort_dirs,
                                             limit=limit, marker=marker)
 
-        return base.obj_make_list(context, cls(context), objects.Host, groups)
+        return base.obj_make_list(context, cls(context), groups)

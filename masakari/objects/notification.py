@@ -20,7 +20,6 @@ from oslo_utils import uuidutils
 from masakari.api import utils as api_utils
 from masakari import db
 from masakari import exception
-from masakari import objects
 from masakari.objects import base
 from masakari.objects import fields
 
@@ -162,8 +161,7 @@ class NotificationList(base.ObjectListBase, base.MasakariObject):
                                                      limit=limit, marker=marker
                                                      )
 
-        return base.obj_make_list(context, cls(context), objects.Notification,
-                                  groups)
+        return base.obj_make_list(context, cls(context), groups)
 
 
 def notification_sample(sample):
