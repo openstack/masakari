@@ -168,31 +168,6 @@ class HackingTestCase(base.NoDBTestCase):
         self.assertEqual(0, len(list(checks.dict_constructor_with_list_copy(
             "      self._render_dict(xml, data_el, data.__dict__)"))))
 
-    def test_check_contextlib_use(self):
-        code = """
-               with base.nested(
-                   mock.patch.object(network_model.NetworkInfo, 'hydrate'),
-                   mock.patch.object(objects.InstanceInfoCache, 'save'),
-               ) as (
-                   hydrate_mock, save_mock
-               )
-               """
-        filename = "masakari/api/openstack/ha/test.py"
-        self._assert_has_no_errors(code, checks.check_no_contextlib_nested,
-                                   filename=filename)
-        code = """
-               with contextlib.nested(
-                   mock.patch.object(network_model.NetworkInfo, 'hydrate'),
-                   mock.patch.object(objects.InstanceInfoCache, 'save'),
-               ) as (
-                   hydrate_mock, save_mock
-               )
-               """
-        filename = "masakari/api/openstack/compute/ha/test.py"
-        errors = [(1, 0, 'M323')]
-        self._assert_has_errors(code, checks.check_no_contextlib_nested,
-                                expected_errors=errors, filename=filename)
-
     def test_check_greenthread_spawns(self):
         errors = [(1, 0, "M322")]
 

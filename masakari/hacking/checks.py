@@ -53,7 +53,6 @@ dict_constructor_with_list_copy_re = re.compile(r".*\bdict\((\[)?(\(|\[)")
 http_not_implemented_re = re.compile(r"raise .*HTTPNotImplemented\(")
 spawn_re = re.compile(
     r".*(eventlet|greenthread)\.(?P<spawn_part>spawn(_n)?)\(.*\)")
-contextlib_nested = re.compile(r"^with (contextlib\.)?nested\(")
 doubled_words_re = re.compile(
     r"\b(then?|[iao]n|i[fst]|but|f?or|at|and|[dt]o)\s+\1\b")
 _all_log_levels = {'critical', 'error', 'exception', 'info',
@@ -217,18 +216,6 @@ def check_greenthread_spawns(logical_line, filename):
 
     if match:
         yield (0, msg % {'spawn': match.group('spawn_part')})
-
-
-@core.flake8ext
-def check_no_contextlib_nested(logical_line, filename):
-    msg = ("M323: contextlib.nested is deprecated. With Python 2.7"
-           "and later  the with-statement supports multiple nested objects. "
-           "See https://docs.python.org/2/library/contextlib.html"
-           "#contextlib.nested for  more information. masakari.test.nested() "
-           "is an alternative as well.")
-
-    if contextlib_nested.match(logical_line):
-        yield (0, msg)
 
 
 @core.flake8ext
