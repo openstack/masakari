@@ -19,8 +19,9 @@ Edit the ``/etc/masakari/masakari.conf`` file and complete the following actions
 
 In the ``[DEFAULT]`` section, set following options:
 
-.. code-block:: bash
+.. code-block:: ini
 
+    [DEFAULT]
     auth_strategy = keystone
     masakari_topic = ha_engine
     os_privileged_user_tenant = service
@@ -33,14 +34,16 @@ Identity service.
 
 In the ``[database]`` section, configure database access:
 
-.. code-block:: bash
+.. code-block:: ini
 
+    [database]
     connection = mysql+pymysql://root:MASAKARI_DBPASS@controller/masakari?charset=utf8
 
-In the ``[keystone_authtoken]`` sections, configure Identity service access:
+In the ``[keystone_authtoken]`` section, configure Identity service access:
 
-.. code-block:: bash
+.. code-block:: ini
 
+    [keystone_authtoken]
     auth_url = http://controller/identity
     memcached_servers = controller:11211
     signing_dir = /var/cache/masakari
@@ -54,7 +57,13 @@ In the ``[keystone_authtoken]`` sections, configure Identity service access:
 
 Replace ``MASAKARI_PASS`` with the password you chose for the ``masakari`` user in the Identity service.
 
-In the ``[coordination]`` section, set 'backend_url' if use coordination for Masakari-api service.
+Also set the ``backend_url`` option in the ``[coordination]`` section, to enable
+shared lock among multiple masakari-api workers.
+
+.. code-block:: ini
+
+    [coordination]
+    backend_url = redis://coordination-host:6379
 
 .. note::
     Additional packages may be required depending on the tooz backend used in
