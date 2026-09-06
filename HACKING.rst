@@ -24,7 +24,6 @@ Masakari Specific Commandments
 - [M317] Ensure that jsonutils.%(fun)s must be used instead of json.%(fun)s
 - [M320] Must use a dict comprehension instead of a dict constructor with a sequence of key-value pairs.
 - [M322] Check masakari.utils.spawn() is used instead of greenthread.spawn() and eventlet.spawn()
-- [M323] contextlib.nested is deprecated
 - [M324] Config options should be in the central location ``masakari/conf/``
 - [M325] Check for common double word typos
 - [M329] Deprecated library function os.popen()
