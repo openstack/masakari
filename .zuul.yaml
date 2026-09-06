@@ -22,9 +22,8 @@
       - ^\.gitreview$
       - ^\.mailmap$
       - ^\.yamllint$
-      - ^\.zuul\.yaml$
       - ^LICENSE$
-      - ^.*[^/]+\.rst$
+      - ^.*\.rst$
       - ^bindep\.txt$
     vars:
       devstack_plugins:
