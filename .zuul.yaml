@@ -16,6 +16,7 @@
       - ^api-ref/
       - ^doc/
       - ^masakari/tests/unit/
+      - ^masakarimonitors/tests/unit/
       - ^releasenotes/
       - ^\.coveragerc$
       - ^\.gitignore$
