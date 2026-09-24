@@ -13,9 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import eventlet
-from eventlet import greenpool
+import time
 
+from eventlet import greenpool
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_service import loopingcall
@@ -56,7 +56,7 @@ class DisableComputeServiceTask(base.MasakariTask):
         log_msg = ("Sleeping %(wait)s sec before starting recovery "
                "thread until nova recognizes the node down.")
         LOG.info(log_msg, {'wait': CONF.wait_period_after_service_update})
-        eventlet.sleep(CONF.wait_period_after_service_update)
+        time.sleep(CONF.wait_period_after_service_update)
         msg = "Disabled compute service on host: '%s'" % host_name
         self.update_details(msg, 1.0)
 
