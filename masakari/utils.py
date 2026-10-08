@@ -15,13 +15,10 @@
 
 """Utilities and helper functions."""
 
-import contextlib
 import functools
 import inspect
 import pyclbr
-import shutil
 import sys
-import tempfile
 
 import eventlet
 from oslo_concurrency import lockutils
@@ -215,21 +212,6 @@ def spawn_n(func, *args, **kwargs):
         func(*args, **kwargs)
 
     eventlet.spawn_n(context_wrapper, *args, **kwargs)
-
-
-@contextlib.contextmanager
-def tempdir(**kwargs):
-    argdict = kwargs.copy()
-    if 'dir' not in argdict:
-        argdict['dir'] = CONF.tempdir
-    tmpdir = tempfile.mkdtemp(**argdict)
-    try:
-        yield tmpdir
-    finally:
-        try:
-            shutil.rmtree(tmpdir)
-        except OSError as e:
-            LOG.error('Could not remove tmpdir: %s', e)
 
 
 def validate_integer(value, name, min_value=None, max_value=None):

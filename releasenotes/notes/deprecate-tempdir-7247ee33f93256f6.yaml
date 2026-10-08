@@ -1,0 +1,5 @@
+---
+deprecations:
+  - |
+    The ``[DEFAULT] tempdir`` option has been deprecated and has no effect now.
+    The directory hasn't been used actually.

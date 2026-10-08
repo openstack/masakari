@@ -18,6 +18,8 @@ from oslo_config import cfg
 base_options = [
     cfg.StrOpt(
         'tempdir',
+        deprecated_for_removal=True,
+        deprecated_reason='This option is unused',
         help='Explicitly specify the temporary working directory.'),
     cfg.BoolOpt(
         'monkey_patch',
