@@ -54,22 +54,6 @@ def reraise(tp, value, tb=None):
         tb = None
 
 
-def utf8(value):
-    """Try to turn a string into utf-8 if possible.
-
-    The original code was copied from the utf8 function in
-    http://github.com/facebook/tornado/blob/master/tornado/escape.py
-
-    """
-    if value is None or isinstance(value, bytes):
-        return value
-
-    if not isinstance(value, str):
-        value = str(value)
-
-    return value.encode('utf-8')
-
-
 def check_isinstance(obj, cls):
     """Checks that obj is of type cls, and lets PyLint infer types."""
     if isinstance(obj, cls):
