@@ -33,7 +33,6 @@ from masakari import exception
 from masakari.i18n import _
 from masakari.objects import base as objects_base
 from masakari import rpc
-from masakari import utils
 from masakari import version
 
 
@@ -84,7 +83,6 @@ class Service(service.Service):
             'topic': self.topic,
             'version': verstr
         })
-        self.basic_config_check()
 
         LOG.debug("Creating RPC server for service %s", self.topic)
 
@@ -171,16 +169,6 @@ class Service(service.Service):
         """Tasks to be run at a periodic interval."""
         ctxt = context.get_admin_context()
         return self.manager.periodic_tasks(ctxt, raise_on_error=raise_on_error)
-
-    def basic_config_check(self):
-        """Perform basic config checks before starting processing."""
-        # Make sure the tempdir exists and is writable
-        try:
-            with utils.tempdir():
-                pass
-        except Exception as e:
-            LOG.error('Temporary directory is invalid: %s', e)
-            sys.exit(1)
 
     def reset(self):
         self.manager.reset()

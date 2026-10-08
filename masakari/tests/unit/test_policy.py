@@ -17,6 +17,7 @@
 
 import os.path
 
+import fixtures
 from oslo_policy import policy as oslo_policy
 from oslo_serialization import jsonutils
 import requests_mock
@@ -28,7 +29,6 @@ from masakari import policy
 from masakari.tests.unit import base
 from masakari.tests.unit import fake_policy
 from masakari.tests.unit import policy_fixture
-from masakari import utils
 
 CONF = masakari.conf.CONF
 
@@ -41,28 +41,27 @@ class PolicyFileTestCase(base.NoDBTestCase):
         self.target = {}
 
     def test_modified_policy_reloads(self):
-        with utils.tempdir() as tmpdir:
-            tmpfilename = os.path.join(tmpdir, 'policy')
+        tmpdir = self.useFixture(fixtures.TempDir()).path
+        tmpfilename = os.path.join(tmpdir, 'policy')
+        self.flags(policy_file=tmpfilename, group='oslo_policy')
 
-            self.flags(policy_file=tmpfilename, group='oslo_policy')
+        # NOTE(Dinesh_Bhor): context construction invokes policy check to
+        # determine is_admin or not. As a side-effect, policy reset is
+        # needed here to flush existing policy cache.
+        policy.reset()
+        policy.init(suppress_deprecation_warnings=True)
+        rule = oslo_policy.RuleDefault('example:test', "")
+        policy._ENFORCER.register_defaults([rule])
 
-            # NOTE(Dinesh_Bhor): context construction invokes policy check to
-            # determine is_admin or not. As a side-effect, policy reset is
-            # needed here to flush existing policy cache.
-            policy.reset()
-            policy.init(suppress_deprecation_warnings=True)
-            rule = oslo_policy.RuleDefault('example:test', "")
-            policy._ENFORCER.register_defaults([rule])
-
-            action = "example:test"
-            with open(tmpfilename, "w") as policyfile:
-                policyfile.write('{"example:test": ""}')
-            policy.authorize(self.context, action, self.target)
-            with open(tmpfilename, "w") as policyfile:
-                policyfile.write('{"example:test": "!"}')
-            policy._ENFORCER.load_rules(True)
-            self.assertRaises(exception.PolicyNotAuthorized, policy.authorize,
-                              self.context, action, self.target)
+        action = "example:test"
+        with open(tmpfilename, "w") as policyfile:
+            policyfile.write('{"example:test": ""}')
+        policy.authorize(self.context, action, self.target)
+        with open(tmpfilename, "w") as policyfile:
+            policyfile.write('{"example:test": "!"}')
+        policy._ENFORCER.load_rules(True)
+        self.assertRaises(exception.PolicyNotAuthorized, policy.authorize,
+                          self.context, action, self.target)
 
 
 class PolicyTestCase(base.NoDBTestCase):
