@@ -118,58 +118,6 @@ class MonkeyPatchDefaultTestCase(base.NoDBTestCase):
             getattr(decorator_module, decorator_name[1])
 
 
-class ExpectedArgsTestCase(base.NoDBTestCase):
-    def test_passes(self):
-        @utils.expects_func_args('foo', 'baz')
-        def dec(f):
-            return f
-
-        @dec
-        def func(foo, bar, baz="lol"):
-            pass
-
-        # Call to ensure nothing errors
-        func(None, None)
-
-    def test_raises(self):
-        @utils.expects_func_args('foo', 'baz')
-        def dec(f):
-            return f
-
-        def func(bar, baz):
-            pass
-
-        self.assertRaises(TypeError, dec, func)
-
-    def test_var_no_of_args(self):
-        @utils.expects_func_args('foo')
-        def dec(f):
-            return f
-
-        @dec
-        def func(bar, *args, **kwargs):
-            pass
-
-        # Call to ensure nothing errors
-        func(None)
-
-    def test_more_layers(self):
-        @utils.expects_func_args('foo', 'baz')
-        def dec(f):
-            return f
-
-        def dec_2(f):
-            def inner_f(*a, **k):
-                return f()
-            return inner_f
-
-        @dec_2
-        def func(bar, baz):
-            pass
-
-        self.assertRaises(TypeError, dec, func)
-
-
 class SpawnTestCase(base.NoDBTestCase):
     def setUp(self):
         super(SpawnTestCase, self).setUp()

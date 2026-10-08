@@ -34,7 +34,6 @@ from oslo_utils import timeutils
 import masakari.conf
 from masakari import exception
 from masakari.i18n import _
-from masakari import safe_utils
 
 
 CONF = masakari.conf.CONF
@@ -130,27 +129,6 @@ def walk_class_hierarchy(clazz, encountered=None):
             for subsubclass in walk_class_hierarchy(subclass, encountered):
                 yield subsubclass
             yield subclass
-
-
-def expects_func_args(*args):
-    def _decorator_checker(dec):
-        @functools.wraps(dec)
-        def _decorator(f):
-            base_f = safe_utils.get_wrapped_function(f)
-            arg_names, a, kw, _, _, _, _ = inspect.getfullargspec(base_f)
-            if a or kw or set(args) <= set(arg_names):
-                # NOTE : We can't really tell if correct stuff will
-                # be passed if it's a function with *args or **kwargs so
-                # we still carry on and hope for the best
-                return dec(f)
-            else:
-                raise TypeError("Decorated function %(f_name)s does not "
-                                "have the arguments expected by the "
-                                "decorator %(d_name)s" %
-                                {'f_name': base_f.__name__,
-                                 'd_name': dec.__name__})
-        return _decorator
-    return _decorator_checker
 
 
 def isotime(at=None):
