@@ -74,7 +74,8 @@ The entry points
 
 The Masakari project has a variety of entry points.
 
-The entry points can be found in the ``entry_points`` section of ``setup.cfg``.
+The entry points can be found in the ``[project.entry-points]`` tables of
+``pyproject.toml``.
 
 The main entry points
 ---------------------

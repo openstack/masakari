@@ -1,3 +1,83 @@
 [build-system]
 requires = ["pbr>=6.1.1"]
 build-backend = "pbr.build"
+
+[project]
+name = "masakari"
+description = "Virtual Machine High Availability (VMHA) service for OpenStack"
+authors = [
+  { name = "OpenStack", email = "openstack-discuss@lists.openstack.org" },
+]
+readme = { file = "README.rst", content-type = "text/x-rst" }
+license = "Apache-2.0"
+dynamic = ["version", "dependencies"]
+requires-python = ">=3.11"
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: OpenStack",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: System Administrators",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[project.urls]
+"Homepage" = "https://docs.openstack.org/masakari/latest/"
+"Repository" = "https://opendev.org/openstack/masakari"
+
+[project.scripts]
+masakari-api = "masakari.cmd.api:main"
+masakari-engine = "masakari.cmd.engine:main"
+masakari-manage = "masakari.cmd.manage:main"
+masakari-status = "masakari.cmd.status:main"
+
+[project.entry-points."oslo.config.opts"]
+"masakari.conf" = "masakari.conf.opts:list_opts"
+customized_recovery_flow_opts = "masakari.conf.opts:list_recovery_workflow_opts"
+
+[project.entry-points."oslo.config.opts.defaults"]
+"masakari.api" = "masakari.common.config:set_lib_defaults"
+
+[project.entry-points."oslo.policy.enforcer"]
+masakari = "masakari.policy:get_enforcer"
+
+[project.entry-points."oslo.policy.policies"]
+masakari = "masakari.policies:list_rules"
+
+[project.entry-points."masakari.api.v1.extensions"]
+versions = "masakari.api.openstack.ha.versionsV1:Versions"
+extension_info = "masakari.api.openstack.ha.extension_info:ExtensionInfo"
+segments = "masakari.api.openstack.ha.segments:Segments"
+hosts = "masakari.api.openstack.ha.hosts:Hosts"
+notifications = "masakari.api.openstack.ha.notifications:Notifications"
+vmoves = "masakari.api.openstack.ha.vmoves:VMoves"
+
+[project.entry-points."masakari.driver"]
+taskflow_driver = "masakari.engine.drivers.taskflow:TaskFlowDriver"
+
+[project.entry-points."masakari.task_flow.tasks"]
+disable_compute_service_task = "masakari.engine.drivers.taskflow.host_failure:DisableComputeServiceTask"
+prepare_HA_enabled_instances_task = "masakari.engine.drivers.taskflow.host_failure:PrepareHAEnabledInstancesTask"
+evacuate_instances_task = "masakari.engine.drivers.taskflow.host_failure:EvacuateInstancesTask"
+stop_instance_task = "masakari.engine.drivers.taskflow.instance_failure:StopInstanceTask"
+start_instance_task = "masakari.engine.drivers.taskflow.instance_failure:StartInstanceTask"
+confirm_instance_active_task = "masakari.engine.drivers.taskflow.instance_failure:ConfirmInstanceActiveTask"
+disable_compute_node_task = "masakari.engine.drivers.taskflow.process_failure:DisableComputeNodeTask"
+confirm_compute_node_disabled_task = "masakari.engine.drivers.taskflow.process_failure:ConfirmComputeNodeDisabledTask"
+no_op = "masakari.engine.drivers.taskflow.no_op:Noop"
+
+[tool.setuptools.packages.find]
+include = ["masakari*"]
+
+[tool.setuptools.data-files]
+"etc/masakari" = [
+  "etc/masakari/api-paste.ini",
+  "etc/masakari/masakari-custom-recovery-methods.conf",
+]

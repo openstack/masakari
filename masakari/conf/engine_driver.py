@@ -139,9 +139,9 @@ auto recovery workflow.
 
 Provide list of strings reflecting to the task classes that should be included
 to the host failure recovery workflow. The full classname path of all task
-classes should be defined in the 'masakari.task_flow.tasks' of setup.cfg and
-these classes may be implemented by OpenStack Masaskari project team, deployer
-or third party.
+classes should be defined in the 'masakari.task_flow.tasks' entry point group
+in pyproject.toml. These classes may be implemented by OpenStack Masakari
+project team, deployer or third party.
 
 By default below three tasks will be part of this config option:-
 1. disable_compute_service_task
@@ -166,9 +166,9 @@ reserved_host recovery workflow.
 
 Provide list of strings reflecting to the task classes that should be included
 to the host failure recovery workflow. The full classname path of all task
-classes should be defined in the 'masakari.task_flow.tasks' of setup.cfg and
-these classes may be implemented by OpenStack Masaskari project team, deployer
-or third party.
+classes should be defined in the 'masakari.task_flow.tasks' entry point group
+in pyproject.toml. These classes may be implemented by OpenStack Masakari
+project team, deployer or third party.
 
 By default below three tasks will be part of this config option:-
 1. disable_compute_service_task
@@ -192,9 +192,9 @@ failure recovery workflow.
 
 Provide list of strings reflecting to the task classes that should be included
 to the instance failure recovery workflow. The full classname path of all task
-classes should be defined in the 'masakari.task_flow.tasks' of setup.cfg and
-these classes may be implemented by OpenStack Masaskari project team, deployer
-or third party.
+classes should be defined in the 'masakari.task_flow.tasks' entry point group
+in pyproject.toml. These classes may be implemented by OpenStack Masakari
+project team, deployer or third party.
 
 By default below three tasks will be part of this config option:-
 1. stop_instance_task
@@ -218,9 +218,9 @@ failure recovery workflow.
 
 Provide list of strings reflecting to the task classes that should be included
 to the process failure recovery workflow. The full classname path of all task
-classes should be defined in the 'masakari.task_flow.tasks' of setup.cfg and
-these classes may be implemented by OpenStack Masaskari project team, deployer
-or third party.
+classes should be defined in the 'masakari.task_flow.tasks' entry point group
+in pyproject.toml. These classes may be implemented by OpenStack Masakari
+project team, deployer or third party.
 
 By default below two tasks will be part of this config option:-
 1. disable_compute_node_task

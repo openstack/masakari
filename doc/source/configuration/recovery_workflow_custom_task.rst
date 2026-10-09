@@ -39,11 +39,13 @@ For example, Third Party Library's setup.cfg will have following entry points
         custom_main_task = <custom_task_class_path_from_third_party_library>
         custom_post_task = <custom_task_class_path_from_third_party_library>
 
-Note: Entry point in Third Party Library's setup.cfg should have same key as
-in Masakari setup.cfg for respective failure recovery.
+Note: The entry point in the third-party library's ``setup.cfg`` should use the
+same key as the ``masakari.task_flow.tasks`` table in Masakari's
+``pyproject.toml`` for the respective failure recovery.
 
-#.  Configure custom task in Masakari's new conf file custom-recovery-methods.conf
-    with same name which was given in the setup.cfg to locate class path.
+#.  Configure the custom task in Masakari's ``custom-recovery-methods.conf``
+    with the same name given in the third-party library's entry point to locate
+    its class path.
     For example(custom task added in host auto failure config option):
 
 .. code-block:: bash
