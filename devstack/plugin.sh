@@ -42,17 +42,6 @@ MASAKARI_USE_MOD_WSGI=${MASAKARI_USE_MOD_WSGI:-True}
 # Functions
 # ---------
 
-# setup_masakari_logging() - Adds logging configuration to conf files
-function setup_masakari_logging {
-    local CONF=$1
-    iniset $CONF DEFAULT debug $ENABLE_DEBUG_LOG_LEVEL
-    iniset $CONF DEFAULT use_syslog $SYSLOG
-    if [ "$LOG_COLOR" == "True" ] && [ "$SYSLOG" == "False" ]; then
-        # Add color to logging output
-        setup_colorized_logging $CONF DEFAULT tenant user
-    fi
-}
-
 # create_masakari_accounts() - Set up common required masakari accounts
 
 # Tenant               User       Roles
@@ -139,10 +128,12 @@ function configure_masakari {
         # Set taskflow connection to store the recovery workflow details in db
         iniset $MASAKARI_CONF taskflow connection `database_connection_url masakari`
 
-        setup_masakari_logging $MASAKARI_CONF
-
         configure_keystone_authtoken_middleware $MASAKARI_CONF masakari
     fi
+
+    iniset $MASAKARI_CONF DEFAULT debug $ENABLE_DEBUG_LOG_LEVEL
+    iniset $MASAKARI_CONF DEFAULT use_syslog $SYSLOG
+    setup_logging $MASAKARI_CONF
 
     # Set os_privileged_user credentials (used for connecting nova service)
     iniset $MASAKARI_CONF DEFAULT os_privileged_user_name nova
