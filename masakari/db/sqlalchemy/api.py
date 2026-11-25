@@ -287,6 +287,12 @@ def failover_segment_update(context, segment_uuid, values):
 @oslo_db_api.wrap_db_retry(max_retries=5, retry_on_deadlock=True)
 @context_manager.writer
 def failover_segment_delete(context, segment_uuid):
+    if is_failover_segment_under_recovery(
+            context, segment_uuid,
+            filters={'status': ['new', 'running', 'error']}):
+        raise exception.Conflict(
+            reason=_("Failover segment %s has active recovery notifications") %
+            segment_uuid)
     count = model_query(context, models.FailoverSegment
                         ).filter_by(uuid=segment_uuid
                                     ).soft_delete(synchronize_session=False)
@@ -322,8 +328,10 @@ def is_failover_segment_under_recovery(context, failover_segment_id,
             query = query.filter(models.Notification.status == status)
 
     query = query.filter(
-        models.Notification.source_host_uuid.in_(inner_select.subquery()))
-
+        models.Notification.source_host_uuid.in_(
+            inner_select.scalar_subquery()
+        )
+    )
     return query.first()[0] > 0
 
 
